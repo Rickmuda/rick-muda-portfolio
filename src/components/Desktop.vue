@@ -63,6 +63,13 @@
       <div class="app-icon-text">{{ $t('guestbook') }}</div>
     </div>
 
+        <div class="desktop-only app-icon" @click="openApp('certificates')">
+      <div class="app-icon-image">
+        <font-awesome-icon icon="certificate" class="app-icon-inner" />
+      </div>
+      <div class="app-icon-text">{{ $t('certificates') }}</div>
+    </div>
+
     <!-- Easter egg apps -->
     <div class="app-icon" v-for="app in easterEggApps" :key="app" @click="openApp(app)">
       <div class="app-icon-image">
