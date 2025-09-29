@@ -716,13 +716,7 @@ sorting-bar button:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
-}
-
-.modal-image {
-  max-width: 90%;
-  max-height: 90%;
-  border-radius: 10px;
+  z-index: 9999; /* Increased from 10 to 9999 to ensure it appears above all windows */
 }
 
 /* Commit Hash Message */
@@ -1155,7 +1149,7 @@ sorting-bar button:hover {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 10;
+  z-index: 9999; /* Increased from 10 to 9999 to ensure it appears above all windows */
 }
 
 .modal-image {
@@ -1170,23 +1164,18 @@ sorting-bar button:hover {
   transform: translateY(-50%);
   background-color: rgba(255, 255, 255, 0.8);
   border: none;
-  font-family: "Retro Gaming", sans-serif; /* Match the font style */
-  font-size: 20px; /* Adjust font size for the arrow */
-  color: black; /* Match the text color */
+  font-family: "Retro Gaming", sans-serif;
+  font-size: 20px;
+  color: black;
   width: 40px;
   height: 40px;
-  font-size: 20px;
   cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: 11;
+  z-index: 10000; /* Increased to appear above the modal */
   text-align: center;
-  border: 2px solid black; /* Add a border for consistency */
-}
-
-.arrow:hover {
-  background-color: rgb(255, 255, 255); /* Slightly darker shade on hover */
+  border: 2px solid black;
 }
 
 .left-arrow {
@@ -1203,13 +1192,13 @@ sorting-bar button:hover {
   right: 10px;
   width: 40px;
   height: 40px;
-  background: rgba(255, 0, 0, 1); /* Match the top bar close button color */
+  background: rgba(255, 0, 0, 1);
   border-radius: 5px;
   display: flex;
   justify-content: center;
   align-items: center;
   cursor: pointer;
-  z-index: 11;
+  z-index: 10000; /* Increased to appear above the modal */
 }
 
 .close-modal span {
