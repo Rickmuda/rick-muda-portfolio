@@ -88,37 +88,31 @@ export default {
           title: this.$t('uwp'),
           image: new URL('@/assets/img/projects/unnamed-weather-app.webp', import.meta.url).href,
           description: this.$t('uwpDescription'),
-          link: "https://github.com/rickmuda/unnamed-weather-app"
+          link: "https://weather.rickmuda.nl"
         },
         {
           title: this.$t('aw'),
           image: new URL('@/assets/img/projects/irritante-webpagina.webp', import.meta.url).href,
           description: this.$t('awDescription'),
-          link: "https://github.com/Rickmuda/Irritating-webpage"
+          link: "https://annoying.rickmuda.nl"
         },
         {
           title: this.$t('wam'),
           image: new URL('@/assets/img/projects/whack-a-mom.webp', import.meta.url).href,
           description: this.$t('wamDescription'),
-          link: "https://github.com/Rickmuda/WhackAMom-JS-game"
+          link: "https://whackamom.rickmuda.nl"
         },
         {
           title: this.$t('gl'),
           image: new URL('@/assets/img/projects/gym-list.webp', import.meta.url).href,
           description: this.$t('glDescription'),
-          link: "https://github.com/Rickmuda/Gym-to-do-list"
+          link: "https://gymlist.rickmuda.nl"
         },
         {
           title: this.$t('op'),
           image: new URL('@/assets/img/projects/one-pager.webp', import.meta.url).href,
           description: this.$t('opDescription'),
-          link: "https://github.com/Rickmuda/One-page-website"
-        },
-        {
-          title: this.$t('eq'),
-          image: new URL('@/assets/img/projects/english-quiz.webp', import.meta.url).href,
-          description: this.$t('eqDescription'),
-          link: "https://github.com/Rickmuda/English-quiz"
+          link: "https://onepager.rickmuda.nl"
         },
         {
           title: this.$t('sp'),
@@ -126,41 +120,35 @@ export default {
           description: this.$t('spDescription'),
           link: "https://www.youtube.com/watch?v=-JeNEwwF-Ms"
         },
-        // {
-        //   title: this.$t('tdl'),
-        //   image: new URL('@/assets/img/projects/todolist.webp', import.meta.url).href,
-        //   description: this.$t('tdlDescription'),
-        //   link: "https://github.com/Rickmuda/To-do-list-API"
-        // },
         {
           title: this.$t('us'),
           image: new URL('@/assets/img/projects/undertale-sudoku.webp', import.meta.url).href,
           description: this.$t('usDescription'),
-          link: "https://github.com/Rickmuda/Undertale-sudoku"
+          link: "https://sudoku.rickmuda.nl"
         },
         {
           title: this.$t('lvt'),
           image: new URL('@/assets/img/projects/longvideotheater.webp', import.meta.url).href,
           description: this.$t('lvtDescription'),
-          link: "https://github.com/Rickmuda/Longvideotheather2"
+          link: "https://lvt.rickmuda.nl"
         },
         {
           title: this.$t('dnm'),
           image: new URL('@/assets/img/projects/dungeon and music.webp', import.meta.url).href,
           description: this.$t('dnmDescription'),
-          link: "https://github.com/Rickmuda/Dungeons-and-music"
+          link: "https://dnm.rickmuda.nl"
         },
         {
           title: this.$t('syp'),
           image: new URL('@/assets/img/projects/secondyearportfolio.webp', import.meta.url).href,
           description: this.$t('sypDescription'),
-          link: "https://github.com/Rickmuda/Second-year-portfolio"
+          link: "https://second.rickmuda.nl"
         },
         {
           title: this.$t('fyp'),
           image: new URL('@/assets/img/projects/firstyearportfolio.webp', import.meta.url).href,
           description: this.$t('fypDescription'),
-          link: "https://github.com/Rickmuda/First-portfolio"
+          link: "https://first.rickmuda.nl"
         },
       ];
     }
