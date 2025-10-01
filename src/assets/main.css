@@ -787,28 +787,37 @@ sorting-bar button:hover {
   justify-content: center;
   align-items: center;
   height: 100%;
+  width: 100%;
 }
 
 /* Socials Icons */
 .socials-icons {
   display: grid;
-  grid-template-columns: repeat(3, 1fr); /* Change from 4 to 3 columns */
-  grid-template-rows: repeat(3, 1fr); /* Add explicit rows for a 3x3 grid */
-  gap: 20px; /* Space between icons */
-  justify-content: center; /* Center the grid horizontally */
-  align-items: center; /* Center the icons vertically */
-  width: 80%; /* Adjust the width of the grid */
-  margin: 0 auto; /* Center the grid within the parent container */
+  grid-template-columns: repeat(3, 1fr);
+  grid-template-rows: repeat(3, 1fr);
+  gap: 20px;
+  justify-content: center;
+  align-items: center;
+  justify-items: center; /* Center items horizontally within grid cells */
+  align-content: center; /* Center the entire grid vertically */
+  width: 80%;
+  height: 80%; /* Give it a defined height for better centering */
+  margin: 0 auto;
 }
 
 .social-icon {
   font-size: 80px;
-  margin: 10px;
   color: white;
   transition: transform 0.2s ease, color 0.3s ease;
   background: none;
   border: none;
   cursor: pointer;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  text-decoration: none; /* Remove underline for links */
 }
 
 .social-icon:hover {

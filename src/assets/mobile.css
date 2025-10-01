@@ -365,6 +365,7 @@
     grid-template-rows: repeat(3, 1fr); /* 3 rows for a 3x3 grid */
     gap: 15px;
     width: 90%; /* Slightly wider for mobile to accommodate 3 columns */
+    height: 80%; /* Give it a defined height */
     margin: 0 auto; /* Center the grid horizontally */
     justify-content: center; /* Center grid cells horizontally */
     align-content: center; /* Center grid cells vertically */
