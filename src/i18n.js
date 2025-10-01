@@ -88,6 +88,7 @@ const messages = {
     fyp: "First year portfolio",
     fypDescription: "My first portfolio I made for my first year at school.",
     goToProject: "Go to Project",
+    goToRepository: "Go to Repository",
 
     // Start menu
     startMenu: "Start Menu",
@@ -229,6 +230,7 @@ const messages = {
     fypDescription:
       "Mijn allereerste portfolio dat ik heb gemaakt voor mijn eerste jaar op school.",
     goToProject: "Ga naar Project",
+    goToRepository: "Ga naar Repository",
 
     // Start menu
     startMenu: "Start Menu",

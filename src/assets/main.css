@@ -1947,3 +1947,51 @@ video {
   letter-spacing: 0.1em;
   margin-top: 2rem;
 }
+
+/* Project Buttons Container */
+.project-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.project-repository {
+  padding: 10px 20px;
+  background-color: #2d0a35;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+  border: 2px solid #000;
+  font-family: 'PortfolioFont', sans-serif;
+  text-align: center;
+}
+
+.project-repository:hover {
+  background-color: #1a0620;
+}
+
+/* Mobile Modal Buttons */
+.project-modal-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+}
+
+.project-modal-repository {
+  padding: 10px 20px;
+  background-color: #2d0a35;
+  color: white;
+  text-decoration: none;
+  border-radius: 5px;
+  transition: background-color 0.3s;
+  border: 1px solid black;
+  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+  font-family: 'PortfolioFont', sans-serif;
+}
+
+.project-modal-repository:hover {
+  background-color: #1a0620;
+}
