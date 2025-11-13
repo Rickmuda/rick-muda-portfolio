@@ -167,7 +167,7 @@ const messages = {
     aboutMeFavoriteGames: "Ik heb niet één favoriete game, maar twee.",
     aboutMeGames:
       "Bloodborne en The Binding of Isaac hebben een speciale plek in mijn hart.",
-    AboutMeBooks : 
+    aboutMeBooks : 
       "Ik heb sinds kort ook lezen op gepakt en heb enorm genoten van 'The king in yellow' van Robert W. Chambers",
     aboutMeHelp: "Waarmee kan ik je verder helpen?",
     projectsIntro:
