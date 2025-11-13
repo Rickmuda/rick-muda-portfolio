@@ -26,6 +26,8 @@ const messages = {
     aboutMeFavoriteGames: "I don't have one favorite game, but two.",
     aboutMeGames:
       "Bloodborne and The Binding of Isaac hold a special place in my heart.",
+    AboutMeBooks : 
+      "I've also picked up reading in the last couple of weeks and really enjoyed the king in yellow from Robert W. Chambers",
     aboutMeHelp: "What else can I help you with?",
     projectsIntro:
       "The projects I create in my free time are usually ideas that come to me spontaneously.",
@@ -165,6 +167,8 @@ const messages = {
     aboutMeFavoriteGames: "Ik heb niet één favoriete game, maar twee.",
     aboutMeGames:
       "Bloodborne en The Binding of Isaac hebben een speciale plek in mijn hart.",
+    AboutMeBooks : 
+      "Ik heb sinds kort ook lezen op gepakt en heb enorm genoten van 'The king in yellow' van Robert W. Chambers",
     aboutMeHelp: "Waarmee kan ik je verder helpen?",
     projectsIntro:
       "De projecten die ik in mijn vrije tijd maak, zijn meestal ideeën die ik spontaan krijg.",

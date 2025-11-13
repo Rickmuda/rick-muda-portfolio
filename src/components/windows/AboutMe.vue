@@ -59,6 +59,7 @@ export default {
             { speaker: "me", text: this.$t("aboutMeFavoriteVinyl") },
             { speaker: "me", text: this.$t("aboutMeFavoriteGames") },
             { speaker: "me", text: this.$t("aboutMeGames") },
+            { speaker: "me", text: this.$t("aboutMeBooks") },
             { speaker: "me", text: this.$t("aboutMeHelp") },
           ],
           choices: [
