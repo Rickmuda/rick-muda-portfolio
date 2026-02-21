@@ -89,6 +89,8 @@ const messages = {
     sypDescription: "The portfolio I made for my second year at school.",
     fyp: "First year portfolio",
     fypDescription: "My first portfolio I made for my first year at school.",
+    qt: "Quiet Turn",
+    qtDescription: "A magic the gathering game tracker for neurodivergent people to make the game more accessible.",
     goToProject: "Go to Project",
     goToRepository: "Go to Repository",
 
@@ -233,6 +235,8 @@ const messages = {
     fyp: "1e jaar portfolio",
     fypDescription:
       "Mijn allereerste portfolio dat ik heb gemaakt voor mijn eerste jaar op school.",
+    qt: "Quiet Turn",
+    qtDescription: "Een magic the gathering game tracker voor neurodivergente mensen om het spel toegankelijker te maken.",
     goToProject: "Ga naar Project",
     goToRepository: "Ga naar Repository",
 

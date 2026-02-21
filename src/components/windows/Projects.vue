@@ -181,6 +181,12 @@ export default {
           link: "https://first.rickmuda.nl",
           repository: "https://github.com/rickmuda/first-year-portfolio"
         },
+        {
+          title: this.$t('qt'),
+          image: new URL('@/assets/img/projects/qt.webp', import.meta.url).href,
+          description: this.$t('qtDescription'),
+          link: "https://quietturn.rickmuda.nl/"
+        },
       ];
     }
   },
