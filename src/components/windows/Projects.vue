@@ -27,14 +27,6 @@
         >
           {{ $t('goToProject') }}
         </a>
-        <a
-          v-if="selectedProject.repository"
-          :href="selectedProject.repository"
-          target="_blank"
-          class="project-repository"
-        >
-          {{ $t('goToRepository') }}
-        </a>
       </div>
     </div>
 
@@ -52,14 +44,6 @@
               class="project-modal-link"
             >
               {{ $t('goToProject') }}
-            </a>
-            <a
-              v-if="selectedProject.repository"
-              :href="selectedProject.repository"
-              target="_blank"
-              class="project-modal-repository"
-            >
-              {{ $t('goToRepository') }}
             </a>
           </div>
         </div>

@@ -92,7 +92,6 @@ const messages = {
     qt: "Quiet Turn",
     qtDescription: "A magic the gathering game tracker for neurodivergent people to make the game more accessible.",
     goToProject: "Go to Project",
-    goToRepository: "Go to Repository",
 
     // Start menu
     startMenu: "Start Menu",
@@ -238,7 +237,6 @@ const messages = {
     qt: "Quiet Turn",
     qtDescription: "Een magic the gathering game tracker voor neurodivergente mensen om het spel toegankelijker te maken.",
     goToProject: "Ga naar Project",
-    goToRepository: "Ga naar Repository",
 
     // Start menu
     startMenu: "Start Menu",
