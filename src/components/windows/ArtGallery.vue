@@ -1,9 +1,4 @@
 <template>
-<<<<<<< Updated upstream
-  <div class="art-gallery">
-    <div class="gallery-grid">
-      <div
-=======
   <div class="photo-viewer">
     <div class="viewer-top">
       <span>Photo {{ selectedImageIndex + 1 }} / {{ artGalleryImages.length }}</span>
@@ -13,37 +8,18 @@
     </div>
     <div class="viewer-strip">
       <button
->>>>>>> Stashed changes
         v-for="(image, index) in artGalleryImages"
         :key="index"
-        class="gallery-item"
-        @click="openImage(index)"
+        class="thumb"
+        :class="{ active: selectedImageIndex === index }"
+        @click="selectedImageIndex = index"
       >
-<<<<<<< Updated upstream
-        <img :src="image" alt="Art" class="gallery-image" />
-      </div>
-=======
         <img 
           :src="selectedImageIndex === index || !image.endsWith('.gif') ? image : (frozenGifFrames[index] || image)"
           alt="Art thumbnail"
         />
       </button>
->>>>>>> Stashed changes
     </div>
-    <teleport to="body">
-      <div
-        v-if="selectedImageIndex !== null"
-        class="image-modal"
-        @click.self="closeImage" 
-      >
-        <button class="arrow left-arrow" @click="previousImage">&#9664;</button>
-        <img :src="artGalleryImages[selectedImageIndex]" alt="Selected Art" class="modal-image" />
-        <button class="arrow right-arrow" @click="nextImage">&#9654;</button>
-        <button class="close-modal" @click="closeImage">
-          <span>X</span>
-        </button>
-      </div>
-    </teleport>
   </div>
 </template>
 
@@ -61,12 +37,8 @@ export default {
         new URL('@/assets/img/imggallery/swag.webp', import.meta.url).href,
         new URL('@/assets/img/imggallery/dance.gif', import.meta.url).href,
       ],
-<<<<<<< Updated upstream
-      selectedImageIndex: null, // Track the index of the selected image
-=======
       selectedImageIndex: 0,
       frozenGifFrames: {},
->>>>>>> Stashed changes
     };
   },
   mounted() {
@@ -90,28 +62,8 @@ export default {
         }
       });
     },
-    openImage(index) {
-      this.selectedImageIndex = index; // Open the modal with the selected image index
-    },
-    closeImage() {
-      this.selectedImageIndex = null; // Close the modal
-    },
-    nextImage() {
-      // Go to the next image, loop back to the first if at the end
-      this.selectedImageIndex =
-        (this.selectedImageIndex + 1) % this.artGalleryImages.length;
-    },
-    previousImage() {
-      // Go to the previous image, loop back to the last if at the beginning
-      this.selectedImageIndex =
-        (this.selectedImageIndex - 1 + this.artGalleryImages.length) %
-        this.artGalleryImages.length;
-    },
   },
 };
-<<<<<<< Updated upstream
-</script>
-=======
 </script>
 
 <style scoped>
@@ -177,4 +129,3 @@ export default {
   border-color: #9b20b7;
 }
 </style>
->>>>>>> Stashed changes

@@ -1,30 +1,4 @@
 <template>
-<<<<<<< Updated upstream
-  <div class="clicker-game">
-    <h2>{{ $t('clickTheRick') }}</h2>
-    <p>{{ $t('score') }}: {{ clickerScore }}</p>
-    <img
-      src="/src/assets/img/minigame.webp"
-      alt="Click Me"
-      class="clicker-image"
-      @click="incrementScore"
-    />
-    <div class="upgrades">
-      <h3>{{ $t('upgrades') }}</h3>
-      <div class="upgrade" v-for="(upgrade, index) in upgrades" :key="index">
-        <p>{{ upgrade.name }}</p>
-        <p>{{ $t('cost') }}: {{ upgrade.cost }}</p>
-        <p v-if="upgrade.multiplier">{{ $t('nextMultiplier') }}: x{{ upgrade.multiplier }}</p>
-        <p v-if="upgrade.autoClick">{{ $t('autoClicks') }}: +{{ upgrade.autoClick }}/{{ $t('sec') }}</p>
-        <button
-          :disabled="clickerScore < upgrade.cost"
-          @click="purchaseUpgrade(index)"
-        >
-          {{ $t('buy') }}
-        </button>
-      </div>
-    </div>
-=======
   <div class="solitaire-window">
     <div class="solitaire-header">
       <h2>Solitaire</h2>
@@ -104,23 +78,15 @@
     </div>
 
     <p v-if="isWon" class="win-message">You won 🎉</p>
->>>>>>> Stashed changes
   </div>
 </template>
 
 <script>
+const SUITS = ["hearts", "diamonds", "clubs", "spades"];
+
 export default {
   data() {
     return {
-<<<<<<< Updated upstream
-      clickerScore: 0,
-      upgrades: [
-        { name: this.$t('doubleClicks'), cost: 10, multiplier: 2 },
-        { name: this.$t('autoClicker'), cost: 50, autoClick: 1 },
-      ],
-      pointsPerClick: 1,
-      autoClickInterval: null,
-=======
       suits: SUITS,
       stock: [],
       waste: [],
@@ -133,32 +99,158 @@ export default {
       tableau: [[], [], [], [], [], [], []],
       selected: null,
       dragging: null,
->>>>>>> Stashed changes
     };
   },
+  computed: {
+    isWon() {
+      return SUITS.every((suit) => this.foundations[suit].length === 13);
+    },
+  },
+  created() {
+    this.newGame();
+  },
   methods: {
-    incrementScore() {
-      this.clickerScore += this.pointsPerClick;
-    },
-    purchaseUpgrade(index) {
-      const upgrade = this.upgrades[index];
-      if (this.clickerScore >= upgrade.cost) {
-        this.clickerScore -= upgrade.cost;
-        if (upgrade.multiplier) {
-          this.pointsPerClick *= upgrade.multiplier;
-        }
-        if (upgrade.autoClick) {
-          this.startAutoClicker(upgrade.autoClick);
+    newGame() {
+      const deck = this.createDeck();
+      this.shuffle(deck);
+
+      this.foundations = { hearts: [], diamonds: [], clubs: [], spades: [] };
+      this.tableau = [[], [], [], [], [], [], []];
+      this.waste = [];
+      this.selected = null;
+
+      let cardIndex = 0;
+      for (let i = 0; i < 7; i++) {
+        for (let j = i; j < 7; j++) {
+          const card = deck[cardIndex++];
+          card.faceUp = j === i;
+          this.tableau[j].push(card);
         }
       }
+      this.stock = deck.slice(cardIndex);
     },
-    startAutoClicker(autoClickRate) {
-      if (this.autoClickInterval) {
-        clearInterval(this.autoClickInterval);
+    createDeck() {
+      const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+      const deck = [];
+      let id = 0;
+      for (const suit of SUITS) {
+        for (const value of values) {
+          deck.push({
+            id: id++,
+            suit,
+            value,
+            color: suit === "hearts" || suit === "diamonds" ? "red" : "black",
+            faceUp: false,
+          });
+        }
       }
-      this.autoClickInterval = setInterval(() => {
-        this.clickerScore += autoClickRate;
-      }, 1000);
+      return deck;
+    },
+    shuffle(array) {
+      for (let i = array.length - 1; i > 0; i--) {
+        const j = Math.floor(Math.random() * (i + 1));
+        [array[i], array[j]] = [array[j], array[i]];
+      }
+    },
+    drawStock() {
+      if (this.stock.length === 0) {
+        this.stock = this.waste.reverse().map((c) => ({ ...c, faceUp: false }));
+        this.waste = [];
+      } else {
+        const card = this.stock.pop();
+        card.faceUp = true;
+        this.waste.push(card);
+      }
+      this.selected = null;
+    },
+    selectWaste() {
+      if (this.waste.length) {
+        this.selected = { type: "waste" };
+      }
+    },
+    selectTableauCard(pileIndex, cardIndex) {
+      const card = this.tableau[pileIndex][cardIndex];
+      if (!card.faceUp) return;
+      this.selected = { type: "tableau", pileIndex, cardIndex };
+    },
+    isSelectedTableauCard(pileIndex, cardIndex) {
+      if (!this.selected || this.selected.type !== "tableau") return false;
+      return (
+        this.selected.pileIndex === pileIndex && this.selected.cardIndex <= cardIndex
+      );
+    },
+    moveToFoundation(suit) {
+      if (!this.selected) return;
+      const card = this.getSelectedCard();
+      if (!card || card.suit !== suit) return;
+      if (!this.canPlaceOnFoundation(card, suit)) return;
+
+      if (this.selected.type === "waste") {
+        this.foundations[suit].push(this.waste.pop());
+      } else {
+        const pile = this.tableau[this.selected.pileIndex];
+        if (this.selected.cardIndex !== pile.length - 1) return;
+        this.foundations[suit].push(pile.pop());
+        this.revealLastTableauCard(this.selected.pileIndex);
+      }
+      this.selected = null;
+    },
+    moveToTableau(targetPileIndex) {
+      if (!this.selected) return;
+
+      const targetPile = this.tableau[targetPileIndex];
+      const movingCard = this.getSelectedCard();
+      if (!movingCard) return;
+      if (!this.canPlaceOnTableau(movingCard, targetPile)) return;
+
+      if (this.selected.type === "waste") {
+        targetPile.push(this.waste.pop());
+      } else {
+        const sourcePile = this.tableau[this.selected.pileIndex];
+        const movingCards = sourcePile.splice(this.selected.cardIndex);
+        this.tableau[targetPileIndex].push(...movingCards);
+        this.revealLastTableauCard(this.selected.pileIndex);
+      }
+      this.selected = null;
+    },
+    getSelectedCard() {
+      if (!this.selected) return null;
+      if (this.selected.type === "waste") {
+        return this.waste[this.waste.length - 1] || null;
+      }
+      const pile = this.tableau[this.selected.pileIndex];
+      return pile[this.selected.cardIndex] || null;
+    },
+    canPlaceOnFoundation(card, suit) {
+      const foundation = this.foundations[suit];
+      if (foundation.length === 0) return card.value === "A";
+      const topCard = foundation[foundation.length - 1];
+      return this.getValueIndex(card.value) === this.getValueIndex(topCard.value) + 1;
+    },
+    canPlaceOnTableau(card, pile) {
+      if (pile.length === 0) return card.value === "K";
+      const topCard = pile[pile.length - 1];
+      if (!topCard.faceUp) return false;
+      const colorMatch = card.color !== topCard.color;
+      const valueMatch = this.getValueIndex(card.value) === this.getValueIndex(topCard.value) - 1;
+      return colorMatch && valueMatch;
+    },
+    getValueIndex(value) {
+      const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
+      return values.indexOf(value);
+    },
+    revealLastTableauCard(pileIndex) {
+      const pile = this.tableau[pileIndex];
+      if (pile.length > 0) {
+        pile[pile.length - 1].faceUp = true;
+      }
+    },
+    cardLabel(card) {
+      return `${card.value}${this.suitSymbol(card.suit)}`;
+    },
+    suitSymbol(suit) {
+      const symbols = { hearts: "♥", diamonds: "♦", clubs: "♣", spades: "♠" };
+      return symbols[suit];
     },
     onDragStart(event, type, pileIndex = null, cardIndex = null) {
       this.dragging = { type, pileIndex, cardIndex };
@@ -215,15 +307,8 @@ export default {
       return pile[this.dragging.cardIndex] || null;
     },
   },
-  beforeUnmount() {
-    if (this.autoClickInterval) {
-      clearInterval(this.autoClickInterval);
-    }
-  },
 };
 </script>
-<<<<<<< Updated upstream
-=======
 
 <style scoped>
 .solitaire-window {
@@ -412,4 +497,3 @@ export default {
   }
 }
 </style>
->>>>>>> Stashed changes

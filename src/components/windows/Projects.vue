@@ -1,34 +1,4 @@
 <template>
-<<<<<<< Updated upstream
-  <div class="projects-window">
-    <!-- Projects Grid -->
-    <div class="projects-grid" :class="{ 'grid-expanded': selectedProject && !isMobile }">
-      <div
-        v-for="(project, index) in projects"
-        :key="index"
-        class="project-card"
-        :class="{ selected: selectedProject === project && !isMobile }"
-        @click="handleProjectClick(project)"
-      >
-        <img :src="project.image" alt="Project Image" />
-        <p>{{ project.title }}</p>
-      </div>
-    </div>
-
-    <!-- Project Details for Desktop -->
-    <div v-if="selectedProject && !isMobile" class="project-details">
-      <img :src="selectedProject.image" alt="Selected Project Image" />
-      <h3>{{ selectedProject.title }}</h3>
-      <p>{{ selectedProject.description }}</p>
-      <div class="project-buttons">
-        <a
-          :href="selectedProject.link"
-          target="_blank"
-          class="project-link"
-        >
-          {{ $t('goToProject') }}
-        </a>
-=======
   <div class="explorer-window" :class="{ 'project-selected': selectedProject }">
     <div class="explorer-pane list-pane" @click="deselectProject">
       <div class="details-header">
@@ -94,32 +64,8 @@
           class="project-link" 
           :class="{ disabled: selectedProject.disabled }"
         >{{ $t('goToProject') }}</a>
->>>>>>> Stashed changes
       </div>
     </div>
-
-    <!-- Modal for Mobile -->
-    <teleport to="body">
-      <div v-if="showModal" class="projects-modal" @click.self="closeModal">
-        <div class="project-modal-content">
-          <img :src="selectedProject.image" alt="Selected Project" class="project-modal-image" />
-          <h3 class="project-modal-title">{{ selectedProject.title }}</h3>
-          <p class="project-modal-description">{{ selectedProject.description }}</p>
-          <div class="project-modal-buttons">
-            <a
-              :href="selectedProject.link"
-              target="_blank"
-              class="project-modal-link"
-            >
-              {{ $t('goToProject') }}
-            </a>
-          </div>
-        </div>
-        <button class="project-modal-close" @click="closeModal">
-          <span>X</span>
-        </button>
-      </div>
-    </teleport>
   </div>
 </template>
 
@@ -129,15 +75,10 @@ export default {
     return {
       projects: [],
       selectedProject: null,
-<<<<<<< Updated upstream
-      showModal: false,
-      isMobile: false
-=======
       currentImageIndex: 0,
       carouselInterval: null,
       sortBy: 'date',
       sortDirection: 'desc',
->>>>>>> Stashed changes
     };
   },
   computed: {
@@ -170,27 +111,6 @@ export default {
     }
   },
   methods: {
-<<<<<<< Updated upstream
-    handleProjectClick(project) {
-      this.selectedProject = project;
-      // Show modal only on mobile
-      if (this.isMobile) {
-        this.showModal = true;
-      }
-    },
-    closeModal() {
-      this.showModal = false;
-    },
-    selectProject(project) {
-      if (!this.isMobile) {
-        this.selectedProject = this.selectedProject === project ? null : project;
-      } else {
-        this.handleProjectClick(project);
-      }
-    },
-    checkMobile() {
-      this.isMobile = window.innerWidth <= 768;
-=======
     selectProject(project) {
       // Clear any existing interval before switching projects
       clearInterval(this.carouselInterval);
@@ -250,13 +170,8 @@ export default {
     restartCarousel() {
       clearInterval(this.carouselInterval);
       this.startCarousel();
->>>>>>> Stashed changes
     },
     initializeProjects() {
-      // Placeholder images for carousel
-      const placeholder1 = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%234a3a6a%22 width=%22400%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2224%22 fill=%22%239b20b7%22 text-anchor=%22middle%22 dy=%22.3em%22%3EAdditional View%3C/text%3E%3C/svg%3E';
-      const placeholder2 = 'data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22400%22 height=%22300%22%3E%3Crect fill=%22%235a4a7a%22 width=%22400%22 height=%22300%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 font-size=%2224%22 fill=%22%23d99be8%22 text-anchor=%22middle%22 dy=%22.3em%22%3EGallery Image%3C/text%3E%3C/svg%3E';
-
       this.projects = [
         {
           title: this.$t('uwp'),
@@ -397,16 +312,6 @@ export default {
   },
   created() {
     this.initializeProjects();
-<<<<<<< Updated upstream
-    this.checkMobile();
-    window.addEventListener('resize', this.checkMobile);
-  },
-  beforeUnmount() {
-    window.removeEventListener('resize', this.checkMobile);
-  }
-};
-</script>
-=======
     this.selectedProject = this.projects[0] || null;
   },
   beforeUnmount() {
@@ -672,4 +577,3 @@ export default {
   }
 }
 </style>
->>>>>>> Stashed changes

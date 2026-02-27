@@ -1,25 +1,35 @@
 <template>
-  <div class="contact-window">
-    <div class="socials-icons">
-      <button class="social-icon" @click="openMail">
-        <font-awesome-icon icon="envelope" />
-      </button>
+  <div class="mail-client">
+    <div class="mail-toolbar">New Message</div>
+    <div class="mail-form">
+      <div class="field-row">
+        <span>To:</span>
+        <input type="text" value="rickmudaportfolio@gmail.com" class="readonly-field" readonly />
+      </div>
+      <div class="field-row">
+        <span>Subject:</span>
+        <input type="text" placeholder="Enter subject..." />
+      </div>
+      <div class="field-column">
+        <span>Message:</span>
+        <textarea placeholder="Write your message..."></textarea>
+      </div>
+      <div class="mail-actions">
+        <button @click="openMail">Send via Email Client</button>
+        <span class="mail-status">Opens your default email app</span>
+      </div>
     </div>
   </div>
 </template>
 
 <script>
 export default {
-  name: 'Contact',
   methods: {
     openMail() {
       window.location.href = "mailto:rickmudaportfolio@gmail.com";
     }
   }
 }
-<<<<<<< Updated upstream
-</script>
-=======
 </script>
 
 <style scoped>
@@ -146,4 +156,3 @@ export default {
   margin-left: auto;
 }
 </style>
->>>>>>> Stashed changes

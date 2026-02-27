@@ -5,11 +5,6 @@ import ArtGallery from "./components/windows/ArtGallery.vue";
 import MiniGame from "./components/windows/MiniGame.vue";
 import Settings from "./components/windows/Settings.vue";
 import OldVideo from "./components/windows/OldVideo.vue";
-<<<<<<< Updated upstream
-import Guestbook from "./components/windows/Guestbook.vue";
-import Certificates from "./components/windows/Certificates.vue";
-=======
->>>>>>> Stashed changes
 
 export const windowConfig = {
   aboutMe: {
@@ -52,33 +47,6 @@ export const windowConfig = {
     defaultX: 600,
     defaultY: 100,
   },
-<<<<<<< Updated upstream
-  settings: {
-    component: Settings,
-    title: "settings",
-    defaultWidth: 500,
-    defaultHeight: 400,
-    defaultX: 700,
-    defaultY: 400,
-  },
-  guestbook: {
-    component: Guestbook,
-    title: "guestbook",
-    defaultWidth: 800,
-    defaultHeight: 750,
-    defaultX: 150,
-    defaultY: 50,
-  },
-  certificates: {
-    component: Certificates,
-    title: "certificates",
-    defaultWidth: 1100,
-    defaultHeight: 600,
-    defaultX: 150,
-    defaultY: 50,
-  },
-=======
->>>>>>> Stashed changes
   oldVideo: {
     component: OldVideo,
     title: "Easter Egg",

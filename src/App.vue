@@ -255,6 +255,10 @@ export default {
         img.src = new URL(`./assets/img/certificates/${filename}`, import.meta.url).href;
       });
     },
+    updateLanguage(lang) {
+      this.currentLanguage = lang;
+      this.$i18n.locale = lang;
+    },
   },
   async mounted() {
     this.checkMobile();

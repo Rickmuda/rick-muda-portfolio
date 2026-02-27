@@ -23,14 +23,7 @@
         <font-awesome-icon icon="envelope" />
       </div>
 
-<<<<<<< Updated upstream
-      <!-- Socials -->
-      <div class="taskbar-icon" @click="openApp('socials')">
-        <font-awesome-icon icon="share-nodes" />
-      </div>
 
-=======
->>>>>>> Stashed changes
       <!-- Mini Game -->
       <div class="taskbar-icon" @click="openApp('miniGame')">
         <font-awesome-icon icon="gamepad" />
@@ -41,24 +34,7 @@
         <font-awesome-icon icon="palette" />
       </div>
 
-<<<<<<< Updated upstream
-      <!-- Guestbook -->
-      <div class="taskbar-icon" @click="openApp('guestbook')">
-        <font-awesome-icon icon="book" />
-      </div>
 
-      <!-- Settings -->
-      <div class="taskbar-icon" @click="openApp('settings')">
-        <font-awesome-icon icon="cog" />
-      </div>
-
-      <!-- Certificates -->
-      <div class="taskbar-icon" @click="openApp('certificates')">
-        <font-awesome-icon icon="certificate" />
-      </div> 
-
-=======
->>>>>>> Stashed changes
       <!-- Easter Egg Icon -->
       <div v-for="app in easterEggApps" :key="app" class="taskbar-icon" @click="openApp(app)" title="Easter Egg">
         <font-awesome-icon icon="egg" />

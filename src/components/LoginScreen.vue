@@ -2,15 +2,6 @@
   <div class="login-screen">
     <div class="center-box">
       <img src="/src/assets/img/pfp.webp" alt="Profile Picture" class="center-image" />
-<<<<<<< Updated upstream
-    </div>
-    
-    <!-- Mobile Slide Login -->
-    <div v-if="isMobile" class="slide-container">
-      <div class="slide-track" @click="startSliding" @touchstart="startSliding">
-        <div class="slide-bar" :style="{ width: slideProgress + '%' }"></div>
-        <div class="slide-handle" :style="{ left: slideProgress + '%' }"></div>
-=======
       <h2 class="welcome-title">Rick Muda Portfolio</h2>
 
       <div v-if="showIntro" class="boot-sequence">
@@ -18,12 +9,11 @@
         <div class="boot-progress">
           <div class="boot-progress-fill" :style="{ width: `${progress}%` }"></div>
         </div>
->>>>>>> Stashed changes
       </div>
     </div>
     
-    <!-- Desktop Password Login -->
-    <div v-else class="password-box">
+    <!-- Password Login -->
+    <div v-if="!showIntro" class="password-box">
       <form @submit.prevent="checkPasswordLength">
         <!-- Hidden username field for accessibility -->
         <input
@@ -49,72 +39,152 @@
 export default {
   data() {
     return {
-      passwordInput: "", // Manage passwordInput locally
-      isMobile: false,
-      slideProgress: 0,
-      isSliding: false
+      passwordInput: "",
+      showIntro: true,
+      bootMessage: "Loading portfolio...",
+      progress: 0
     };
   },
   methods: {
-    detectMobile() {
-      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-      this.isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent) || 
-                     window.innerWidth <= 768;
-    },
-    startSliding() {
-      if (this.isSliding) return;
-      
-      this.isSliding = true;
-      
-      const slideInterval = setInterval(() => {
-        this.slideProgress += 5; // Increased from 3 to 5 for faster animation
-        
-        if (this.slideProgress >= 100) {
-          clearInterval(slideInterval);
-          this.slideProgress = 100;
-          
-          setTimeout(() => {
-            this.$emit("login");
-          }, 200); // Reduced delay from 500ms to 200ms
+    runBootSequence() {
+      const messages = [
+        "Loading portfolio...",
+        "Initializing components...",
+        "Loading assets...",
+        "Almost ready..."
+      ];
+      let messageIndex = 0;
+
+      const bootInterval = setInterval(() => {
+        this.progress += 2;
+
+        if (this.progress >= 25 && messageIndex < 1) {
+          messageIndex = 1;
+          this.bootMessage = messages[messageIndex];
+        } else if (this.progress >= 50 && messageIndex < 2) {
+          messageIndex = 2;
+          this.bootMessage = messages[messageIndex];
+        } else if (this.progress >= 75 && messageIndex < 3) {
+          messageIndex = 3;
+          this.bootMessage = messages[messageIndex];
         }
-      }, 20); // Reduced from 30ms to 20ms for smoother, faster animation
+
+        if (this.progress >= 100) {
+          clearInterval(bootInterval);
+          this.showIntro = false;
+          this.simulateTyping();
+        }
+      }, 30);
     },
     simulateTyping() {
-      const keys = ["a", "b", "c", "d", "e", "f"]; // Simulated keys
+      const keys = ["a", "b", "c", "d", "e", "f"];
       let index = 0;
 
       const typingInterval = setInterval(() => {
         if (index < keys.length) {
-          this.passwordInput += keys[index]; // Simulate typing
+          this.passwordInput += keys[index];
           index++;
         } else {
-          clearInterval(typingInterval); // Stop typing
-          this.checkPasswordLength(); // Automatically log in after typing
+          clearInterval(typingInterval);
+          this.checkPasswordLength();
         }
-      }, 200); // Simulate typing every 200ms
+      }, 200);
     },
     checkPasswordLength() {
-      // Simulate a successful login
-      this.$emit("login"); // Emit the login event to the parent component
+      this.$emit("login");
     },
   },
   mounted() {
-    this.detectMobile();
-    
-    if (!this.isMobile) {
-      this.simulateTyping(); // Start simulating typing when the component is mounted
-    } else {
-      // Auto-start sliding after a delay on mobile
-      setTimeout(() => {
-        this.startSliding();
-      }, 1000); // Reduced delay from 1500ms to 1000ms
-    }
-    
-    // Listen for resize events to re-detect mobile
-    window.addEventListener('resize', this.detectMobile);
-  },
-  beforeUnmount() {
-    window.removeEventListener('resize', this.detectMobile);
+    this.runBootSequence();
   }
 };
 </script>
+
+<style scoped>
+.login-screen {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  gap: 20px;
+  padding-bottom: 100px;
+}
+
+.center-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.center-image {
+  width: 180px;
+  height: 180px;
+  object-fit: cover;
+  border-radius: 50%;
+  border: 4px solid #9b20b7;
+  box-shadow: 0 0 20px rgba(155, 32, 183, 0.5);
+}
+
+.welcome-title {
+  color: #fff;
+  font-size: 24px;
+  font-weight: bold;
+  margin: 10px 0;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.5);
+}
+
+.boot-sequence {
+  text-align: center;
+  margin-top: 20px;
+}
+
+.boot-line {
+  color: #d99be8;
+  font-size: 14px;
+  margin-bottom: 10px;
+}
+
+.boot-progress {
+  width: 200px;
+  height: 8px;
+  background: #2a2a3a;
+  border-radius: 4px;
+  overflow: hidden;
+  border: 1px solid #9b20b7;
+}
+
+.boot-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #9b20b7, #d99be8);
+  transition: width 0.1s ease;
+}
+
+.password-box {
+  margin-top: 20px;
+}
+
+.password-input {
+  width: 220px;
+  padding: 12px 16px;
+  border: 2px solid #9b20b7;
+  border-radius: 8px;
+  background: #1a1a24;
+  color: #fff;
+  font-size: 16px;
+  text-align: center;
+  letter-spacing: 8px;
+}
+
+.password-input:focus {
+  outline: none;
+  border-color: #d99be8;
+  box-shadow: 0 0 10px rgba(155, 32, 183, 0.3);
+}
+
+.password-input::placeholder {
+  color: #888;
+  letter-spacing: 0;
+}
+</style>

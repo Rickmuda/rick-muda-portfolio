@@ -45,8 +45,6 @@ const messages = {
     showMeYourProjects: "Show me your projects.",
     whatAreYourSkills: "What are your skills?",
     goBack: "Go back.",
-<<<<<<< Updated upstream
-=======
     canISeeYourCV: "Can I see your CV?",
     cvSure: "Of course! Here you go — feel free to download it.",
     whatAreYourSocials: "What are your socials?",
@@ -59,7 +57,6 @@ const messages = {
     funFact3: "I own over 30 vinyl records and counting.",
     funFact4: "",
     funFact5: "",
->>>>>>> Stashed changes
 
     // Settings
     language: "Language",
@@ -202,8 +199,6 @@ const messages = {
     showMeYourProjects: "Laat me je projecten zien.",
     whatAreYourSkills: "Wat zijn je vaardigheden?",
     goBack: "Ga terug.",
-<<<<<<< Updated upstream
-=======
     canISeeYourCV: "Kan ik je CV zien?",
     cvSure: "Natuurlijk! Hier is het — download het gerust.",
     whatAreYourSocials: "Wat zijn je socials?",
@@ -216,7 +211,6 @@ const messages = {
     funFact3: "Ik heb meer dan 30 vinylplaten en het worden er steeds meer.",
     funFact4: "Bloodborne is de enige game die ik twee keer heb geplatinumd.",
     funFact5: "Ik kan elke Spider-Man filmsoundtrack uit mijn hoofd opnoemen.",
->>>>>>> Stashed changes
 
     // Settings
     enableDarkMode: "Schakel Donkere Modus In",
