@@ -256,10 +256,7 @@ export default {
       });
     },
   },
-<<<<<<< Updated upstream
   async mounted() {
-=======
-  mounted() {
     this.checkMobile();
     this.preloadProjectImages();
     window.addEventListener('resize', this.checkMobile);
@@ -269,7 +266,6 @@ export default {
       this.updateLanguage(savedLanguage);
     }
 
->>>>>>> Stashed changes
     this.setDarkModeBasedOnTime();
 
     setInterval(() => {
