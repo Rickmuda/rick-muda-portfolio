@@ -32,6 +32,7 @@
       <div class="app-icon-text">{{ $t('contact') }}</div>
     </div>
 
+<<<<<<< Updated upstream
     <!-- Socials (5th) -->
     <div class="app-icon" @click="openApp('socials')">
       <div class="app-icon-image">
@@ -48,6 +49,8 @@
       <div class="app-icon-text">{{ $t('settings') }}</div>
     </div>
 
+=======
+>>>>>>> Stashed changes
     <!-- Desktop-only apps (hidden on mobile) -->
     <div class="desktop-only app-icon" @click="openApp('miniGame')">
       <div class="app-icon-image">
@@ -56,6 +59,7 @@
       <div class="app-icon-text">{{ $t('miniGame') }}</div>
     </div>
 
+<<<<<<< Updated upstream
     <div class="desktop-only app-icon" @click="openApp('guestbook')">
       <div class="app-icon-image">
         <font-awesome-icon icon="book" class="app-icon-inner" />
@@ -70,6 +74,8 @@
       <div class="app-icon-text">{{ $t('certificates') }}</div>
     </div>
 
+=======
+>>>>>>> Stashed changes
     <!-- Easter egg apps -->
     <div class="app-icon" v-for="app in easterEggApps" :key="app" @click="openApp(app)">
       <div class="app-icon-image">

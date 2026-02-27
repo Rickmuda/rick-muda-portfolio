@@ -2,6 +2,7 @@
   <div class="login-screen">
     <div class="center-box">
       <img src="/src/assets/img/pfp.webp" alt="Profile Picture" class="center-image" />
+<<<<<<< Updated upstream
     </div>
     
     <!-- Mobile Slide Login -->
@@ -9,6 +10,15 @@
       <div class="slide-track" @click="startSliding" @touchstart="startSliding">
         <div class="slide-bar" :style="{ width: slideProgress + '%' }"></div>
         <div class="slide-handle" :style="{ left: slideProgress + '%' }"></div>
+=======
+      <h2 class="welcome-title">Rick Muda Portfolio</h2>
+
+      <div v-if="showIntro" class="boot-sequence">
+        <p class="boot-line">{{ bootMessage }}</p>
+        <div class="boot-progress">
+          <div class="boot-progress-fill" :style="{ width: `${progress}%` }"></div>
+        </div>
+>>>>>>> Stashed changes
       </div>
     </div>
     

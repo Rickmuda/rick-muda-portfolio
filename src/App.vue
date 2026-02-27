@@ -1,5 +1,13 @@
 <template>
   <div id="app">
+    <!-- Mobile Overlay -->
+    <div v-if="isMobile" class="mobile-overlay" @click="playMobileAudio">
+      <div class="mobile-overlay-text">This version still has to be made but I'm a lil lazy.</div>
+      <audio ref="mobileAudio" loop>
+        <source :src="oopsieAudio" type="audio/mpeg">
+      </audio>
+    </div>
+
     <!-- Router View for Error Pages -->
     <router-view v-if="$route.name === 'NotFound'" />
 
@@ -28,6 +36,7 @@
       <AppWindow
         v-for="window in openWindows"
         :key="window"
+        v-show="!minimizedWindows[window]"
         :title="$t(windowConfig[window].title)"
         :defaultWidth="windowConfig[window].defaultWidth"
         :defaultHeight="windowConfig[window].defaultHeight"
@@ -90,6 +99,8 @@ export default {
       guestbookError: null,
       showUnderDevelopment: false,
       unfinishedApps: ['threeDPrinting'],
+      isMobile: false,
+      oopsieAudio: new URL('@/assets/sounds/oopsie.mp3', import.meta.url).href,
     };
   },
   computed: {
@@ -190,8 +201,75 @@ export default {
     closeUnderDevelopment() {
       this.showUnderDevelopment = false;
     },
+    checkMobile() {
+      this.isMobile = window.innerWidth <= 768;
+      if (this.isMobile && this.$refs.mobileAudio) {
+        this.$refs.mobileAudio.play().catch(() => {});
+      } else if (!this.isMobile && this.$refs.mobileAudio) {
+        this.$refs.mobileAudio.pause();
+        this.$refs.mobileAudio.currentTime = 0;
+      }
+    },
+    playMobileAudio() {
+      if (this.$refs.mobileAudio) {
+        this.$refs.mobileAudio.play().catch(() => {});
+      }
+    },
+    preloadProjectImages() {
+      const projectImages = [
+        'weather1.webp', 'weather2.webp', 'weather3.webp',
+        'annoying1.webp', 'annoying2.webp', 'annoying3.webp',
+        'whack1.webp', 'whack2.webp', 'whack3.webp',
+        'gym-list.webp',
+        'one-pager.webp',
+        'snackbar-podcast.webp',
+        'undertale-sudoku.webp',
+        'longvideotheater.webp',
+        'dungeon and music.webp',
+        'portfolio1.webp', 'portfolio2.webp', 'portfolio3.webp',
+        'quiet1.webp', 'quiet2.webp', 'quiet3.webp'
+      ];
+      projectImages.forEach(filename => {
+        const img = new Image();
+        img.src = new URL(`./assets/img/projects/${filename}`, import.meta.url).href;
+      });
+
+      // Preload gallery images
+      const galleryImages = [
+        'dance.gif', 'fnf.webp', 'panels.webp', 'pepe.webp', 'pose.webp',
+        'room.webp', 'roomdark.webp', 'swag.webp', 'vtuber.webp'
+      ];
+      galleryImages.forEach(filename => {
+        const img = new Image();
+        img.src = new URL(`./assets/img/imggallery/${filename}`, import.meta.url).href;
+      });
+
+      // Preload profile picture
+      const pfp = new Image();
+      pfp.src = new URL('./assets/img/self-image-1.webp', import.meta.url).href;
+
+      // Preload certificate images
+      const certImages = ['rattickling.webp', 'dudeism.webp'];
+      certImages.forEach(filename => {
+        const img = new Image();
+        img.src = new URL(`./assets/img/certificates/${filename}`, import.meta.url).href;
+      });
+    },
   },
+<<<<<<< Updated upstream
   async mounted() {
+=======
+  mounted() {
+    this.checkMobile();
+    this.preloadProjectImages();
+    window.addEventListener('resize', this.checkMobile);
+
+    const savedLanguage = localStorage.getItem("portfolio-language");
+    if (savedLanguage) {
+      this.updateLanguage(savedLanguage);
+    }
+
+>>>>>>> Stashed changes
     this.setDarkModeBasedOnTime();
 
     setInterval(() => {
@@ -206,6 +284,7 @@ export default {
     await this.fetchGuestbookEntries();
   },
   beforeUnmount() {
+    window.removeEventListener('resize', this.checkMobile);
     if (this.keydownListenerAdded) {
       window.removeEventListener("keydown", this.handleKeydown);
       this.keydownListenerAdded = false;
@@ -213,3 +292,31 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.mobile-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.85);
+  backdrop-filter: blur(10px);
+  z-index: 99999;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  box-sizing: border-box;
+}
+
+.mobile-overlay-text {
+  color: #fff;
+  font-size: clamp(16px, 5vw, 24px);
+  font-weight: bold;
+  text-align: center;
+  line-height: 1.5;
+  max-width: 90%;
+  margin: 0 auto;
+}
+</style>

@@ -16,6 +16,7 @@ const messages = {
 
     // About me
     aboutMeIntro: "Hey there! Welcome to my portfolio.",
+    greeting: "Hey there! Welcome to my portfolio. Feel free to ask me anything!",
     aboutMeQuestion: "What can I help you with?",
     aboutMeNerd: "Sure! I'm what many people would call a nerd.",
     aboutMeGadgets: "I love gadgets and tech.",
@@ -44,6 +45,21 @@ const messages = {
     showMeYourProjects: "Show me your projects.",
     whatAreYourSkills: "What are your skills?",
     goBack: "Go back.",
+<<<<<<< Updated upstream
+=======
+    canISeeYourCV: "Can I see your CV?",
+    cvSure: "Of course! Here you go — feel free to download it.",
+    whatAreYourSocials: "What are your socials?",
+    socialsIntro: "Sure! Here are my social media links — feel free to connect with me!",
+    showMeYourCertificates: "Show me your certificates.",
+    certificatesIntro: "Here are some fun certificates I've collected! Click to expand.",
+    funFacts: "Fun Facts",
+    funFact1: "Version 1.0 of this portfolio was built in just one weekend.",
+    funFact2: "",
+    funFact3: "I own over 30 vinyl records and counting.",
+    funFact4: "",
+    funFact5: "",
+>>>>>>> Stashed changes
 
     // Settings
     language: "Language",
@@ -68,8 +84,8 @@ const messages = {
       "For the first project of my first year, I had to recreate a one-page website using HTML and CSS.",
     eq: "English Quiz",
     eqDescription: "A project where I created an English quiz application.",
-    sp: "Snackbar Podcast",
-    spDescription: "A podcast made for Dutch lessons.",
+    sp: "Snackbar",
+    spDescription: "A creative video project showcasing multimedia production.",
     sf: "Spiderverse Forum",
     sfDescription: "A forum website inspired by the Spiderverse movie.",
     tdl: "To-Do List",
@@ -159,6 +175,7 @@ const messages = {
     certificates: "Certificaten",
     // About me
     aboutMeIntro: "Hey daar! Welkom op mijn portfolio.",
+    greeting: "Hoi daar! Welkom op mijn portfolio. Vraag me gerust wat je wilt weten!",
     aboutMeQuestion: "Waarmee kan ik je helpen?",
     aboutMeNerd: "Zeker! Ik ben wat veel mensen een nerd zouden noemen.",
     aboutMeGadgets: "Ik hou van gadgets en snufjes.",
@@ -185,6 +202,21 @@ const messages = {
     showMeYourProjects: "Laat me je projecten zien.",
     whatAreYourSkills: "Wat zijn je vaardigheden?",
     goBack: "Ga terug.",
+<<<<<<< Updated upstream
+=======
+    canISeeYourCV: "Kan ik je CV zien?",
+    cvSure: "Natuurlijk! Hier is het — download het gerust.",
+    whatAreYourSocials: "Wat zijn je socials?",
+    socialsIntro: "Natuurlijk! Hier zijn mijn social media links — voel je vrij om contact te maken!",
+    showMeYourCertificates: "Laat me je certificaten zien.",
+    certificatesIntro: "Hier zijn een paar leuke certificaten die ik heb verzameld! Klik om te vergroten.",
+    funFacts: "Leuke Weetjes",
+    funFact1: "Ik heb ooit een volledige portfolio-website in één weekend gebouwd.",
+    funFact2: "Mijn eerste regel code was in Scratch — ik maakte een dansende kat.",
+    funFact3: "Ik heb meer dan 30 vinylplaten en het worden er steeds meer.",
+    funFact4: "Bloodborne is de enige game die ik twee keer heb geplatinumd.",
+    funFact5: "Ik kan elke Spider-Man filmsoundtrack uit mijn hoofd opnoemen.",
+>>>>>>> Stashed changes
 
     // Settings
     enableDarkMode: "Schakel Donkere Modus In",
@@ -210,8 +242,8 @@ const messages = {
     eq: "Engelse Quiz",
     eqDescription:
       "Een project waarin ik een Engelse quiz-applicatie heb gemaakt.",
-    sp: "Snackbar Podcast",
-    spDescription: "Een podcast voor Nederlands.",
+    sp: "Snackbar",
+    spDescription: "Een creatief videoproject dat multimediaproductie toont.",
     sf: "Spiderverse Forum",
     sfDescription: "Een forumwebsite geïnspireerd door de Spiderverse-film.",
     tdl: "Takenlijst",
