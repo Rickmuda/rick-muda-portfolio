@@ -9,9 +9,7 @@ const messages = {
     socials: "Socials",
     artGallery: "Art Gallery",
     miniGame: "Mini Game",
-    settings: "Settings",
     threeDPrinting: "3D Printing",
-    guestbook: "Guestbook",
     certificates: "Certificates",
 
     // About me
@@ -26,28 +24,33 @@ const messages = {
     aboutMeFavoriteGames: "I don't have one favorite game, but two.",
     aboutMeGames:
       "Bloodborne and The Binding of Isaac hold a special place in my heart.",
-    aboutMeBooks: 
+    aboutMeBooks:
       "I've also picked up reading in the last couple of weeks and really enjoyed the king in yellow from Robert W. Chambers",
-    aboutMeHelp: "What else can I help you with?",
     projectsIntro:
       "The projects I create in my free time are usually ideas that come to me spontaneously.",
     projectsGithub:
       "If you're curious about my projects, you can check out a few in the projects window or on my GitHub.",
-    projectsHelp: "What else can I help you with?",
     skillsIntro: "I specialize in front-end web development.",
     skillsLanguages:
       "I work with all kinds of front-end languages and frameworks.",
     skillsBackEnd:
       "I also have experience with back-end technologies, but I prefer working with front-end so I can let my creativity shine.",
-    skillsHelp: "What else can I help you with?",
     tellMeAboutYourself: "Tell me about yourself.",
     showMeYourProjects: "Show me your projects.",
     whatAreYourSkills: "What are your skills?",
     goBack: "Go back.",
+    canISeeYourCV: "Can I see your CV?",
+    cvSure: "Of course! Here you go — feel free to download it.",
+    funFacts: "Fun Facts",
+    funFact1: "I once built a full portfolio website in a single weekend.",
+    funFact2: "My first line of code was in Scratch — I made a dancing cat.",
+    funFact3: "I own over 30 vinyl records and counting.",
+    funFact4: "Bloodborne is the only game I've platinumed twice.",
+    funFact5: "I can name every Spider-Man movie soundtrack by heart.",
 
-    // Settings
-    language: "Language",
+    // Settings moved to StartMenu
     enableDarkMode: "Enable Dark Mode",
+    enableLightMode: "Enable Light Mode",
     selectLanguage: "Select Language",
 
     // Projects
@@ -90,7 +93,8 @@ const messages = {
     fyp: "First year portfolio",
     fypDescription: "My first portfolio I made for my first year at school.",
     qt: "Quiet Turn",
-    qtDescription: "A magic the gathering game tracker for neurodivergent people to make the game more accessible.",
+    qtDescription:
+      "A magic the gathering game tracker for neurodivergent people to make the game more accessible.",
     goToProject: "Go to Project",
 
     // Start menu
@@ -112,18 +116,6 @@ const messages = {
     messageFailed: "Failed to send message. Please try again.",
     errorOccurred: "An error occurred. Please try again.",
 
-    // Mini game
-    clickTheRick: "Click the Rick",
-    score: "Score",
-    upgrades: "Upgrades",
-    cost: "Cost",
-    nextMultiplier: "Next Multiplier",
-    autoClicks: "Auto Clicks",
-    sec: "sec",
-    buy: "Buy",
-    doubleClicks: "Double Clicks",
-    autoClicker: "Auto Clicker",
-
     // Languages
     english: "English",
     dutch: "Dutch",
@@ -132,17 +124,6 @@ const messages = {
     // Easter egg
     oldVideo: "Old Video",
     easterEgg: "Easter Egg",
-
-    // Guestbook
-    signGuestbook: "Sign Guestbook",
-    guestbookName: "Your Name",
-    guestbookMessage: "Your Message",
-    guestbookSubmit: "Submit",
-    guestbookSuccess: "Thank you for signing the guestbook!",
-    guestbookError: "Error submitting your message. Please try again.",
-    guestbookInfo:
-      "Welcome to my guestbook! Leave a message for future visitors.",
-    noEntries: "No entries yet. Be the first to sign!",
   },
 
   nl: {
@@ -153,9 +134,7 @@ const messages = {
     socials: "Socials",
     artGallery: "Kunstgalerij",
     miniGame: "Mini Spel",
-    settings: "Instellingen",
     threeDPrinting: "3D Printen",
-    guestbook: "Gastenboek",
     certificates: "Certificaten",
     // About me
     aboutMeIntro: "Hey daar! Welkom op mijn portfolio.",
@@ -168,7 +147,7 @@ const messages = {
     aboutMeFavoriteGames: "Ik heb niet één favoriete game, maar twee.",
     aboutMeGames:
       "Bloodborne en The Binding of Isaac hebben een speciale plek in mijn hart.",
-    aboutMeBooks: 
+    aboutMeBooks:
       "Ik heb sinds kort ook lezen op gepakt en heb enorm genoten van 'The king in yellow' van Robert W. Chambers",
     aboutMeHelp: "Waarmee kan ik je verder helpen?",
     projectsIntro:
@@ -185,11 +164,19 @@ const messages = {
     showMeYourProjects: "Laat me je projecten zien.",
     whatAreYourSkills: "Wat zijn je vaardigheden?",
     goBack: "Ga terug.",
+    canISeeYourCV: "Kan ik je CV zien?",
+    cvSure: "Natuurlijk! Hier is het — download het gerust.",
+    funFacts: "Leuke Weetjes",
+    funFact1: "Ik heb ooit een volledige portfolio-website in één weekend gebouwd.",
+    funFact2: "Mijn eerste regel code was in Scratch — ik maakte een dansende kat.",
+    funFact3: "Ik heb meer dan 30 vinylplaten en het worden er steeds meer.",
+    funFact4: "Bloodborne is de enige game die ik twee keer heb geplatinumd.",
+    funFact5: "Ik kan elke Spider-Man filmsoundtrack uit mijn hoofd opnoemen.",
 
-    // Settings
+    // Settings moved to StartMenu
     enableDarkMode: "Schakel Donkere Modus In",
+    enableLightMode: "Schakel Licht Modus In",
     selectLanguage: "Selecteer Taal",
-    language: "Taal",
 
     // Projects
     uwp: "Onbenoemde Weer App",
@@ -235,7 +222,8 @@ const messages = {
     fypDescription:
       "Mijn allereerste portfolio dat ik heb gemaakt voor mijn eerste jaar op school.",
     qt: "Quiet Turn",
-    qtDescription: "Een magic the gathering game tracker voor neurodivergente mensen om het spel toegankelijker te maken.",
+    qtDescription:
+      "Een magic the gathering game tracker voor neurodivergente mensen om het spel toegankelijker te maken.",
     goToProject: "Ga naar Project",
 
     // Start menu
@@ -257,18 +245,6 @@ const messages = {
     messageFailed: "Bericht verzenden mislukt. Probeer het opnieuw.",
     errorOccurred: "Er is een fout opgetreden. Probeer het opnieuw.",
 
-    // Mini game
-    clickTheRick: "Klik de Rick",
-    score: "Score",
-    upgrades: "Upgrades",
-    cost: "Kosten",
-    nextMultiplier: "Volgende Vermenigvuldiger",
-    autoClicks: "Automatische Klikken",
-    sec: "seconde",
-    buy: "Kopen",
-    doubleClicks: "Dubbele Klikken",
-    autoClicker: "Automatisch Klikken",
-
     // Languages
     english: "Engels",
     dutch: "Nederlands",
@@ -277,18 +253,6 @@ const messages = {
     // Easter egg
     oldVideo: "Oude Video",
     easterEgg: "Easter Egg",
-
-    // Guestbook
-    signGuestbook: "Gastenboek Tekenen",
-    guestbookName: "Jouw Naam",
-    guestbookMessage: "Jouw Bericht",
-    guestbookSubmit: "Versturen",
-    guestbookSuccess: "Bedankt voor het tekenen van het gastenboek!",
-    guestbookError:
-      "Fout bij het versturen van je bericht. Probeer het opnieuw.",
-    guestbookInfo:
-      "Welkom bij mijn gastenboek! Laat een bericht achter voor toekomstige bezoekers.",
-    noEntries: "Nog geen berichten. Wees de eerste om te tekenen!",
   },
 };
 

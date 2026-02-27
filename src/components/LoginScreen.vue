@@ -1,110 +1,158 @@
 <template>
   <div class="login-screen">
-    <div class="center-box">
+    <div class="login-card">
       <img src="/src/assets/img/pfp.webp" alt="Profile Picture" class="center-image" />
-    </div>
-    
-    <!-- Mobile Slide Login -->
-    <div v-if="isMobile" class="slide-container">
-      <div class="slide-track" @click="startSliding" @touchstart="startSliding">
-        <div class="slide-bar" :style="{ width: slideProgress + '%' }"></div>
-        <div class="slide-handle" :style="{ left: slideProgress + '%' }"></div>
+      <h2 class="welcome-title">Rick Muda Portfolio</h2>
+      <p class="welcome-subtitle">Version 3.0.0</p>
+
+      <div v-if="showIntro" class="boot-sequence">
+        <p class="boot-line">{{ bootMessage }}</p>
+        <div class="boot-progress">
+          <div class="boot-progress-fill" :style="{ width: `${progress}%` }"></div>
+        </div>
       </div>
-    </div>
-    
-    <!-- Desktop Password Login -->
-    <div v-else class="password-box">
-      <form @submit.prevent="checkPasswordLength">
-        <!-- Hidden username field for accessibility -->
-        <input
-          type="text"
-          name="username"
-          autocomplete="username"
-          style="display: none;"
-        />
-        <input
-          type="password"
-          v-model="passwordInput"
-          class="password-input"
-          placeholder="Enter 6 random keys"
-          autocomplete="new-password"
-          readonly
-        />
-      </form>
+
+      <button v-else class="enter-button" @click="enterDesktop">
+        Enter Desktop
+      </button>
     </div>
   </div>
 </template>
 
 <script>
+const INTRO_STORAGE_KEY = "portfolio-login-intro-seen-v3";
+
 export default {
   data() {
     return {
-      passwordInput: "", // Manage passwordInput locally
-      isMobile: false,
-      slideProgress: 0,
-      isSliding: false
+      showIntro: true,
+      progress: 0,
+      bootMessage: "Preparing desktop...",
+      introInterval: null,
     };
   },
   methods: {
-    detectMobile() {
-      const userAgent = navigator.userAgent || navigator.vendor || window.opera;
-      this.isMobile = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(userAgent) || 
-                     window.innerWidth <= 768;
-    },
-    startSliding() {
-      if (this.isSliding) return;
-      
-      this.isSliding = true;
-      
-      const slideInterval = setInterval(() => {
-        this.slideProgress += 5; // Increased from 3 to 5 for faster animation
-        
-        if (this.slideProgress >= 100) {
-          clearInterval(slideInterval);
-          this.slideProgress = 100;
-          
-          setTimeout(() => {
-            this.$emit("login");
-          }, 200); // Reduced delay from 500ms to 200ms
-        }
-      }, 20); // Reduced from 30ms to 20ms for smoother, faster animation
-    },
-    simulateTyping() {
-      const keys = ["a", "b", "c", "d", "e", "f"]; // Simulated keys
-      let index = 0;
+    startIntro() {
+      const seenIntro = localStorage.getItem(INTRO_STORAGE_KEY) === "true";
 
-      const typingInterval = setInterval(() => {
-        if (index < keys.length) {
-          this.passwordInput += keys[index]; // Simulate typing
-          index++;
-        } else {
-          clearInterval(typingInterval); // Stop typing
-          this.checkPasswordLength(); // Automatically log in after typing
+      if (seenIntro) {
+        this.showIntro = false;
+        return;
+      }
+
+      this.showIntro = true;
+      this.progress = 0;
+      this.bootMessage = "Preparing desktop...";
+
+      this.introInterval = setInterval(() => {
+        this.progress += 4;
+
+        if (this.progress >= 30) {
+          this.bootMessage = "Loading window manager...";
         }
-      }, 200); // Simulate typing every 200ms
+        if (this.progress >= 65) {
+          this.bootMessage = "Applying portfolio theme...";
+        }
+        if (this.progress >= 95) {
+          this.bootMessage = "Ready.";
+        }
+
+        if (this.progress >= 100) {
+          clearInterval(this.introInterval);
+          this.introInterval = null;
+          localStorage.setItem(INTRO_STORAGE_KEY, "true");
+          setTimeout(() => this.enterDesktop(), 250);
+        }
+      }, 45);
     },
-    checkPasswordLength() {
-      // Simulate a successful login
-      this.$emit("login"); // Emit the login event to the parent component
+    enterDesktop() {
+      this.$emit("login");
     },
   },
   mounted() {
-    this.detectMobile();
-    
-    if (!this.isMobile) {
-      this.simulateTyping(); // Start simulating typing when the component is mounted
-    } else {
-      // Auto-start sliding after a delay on mobile
-      setTimeout(() => {
-        this.startSliding();
-      }, 1000); // Reduced delay from 1500ms to 1000ms
-    }
-    
-    // Listen for resize events to re-detect mobile
-    window.addEventListener('resize', this.detectMobile);
+    this.startIntro();
   },
   beforeUnmount() {
-    window.removeEventListener('resize', this.detectMobile);
+    if (this.introInterval) {
+      clearInterval(this.introInterval);
+      this.introInterval = null;
+    }
   }
 };
 </script>
+
+<style scoped>
+.login-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 100%;
+}
+
+.login-card {
+  width: min(520px, 92vw);
+  border: 4px solid #8404a1;
+  border-radius: 16px;
+  background: rgba(43, 8, 51, 0.9);
+  padding: 24px;
+  color: #fff;
+  text-align: center;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.35);
+}
+
+.center-image {
+  width: 140px;
+  height: 140px;
+  object-fit: cover;
+  border-radius: 12px;
+  border: 3px solid #9b20b7;
+}
+
+.welcome-title {
+  margin-top: 16px;
+  font-size: 28px;
+}
+
+.welcome-subtitle {
+  opacity: 0.9;
+  margin-bottom: 18px;
+}
+
+.boot-sequence {
+  text-align: left;
+  border: 2px solid #9b20b7;
+  border-radius: 10px;
+  padding: 12px;
+  background: rgba(0, 0, 0, 0.35);
+}
+
+.boot-line {
+  margin-bottom: 10px;
+}
+
+.boot-progress {
+  width: 100%;
+  height: 12px;
+  border-radius: 99px;
+  border: 1px solid #a948bf;
+  overflow: hidden;
+}
+
+.boot-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #8404a1, #9b20b7);
+  transition: width 0.2s ease;
+}
+
+.enter-button {
+  margin-top: 8px;
+  background: #9b20b7;
+  border: 2px solid #8404a1;
+  color: #fff;
+  border-radius: 8px;
+  padding: 10px 18px;
+  cursor: pointer;
+  font-family: inherit;
+}
+</style>

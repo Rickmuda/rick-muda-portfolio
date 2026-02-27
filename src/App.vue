@@ -18,6 +18,12 @@
       <Taskbar
         v-if="loggedIn"
         :openApp="openApp"
+        :openWindows="openWindows"
+        :activeWindow="activeWindow"
+        :darkMode="darkMode"
+        :currentLanguage="currentLanguage"
+        @update:darkMode="toggleDarkMode"
+        @update:currentLanguage="updateLanguage"
         :commitSummary="commitSummary"
         :commitDescription="commitDescription"
         :easterEggApps="easterEggApps"
@@ -26,7 +32,7 @@
 
       <!-- Dynamic App Windows -->
       <AppWindow
-        v-for="window in openWindows"
+        v-for="window in visibleWindows"
         :key="window"
         :title="$t(windowConfig[window].title)"
         :defaultWidth="windowConfig[window].defaultWidth"
@@ -35,6 +41,7 @@
         :defaultY="windowConfig[window].defaultY"
         :zIndex="windowZIndices[window]" 
         @close="closeApp(window)"
+        @minimize="minimizeApp(window)"
         @bringToFront="bringWindowToFront(window)" 
       >
         <component
@@ -79,15 +86,14 @@ export default {
       commitSummary: __COMMIT_SUMMARY__,
       commitDescription: __COMMIT_DESCRIPTION__,
       zIndexCounter: 10,
+      activeWindow: "",
       windowZIndices: {},
+      minimizedWindows: {},
       konamiCode: ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"],
       currentInput: [],
       easterEggTriggered: false,
       keydownListenerAdded: false,
       easterEggApps: [],
-      guestbookEntries: [],
-      guestbookLoading: true,
-      guestbookError: null,
       showUnderDevelopment: false,
       unfinishedApps: ['threeDPrinting'],
     };
@@ -95,6 +101,9 @@ export default {
   computed: {
     windowConfig() {
       return windowConfig;
+    },
+    visibleWindows() {
+      return this.openWindows.filter((windowName) => !this.minimizedWindows[windowName]);
     },
   },
   methods: {
@@ -105,47 +114,59 @@ export default {
       }
 
       if (this.openWindows.includes(appName)) {
-        this.closeApp(appName);
+        if (this.minimizedWindows[appName]) {
+          this.minimizedWindows[appName] = false;
+        }
+        this.bringWindowToFront(appName);
         return;
       }
 
       this.openWindows.push(appName);
       this.windowZIndices[appName] = this.zIndexCounter++;
+      this.activeWindow = appName;
     },
     closeApp(appName) {
       this.openWindows = this.openWindows.filter(window => window !== appName);
       delete this.windowZIndices[appName];
+      delete this.minimizedWindows[appName];
+      this.activeWindow = this.openWindows.length ? this.openWindows[this.openWindows.length - 1] : "";
+    },
+    minimizeApp(appName) {
+      this.minimizedWindows[appName] = true;
+      if (this.activeWindow === appName) {
+        const nextVisible = this.visibleWindows.filter((name) => name !== appName);
+        this.activeWindow = nextVisible.length ? nextVisible[nextVisible.length - 1] : "";
+      }
     },
     checkLoginState() {
       this.loggedIn = true;
     },
-    toggleDarkMode() {
-      this.darkMode = !this.darkMode;
+    toggleDarkMode(value) {
+      this.darkMode = typeof value === "boolean" ? value : !this.darkMode;
+      localStorage.setItem("portfolio-dark-mode", JSON.stringify(this.darkMode));
     },
     setDarkModeBasedOnTime() {
+      const savedDarkMode = localStorage.getItem("portfolio-dark-mode");
+      if (savedDarkMode !== null) {
+        this.darkMode = JSON.parse(savedDarkMode);
+        return;
+      }
       const currentHour = new Date().getHours();
       this.darkMode = currentHour >= 18 || currentHour < 6;
     },
+    updateLanguage(language) {
+      this.currentLanguage = language;
+      this.$i18n.locale = language;
+      localStorage.setItem("portfolio-language", language);
+    },
     bringWindowToFront(appName) {
+      if (this.minimizedWindows[appName]) {
+        this.minimizedWindows[appName] = false;
+      }
       this.windowZIndices[appName] = this.zIndexCounter++;
+      this.activeWindow = appName;
     },
     getWindowProps(windowName) {
-      if (windowName === "settings") {
-        return {
-          darkMode: this.darkMode,
-          currentLanguage: this.currentLanguage,
-          "onUpdate:darkMode": (value) => (this.darkMode = value),
-          "onUpdate:currentLanguage": (value) => (this.currentLanguage = value),
-        };
-      }
-      if (windowName === "guestbook") {
-        return {
-          entries: this.guestbookEntries,
-          isLoading: this.guestbookLoading,
-          error: this.guestbookError,
-          onEntryAdded: this.fetchGuestbookEntries
-        };
-      }
       return windowConfig[windowName]?.props || {};
     },
     handleKeydown(event) {
@@ -167,31 +188,16 @@ export default {
         this.easterEggApps.push("oldVideo");
       }
     },
-    async fetchGuestbookEntries() {
-      try {
-        const baseUrl = import.meta.env.VITE_API_URL;
-        if (baseUrl) {
-          const response = await fetch(`${baseUrl}/guestbook`);
-          if (!response.ok) throw new Error('Failed to fetch entries');
-          this.guestbookEntries = await response.json();
-        } else {
-          const saved = localStorage.getItem('guestbookEntries');
-          this.guestbookEntries = saved ? JSON.parse(saved) : [];
-        }
-      } catch (error) {
-        console.error('Error fetching guestbook entries:', error);
-        const saved = localStorage.getItem('guestbookEntries');
-        this.guestbookEntries = saved ? JSON.parse(saved) : [];
-        this.guestbookError = error.message;
-      } finally {
-        this.guestbookLoading = false;
-      }
-    },
     closeUnderDevelopment() {
       this.showUnderDevelopment = false;
     },
   },
-  async mounted() {
+  mounted() {
+    const savedLanguage = localStorage.getItem("portfolio-language");
+    if (savedLanguage) {
+      this.updateLanguage(savedLanguage);
+    }
+
     this.setDarkModeBasedOnTime();
 
     setInterval(() => {
@@ -202,8 +208,6 @@ export default {
       window.addEventListener("keydown", this.handleKeydown);
       this.keydownListenerAdded = true;
     }
-
-    await this.fetchGuestbookEntries();
   },
   beforeUnmount() {
     if (this.keydownListenerAdded) {

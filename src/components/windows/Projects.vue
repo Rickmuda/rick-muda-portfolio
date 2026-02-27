@@ -1,57 +1,33 @@
 <template>
-  <div class="projects-window">
-    <!-- Projects Grid -->
-    <div class="projects-grid" :class="{ 'grid-expanded': selectedProject && !isMobile }">
-      <div
-        v-for="(project, index) in projects"
-        :key="index"
-        class="project-card"
-        :class="{ selected: selectedProject === project && !isMobile }"
-        @click="handleProjectClick(project)"
-      >
-        <img :src="project.image" alt="Project Image" />
-        <p>{{ project.title }}</p>
+  <div class="explorer-window">
+    <div class="explorer-pane list-pane">
+      <div class="details-header">
+        <span>Name</span>
+        <span>Type</span>
+        <span>Status</span>
       </div>
+      <button
+        v-for="project in projects"
+        :key="project.title"
+        class="details-row"
+        :class="{ selected: selectedProject?.title === project.title }"
+        @click="selectProject(project)"
+      >
+        <span class="name">{{ project.title }}</span>
+        <span>Web Project</span>
+        <span>Published</span>
+      </button>
     </div>
 
-    <!-- Project Details for Desktop -->
-    <div v-if="selectedProject && !isMobile" class="project-details">
-      <img :src="selectedProject.image" alt="Selected Project Image" />
+    <div class="explorer-pane preview-pane" v-if="selectedProject">
+      <img :src="selectedProject.image" alt="Selected Project Image" class="preview-image" />
       <h3>{{ selectedProject.title }}</h3>
       <p>{{ selectedProject.description }}</p>
-      <div class="project-buttons">
-        <a
-          :href="selectedProject.link"
-          target="_blank"
-          class="project-link"
-        >
-          {{ $t('goToProject') }}
-        </a>
+      <div class="project-links">
+        <a :href="selectedProject.link" target="_blank" class="project-link">{{ $t('goToProject') }}</a>
+        <a v-if="selectedProject.repository" :href="selectedProject.repository" target="_blank" class="project-link alt">GitHub</a>
       </div>
     </div>
-
-    <!-- Modal for Mobile -->
-    <teleport to="body">
-      <div v-if="showModal" class="projects-modal" @click.self="closeModal">
-        <div class="project-modal-content">
-          <img :src="selectedProject.image" alt="Selected Project" class="project-modal-image" />
-          <h3 class="project-modal-title">{{ selectedProject.title }}</h3>
-          <p class="project-modal-description">{{ selectedProject.description }}</p>
-          <div class="project-modal-buttons">
-            <a
-              :href="selectedProject.link"
-              target="_blank"
-              class="project-modal-link"
-            >
-              {{ $t('goToProject') }}
-            </a>
-          </div>
-        </div>
-        <button class="project-modal-close" @click="closeModal">
-          <span>X</span>
-        </button>
-      </div>
-    </teleport>
   </div>
 </template>
 
@@ -61,30 +37,11 @@ export default {
     return {
       projects: [],
       selectedProject: null,
-      showModal: false,
-      isMobile: false
     };
   },
   methods: {
-    handleProjectClick(project) {
-      this.selectedProject = project;
-      // Show modal only on mobile
-      if (this.isMobile) {
-        this.showModal = true;
-      }
-    },
-    closeModal() {
-      this.showModal = false;
-    },
     selectProject(project) {
-      if (!this.isMobile) {
-        this.selectedProject = this.selectedProject === project ? null : project;
-      } else {
-        this.handleProjectClick(project);
-      }
-    },
-    checkMobile() {
-      this.isMobile = window.innerWidth <= 768;
+      this.selectedProject = project;
     },
     initializeProjects() {
       this.projects = [
@@ -176,11 +133,110 @@ export default {
   },
   created() {
     this.initializeProjects();
-    this.checkMobile();
-    window.addEventListener('resize', this.checkMobile);
-  },
-  beforeUnmount() {
-    window.removeEventListener('resize', this.checkMobile);
+    this.selectedProject = this.projects[0] || null;
   }
 };
 </script>
+
+<style scoped>
+.explorer-window {
+  display: grid;
+  grid-template-columns: 1.2fr 1fr;
+  height: 100%;
+  border: 2px solid #000;
+  background: #f0f0f0;
+}
+
+.explorer-pane {
+  padding: 12px;
+}
+
+.list-pane {
+  border-right: 2px solid #000;
+  overflow: auto;
+  background: #fff;
+}
+
+.details-header,
+.details-row {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr;
+  gap: 10px;
+  align-items: center;
+}
+
+.details-header {
+  font-weight: bold;
+  border-bottom: 2px solid #8404a1;
+  padding: 8px;
+  color: #3d114a;
+}
+
+.details-row {
+  width: 100%;
+  border: none;
+  border-bottom: 1px solid #ddd;
+  padding: 8px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.details-row:hover {
+  background: #f3e6f7;
+}
+
+.details-row.selected {
+  background: #d89be8;
+}
+
+.name {
+  font-weight: 600;
+}
+
+.preview-pane {
+  background: #ece2f2;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: flex-start;
+}
+
+.preview-image {
+  width: 100%;
+  max-height: 260px;
+  object-fit: cover;
+  border: 2px solid #4f115d;
+}
+
+.project-links {
+  display: flex;
+  gap: 10px;
+}
+
+.project-link {
+  padding: 8px 12px;
+  border-radius: 6px;
+  color: #fff;
+  text-decoration: none;
+  background: #9b20b7;
+  border: 1px solid #4f115d;
+}
+
+.project-link.alt {
+  background: #4f115d;
+}
+
+@media (max-width: 900px) {
+  .explorer-window {
+    grid-template-columns: 1fr;
+    grid-template-rows: 1fr auto;
+  }
+
+  .list-pane {
+    border-right: none;
+    border-bottom: 2px solid #000;
+  }
+}
+</style>

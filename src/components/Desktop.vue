@@ -40,27 +40,12 @@
       <div class="app-icon-text">{{ $t('socials') }}</div>
     </div>
 
-    <!-- Settings (6th) -->
-    <div class="app-icon" @click="openApp('settings')">
-      <div class="app-icon-image">
-        <font-awesome-icon icon="cog" class="app-icon-inner" />
-      </div>
-      <div class="app-icon-text">{{ $t('settings') }}</div>
-    </div>
-
     <!-- Desktop-only apps (hidden on mobile) -->
     <div class="desktop-only app-icon" @click="openApp('miniGame')">
       <div class="app-icon-image">
         <font-awesome-icon icon="gamepad" class="app-icon-inner" />
       </div>
       <div class="app-icon-text">{{ $t('miniGame') }}</div>
-    </div>
-
-    <div class="desktop-only app-icon" @click="openApp('guestbook')">
-      <div class="app-icon-image">
-        <font-awesome-icon icon="book" class="app-icon-inner" />
-      </div>
-      <div class="app-icon-text">{{ $t('guestbook') }}</div>
     </div>
 
         <div class="desktop-only app-icon" @click="openApp('certificates')">

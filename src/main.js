@@ -17,10 +17,8 @@ import {
   faShareNodes,
   faGamepad,
   faPalette,
-  faCog,
   faCube,
   faEgg,
-  faBook,
   faCertificate,
   faWrench,
 } from "@fortawesome/free-solid-svg-icons";
@@ -44,12 +42,10 @@ library.add(
   faShareNodes,
   faGamepad,
   faPalette,
-  faCog,
   faCube,
   faEgg,
-  faBook,
   faCertificate,
-  faWrench
+  faWrench,
 );
 library.add(faTwitter, faInstagram, faLinkedin, faGithub, faYoutube, faTiktok, faSpotify, faSteam, faCodepen);
 

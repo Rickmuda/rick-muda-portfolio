@@ -2,7 +2,6 @@ import "dotenv/config";
 import express from "express";
 import bodyParser from "body-parser";
 import cors from "cors";
-import mysql from "mysql2/promise";
 import axios from "axios";
 
 const app = express();
@@ -29,17 +28,6 @@ const corsOptions = {
 // Apply CORS middleware
 app.use(cors(corsOptions));
 
-// MySQL connection setup
-const db = await mysql.createConnection({
-  host: process.env.DATABASE_URL.split("@")[1].split(":")[0],
-  user: process.env.DATABASE_URL.split("//")[1].split(":")[0],
-  password: process.env.DATABASE_URL.split(":")[2].split("@")[0],
-  database: process.env.DATABASE_URL.split("/")[1],
-  port: process.env.DATABASE_URL.split(":")[2].split("/")[0],
-});
-
-console.log("Successfully connected to MySQL database");
-
 // Enable pre-flight requests for all routes
 app.options("*", cors(corsOptions));
 
@@ -49,77 +37,6 @@ app.use(bodyParser.json());
 // Health check endpoint
 app.get("/health", (req, res) => {
   res.status(200).json({ status: "OK", timestamp: new Date() });
-});
-
-// Guestbook Routes with MySQL
-app.post("/guestbook", cors(corsOptions), async (req, res) => {
-  try {
-    const { name, message } = req.body;
-
-    // Validate input
-    if (!name || !message) {
-      return res.status(400).json({ error: "Name and message are required." });
-    }
-
-    // Insert the guestbook entry into the database
-    const [result] = await db.execute(
-      "INSERT INTO guestbook (name, message, date) VALUES (?, ?, NOW())",
-      [name, message]
-    );
-
-    // Respond with the created entry
-    res.status(201).json({
-      id: result.insertId,
-      name,
-      message,
-      date: new Date().toISOString(),
-    });
-  } catch (error) {
-    console.error("Error creating guestbook entry:", error);
-    res.status(500).json({ error: "Failed to create guestbook entry." });
-  }
-});
-
-app.get("/guestbook", cors(corsOptions), async (req, res) => {
-  try {
-    // Fetch all guestbook entries from the database
-    const [entries] = await db.execute(
-      "SELECT id, name, message, date FROM guestbook ORDER BY date DESC"
-    );
-
-    // Respond with the entries
-    res.status(200).json(entries);
-  } catch (error) {
-    console.error("Error fetching guestbook entries:", error);
-    res.status(500).json({ error: "Failed to fetch guestbook entries." });
-  }
-});
-
-app.delete("/guestbook/:id", cors(corsOptions), async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // Validate input
-    if (!id) {
-      return res.status(400).json({ error: "Entry ID is required." });
-    }
-
-    // Delete the guestbook entry from the database
-    const [result] = await db.execute("DELETE FROM guestbook WHERE id = ?", [
-      id,
-    ]);
-
-    // Check if the entry was deleted
-    if (result.affectedRows === 0) {
-      return res.status(404).json({ error: "Guestbook entry not found." });
-    }
-
-    // Respond with success
-    res.status(200).json({ message: "Guestbook entry deleted successfully." });
-  } catch (error) {
-    console.error("Error deleting guestbook entry:", error);
-    res.status(500).json({ error: "Failed to delete guestbook entry." });
-  }
 });
 
 // Email Route with better error handling

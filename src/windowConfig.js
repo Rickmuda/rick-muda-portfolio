@@ -4,9 +4,7 @@ import Contact from "./components/windows/Contact.vue";
 import Socials from "./components/windows/Socials.vue";
 import ArtGallery from "./components/windows/ArtGallery.vue";
 import MiniGame from "./components/windows/MiniGame.vue";
-import Settings from "./components/windows/Settings.vue";
 import OldVideo from "./components/windows/OldVideo.vue";
-import Guestbook from "./components/windows/Guestbook.vue";
 import Certificates from "./components/windows/Certificates.vue";
 
 export const windowConfig = {
@@ -57,22 +55,6 @@ export const windowConfig = {
     defaultHeight: 700,
     defaultX: 600,
     defaultY: 100,
-  },
-  settings: {
-    component: Settings,
-    title: "settings",
-    defaultWidth: 500,
-    defaultHeight: 400,
-    defaultX: 700,
-    defaultY: 400,
-  },
-  guestbook: {
-    component: Guestbook,
-    title: "guestbook",
-    defaultWidth: 800,
-    defaultHeight: 750,
-    defaultX: 150,
-    defaultY: 50,
   },
   certificates: {
     component: Certificates,
