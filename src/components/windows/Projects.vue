@@ -272,7 +272,7 @@ export default {
         },
         {
           title: this.$t('dnm'),
-          type: 'Game',
+          type: 'Web Project',
           dateCreated: '2025-04-12',
           images: [
             new URL('@/assets/img/projects/dungeon and music.webp', import.meta.url).href

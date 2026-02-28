@@ -4,32 +4,28 @@
       <h2>Solitaire</h2>
       <div class="header-actions">
         <button @click="newGame">New Game</button>
-        <button @click="drawStock">Draw</button>
       </div>
     </div>
 
     <div class="top-row">
       <div class="stock-waste">
-        <button class="pile stock" @click="drawStock">
-          {{ stock.length ? `Stock (${stock.length})` : 'Recycle' }}
-        </button>
-
-        <div class="waste-area">
-          <div
-            v-if="waste.length"
-            class="card waste-card"
-            :class="{ 
-              selected: selected?.type === 'waste',
-              red: waste[waste.length - 1].color === 'red'
-            }"
-            draggable="true"
-            @click="selectWaste"
-            @dragstart="onDragStart($event, 'waste')"
-            @dragend="onDragEnd"
-          >
-            {{ cardLabel(waste[waste.length - 1]) }}
-          </div>
-          <div v-else class="pile waste-empty">Waste</div>
+        <!-- Shows drawn card face-up; click to select. When empty, shows face-down stock to draw from. -->
+        <div
+          v-if="waste.length"
+          class="top-card waste-card"
+          :class="{ selected: selected?.type === 'waste', red: waste[waste.length - 1].color === 'red' }"
+          draggable="true"
+          @click="selectWaste"
+          @dragstart="onDragStart($event, 'waste')"
+          @dragend="onDragEnd"
+        >
+          {{ cardLabel(waste[waste.length - 1]) }}
+        </div>
+        <div v-else class="top-card stock-card" @click="drawStock">
+          {{ stock.length ? `🂠 ${stock.length}` : '↩' }}
+        </div>
+        <div v-if="waste.length" class="stock-counter" @click="drawStock" title="Draw next card">
+          {{ stock.length ? `🂠 ${stock.length}` : '↩' }}
         </div>
       </div>
 
@@ -37,7 +33,8 @@
         <div
           v-for="suit in suits"
           :key="suit"
-          class="pile foundation"
+          class="foundation"
+          :class="{ 'foundation-filled': foundations[suit].length, red: foundations[suit].length && foundations[suit][foundations[suit].length-1].color === 'red' }"
           @click="moveToFoundation(suit)"
           @dragover.prevent
           @drop="onDropFoundation($event, suit)"
@@ -333,8 +330,7 @@ export default {
   gap: 8px;
 }
 
-.header-actions button,
-.pile {
+.header-actions button {
   background: #9b20b7;
   border: 1px solid #4f115d;
   color: #fff;
@@ -350,27 +346,55 @@ export default {
   gap: 10px;
 }
 
-.stock-waste,
-.foundations {
+.stock-waste {
   display: flex;
-  gap: 8px;
-  align-items: flex-start;
+  flex-direction: column;
+  gap: 6px;
+  align-items: center;
 }
 
-.pile {
-  min-width: 92px;
-  min-height: 70px;
-  font-size: 18px;
+.top-card {
+  width: 92px;
+  height: 70px;
+  background: #f7f7f7;
+  color: #111;
+  border-radius: 6px;
   display: flex;
   align-items: center;
   justify-content: center;
+  font-weight: bold;
+  font-size: 20px;
+  cursor: grab;
+  flex-shrink: 0;
+  text-shadow: none;
 }
 
-.waste-area {
-  min-width: 92px;
-  min-height: 70px;
-  display: flex;
-  align-items: flex-start;
+.top-card.red {
+  color: #b10000;
+}
+
+.top-card.selected {
+  outline: 2px solid #fff;
+  outline-offset: 1px;
+}
+
+.stock-card {
+  background: #5b0f6f;
+  color: #fff;
+  cursor: pointer;
+}
+.stock-counter {
+  font-size: 12px;
+  color: rgba(255,255,255,0.7);
+  cursor: pointer;
+  text-align: center;
+  padding: 2px 4px;
+  border-radius: 4px;
+  background: rgba(0,0,0,0.2);
+}
+
+.stock-counter:hover {
+  background: rgba(0,0,0,0.35);
 }
 
 .waste-card {
@@ -390,39 +414,34 @@ export default {
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
 }
 
-.waste-card:active {
-  cursor: grabbing;
-}
-
-.waste-card.red {
-  color: #b10000;
-}
-
-.waste-card.selected {
-  outline: 2px solid #fff;
-  outline-offset: 1px;
-}
-
-.waste-empty {
-  min-width: 92px;
-  min-height: 70px;
-  background: #9b20b7;
-  border: 1px solid #4f115d;
-  color: #fff;
-  border-radius: 6px;
+.foundations {
   display: flex;
-  align-items: center;
-  justify-content: center;
-  font-size: 18px;
-}
-
-.waste.selected {
-  box-shadow: 0 0 0 2px #fff inset;
+  gap: 8px;
+  align-items: flex-start;
 }
 
 .foundation {
+  min-width: 92px;
+  min-height: 70px;
+  font-size: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   background: rgba(155, 32, 183, 0.5);
   border: 2px dashed rgba(255, 255, 255, 0.5);
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.foundation-filled {
+  background: #f7f7f7;
+  border: none;
+  color: #111;
+  text-shadow: none;
+}
+
+.foundation-filled.red {
+  color: #b10000;
 }
 
 .tableau-row {
@@ -455,6 +474,7 @@ export default {
   font-weight: bold;
   font-size: 20px;
   text-shadow: none;
+  text-shadow: none;
   cursor: grab;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
 }
@@ -468,11 +488,17 @@ export default {
 }
 
 .card.hidden {
-  background: #5b0f6f;
-  border-color: #2a0734;
+  background: repeating-linear-gradient(
+    135deg,
+    #5b0f6f 0px,
+    #5b0f6f 6px,
+    #4a0d5c 6px,
+    #4a0d5c 8px
+  );
+  border: 2px solid #3a0944;
   color: transparent;
   cursor: default;
-  box-shadow: none;
+  box-shadow: 0 1px 2px rgba(0,0,0,0.3);
 }
 
 .card.selected {

@@ -48,20 +48,6 @@ body {
     background-image: url('/src/assets/img/imggallery/room.webp');
 }
 
-.background::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
-    background-color: rgba(29, 119, 94, 0.9); /* Default color and opacity */
-    z-index: 1; /* Overlay is above the background image */
-}
-
-.background-logged-in::before {
-    background-color: rgba(76, 175, 79, 0); /* Transparent overlay when logged in */
-}
 
 .background > * {
     position: relative;

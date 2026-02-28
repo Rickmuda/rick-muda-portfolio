@@ -1,15 +1,13 @@
 <template>
-  <vue3-draggable-resizable
-    :x="defaultX"
-    :y="defaultY"
-    :w="defaultWidth"
-    :h="defaultHeight"
-    :resizable="false"
-    :draggable="false"
-    :active="true"
-    :parent="true"
+  <div
     class="draggable-window"
-    :style="{ zIndex: zIndex }"
+    :style="{
+      zIndex: zIndex,
+      left: windowState.x + 'px',
+      top: windowState.y + 'px',
+      width: windowState.w + 'px',
+      height: windowState.h + 'px',
+    }"
     @mousedown="bringToFront"
   >
     <div class="app-window">
@@ -31,13 +29,10 @@
         <slot></slot>
       </div>
     </div>
-  </vue3-draggable-resizable>
+  </div>
 </template>
 
 <script>
-import Vue3DraggableResizable from "vue3-draggable-resizable";
-import "vue3-draggable-resizable/dist/Vue3DraggableResizable.css";
-
 export default {
   props: {
     title: {
@@ -65,9 +60,7 @@ export default {
       required: true,
     },
   },
-  components: {
-    Vue3DraggableResizable,
-  },
+  components: {},
   data() {
     return {
       windowState: {
@@ -176,7 +169,7 @@ export default {
 
 <style scoped>
 .draggable-window {
-  z-index: 10;
+  position: fixed;
 }
 
 .app-window {

@@ -14,22 +14,24 @@
     <!-- Main App Content -->
     <template v-else>
       <!-- Background -->
-      <div class="background" :class="{ 'background-logged-in': loggedIn, 'dark-mode': darkMode }">
-        <!-- Login Screen -->
-        <LoginScreen v-if="!loggedIn" @login="checkLoginState" />
-
-        <!-- Desktop -->
-        <Desktop v-else :openApp="openApp" :easterEggApps="easterEggApps" />
+      <div class="background" :class="{ 'dark-mode': darkMode }">
+        <!-- Desktop: always shown -->
+        <Desktop :openApp="openApp" :easterEggApps="easterEggApps" />
       </div>
 
-      <!-- Taskbar -->
+      <!-- Taskbar: always shown -->
       <Taskbar
-        v-if="loggedIn"
         :openApp="openApp"
         :commitSummary="commitSummary"
         :commitDescription="commitDescription"
         :easterEggApps="easterEggApps"
-        :easterEggTriggered="easterEggTriggered" 
+        :easterEggTriggered="easterEggTriggered"
+        :darkMode="darkMode"
+        :currentLanguage="currentLanguage"
+        :openWindows="openWindows"
+        :minimizedWindows="minimizedWindows"
+        @toggle-dark-mode="toggleDarkMode"
+        @update-language="updateLanguage"
       />
 
       <!-- Dynamic App Windows -->
@@ -44,7 +46,8 @@
         :defaultY="windowConfig[window].defaultY"
         :zIndex="windowZIndices[window]" 
         @close="closeApp(window)"
-        @bringToFront="bringWindowToFront(window)" 
+        @minimize="minimizeApp(window)"
+        @bringToFront="bringWindowToFront(window)"
       >
         <component
           :is="windowConfig[window].component"
@@ -62,7 +65,6 @@
 </template>
 
 <script>
-import LoginScreen from "./components/LoginScreen.vue";
 import Desktop from "./components/Desktop.vue";
 import Taskbar from "./components/Taskbar.vue";
 import AppWindow from "./components/AppWindow.vue";
@@ -72,7 +74,6 @@ import { windowConfig } from "./windowConfig";
 export default {
   name: 'App',
   components: {
-    LoginScreen,
     Desktop,
     Taskbar,
     AppWindow,
@@ -80,8 +81,8 @@ export default {
   },
   data() {
     return {
-      loggedIn: false,
       openWindows: [],
+      minimizedWindows: {},
       darkMode: false,
       currentLanguage: "en",
       currentDate: new Date().toLocaleDateString(),
@@ -116,7 +117,12 @@ export default {
       }
 
       if (this.openWindows.includes(appName)) {
-        this.closeApp(appName);
+        if (this.minimizedWindows[appName]) {
+          this.minimizedWindows = { ...this.minimizedWindows, [appName]: false };
+          this.bringWindowToFront(appName);
+        } else {
+          this.minimizeApp(appName);
+        }
         return;
       }
 
@@ -127,9 +133,10 @@ export default {
       this.openWindows = this.openWindows.filter(window => window !== appName);
       delete this.windowZIndices[appName];
     },
-    checkLoginState() {
-      this.loggedIn = true;
+    minimizeApp(appName) {
+      this.minimizedWindows = { ...this.minimizedWindows, [appName]: true };
     },
+    // Removed login logic
     toggleDarkMode() {
       this.darkMode = !this.darkMode;
     },
@@ -227,7 +234,9 @@ export default {
         'longvideotheater.webp',
         'dungeon and music.webp',
         'portfolio1.webp', 'portfolio2.webp', 'portfolio3.webp',
-        'quiet1.webp', 'quiet2.webp', 'quiet3.webp'
+        'quiet1.webp', 'quiet2.webp', 'quiet3.webp',
+        'rickvlogs1.webp',
+        'beer.png',
       ];
       projectImages.forEach(filename => {
         const img = new Image();
@@ -244,12 +253,14 @@ export default {
         img.src = new URL(`./assets/img/imggallery/${filename}`, import.meta.url).href;
       });
 
-      // Preload profile picture
-      const pfp = new Image();
-      pfp.src = new URL('./assets/img/self-image-1.webp', import.meta.url).href;
+      // Preload root images
+      ['self-image-1.webp', 'self-image-2.webp', 'pfp.webp', 'peterthinking.webp', 'minigame.webp'].forEach(filename => {
+        const img = new Image();
+        img.src = new URL(`./assets/img/${filename}`, import.meta.url).href;
+      });
 
       // Preload certificate images
-      const certImages = ['rattickling.webp', 'dudeism.webp'];
+      const certImages = ['rattickling.webp', 'dudeism.webp', 'dudeism.gif'];
       certImages.forEach(filename => {
         const img = new Image();
         img.src = new URL(`./assets/img/certificates/${filename}`, import.meta.url).href;
