@@ -84,7 +84,7 @@ export default {
   computed: {
     sortedProjects() {
       const typeOrder = { 'Web Project': 0, 'Portfolio': 1, 'Video Project': 2, 'Game': 3 };
-      const statusOrder = { 'Published': 0, 'W.I.P': 1, 'Outdated': 2 };
+      const statusOrder = { 'Published': 0, 'W.I.P': 1, 'Outdated': 2, 'Private': 3 };
       
       return [...this.projects].sort((a, b) => {
         let comparison = 0;
@@ -306,6 +306,19 @@ export default {
           ],
           description: this.$t('qtDescription'),
           link: "https://quietturn.rickmuda.nl/"
+        },
+        {
+          title: this.$t('lh'),
+          type: 'Web Project',
+          dateCreated: '2026-04-28',
+          images: [
+            new URL('@/assets/img/projects/Lunar1.webp', import.meta.url).href,
+            new URL('@/assets/img/projects/Lunar2.webp', import.meta.url).href,
+            new URL('@/assets/img/projects/Lunar3.webp', import.meta.url).href
+          ],
+          description: this.$t('lhDescription'),
+          disabled: true,
+          status: 'Private'
         },
       ];
     }

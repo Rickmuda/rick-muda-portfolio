@@ -15,13 +15,20 @@
         <span class="window-title">{{ title }}</span>
         <div class="window-controls">
           <button class="window-control minimize" @click.stop="minimizeWindow" title="Minimize" aria-label="Minimize">
-            <span class="control-icon">&#x2015;</span>
+            <svg class="control-icon" viewBox="0 0 10 10" aria-hidden="true">
+              <line x1="1" y1="5" x2="9" y2="5" stroke="currentColor" stroke-width="1" stroke-linecap="square" />
+            </svg>
           </button>
           <button class="window-control maximize" @click.stop="toggleMaximize" title="Maximize / Restore" aria-label="Maximize or restore">
-            <span class="control-icon maximize-icon"></span>
+            <svg class="control-icon" viewBox="0 0 10 10" aria-hidden="true">
+              <rect x="1" y="1" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1" />
+            </svg>
           </button>
           <button class="window-control close" @click.stop="closeWindow" title="Close" aria-label="Close">
-            <span class="control-icon">&times;</span>
+            <svg class="control-icon" viewBox="0 0 10 10" aria-hidden="true">
+              <line x1="1.5" y1="1.5" x2="8.5" y2="8.5" stroke="currentColor" stroke-width="1" stroke-linecap="square" />
+              <line x1="8.5" y1="1.5" x2="1.5" y2="8.5" stroke="currentColor" stroke-width="1" stroke-linecap="square" />
+            </svg>
           </button>
         </div>
       </div>
@@ -216,22 +223,14 @@ export default {
   align-items: center;
   justify-content: center;
   transition: background 0.12s ease;
-  border-left: 1px solid rgba(0, 0, 0, 0.1);
 }
 
 .control-icon {
-  font-size: 22px;
-  line-height: 1;
+  width: 14px;
+  height: 14px;
   color: #1a1a1a;
   pointer-events: none;
-}
-
-.maximize-icon {
-  width: 12px;
-  height: 12px;
-  border: 2px solid #1a1a1a;
-  border-radius: 0;
-  display: inline-block;
+  display: block;
 }
 
 .window-control.minimize:hover {

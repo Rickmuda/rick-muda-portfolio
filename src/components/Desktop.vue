@@ -41,6 +41,22 @@
       <div class="app-icon-text">{{ $t('miniGame') }}</div>
     </div>
 
+    <!-- Vinyl Collection -->
+    <div class="desktop-only app-icon" @click="openApp('vinylCollection')">
+      <div class="app-icon-image">
+        <font-awesome-icon icon="compact-disc" class="app-icon-inner" />
+      </div>
+      <div class="app-icon-text">{{ $t('vinylCollection') }}</div>
+    </div>
+
+    <!-- Skill Tree -->
+    <div class="desktop-only app-icon" @click="openApp('skillTree')">
+      <div class="app-icon-image">
+        <font-awesome-icon icon="sitemap" class="app-icon-inner" />
+      </div>
+      <div class="app-icon-text">{{ $t('skillTree') }}</div>
+    </div>
+
 
     <!-- Easter egg apps -->
     <div class="app-icon" v-for="app in easterEggApps" :key="app" @click="openApp(app)">

@@ -39,6 +39,18 @@
         <span v-if="openWindows.includes('artGallery')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['artGallery'] }"></span>
       </div>
 
+      <!-- Vinyl Collection -->
+      <div class="taskbar-icon" :class="iconState('vinylCollection')" @click="openApp('vinylCollection')">
+        <font-awesome-icon icon="compact-disc" />
+        <span v-if="openWindows.includes('vinylCollection')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['vinylCollection'] }"></span>
+      </div>
+
+      <!-- Skill Tree -->
+      <div class="taskbar-icon" :class="iconState('skillTree')" @click="openApp('skillTree')">
+        <font-awesome-icon icon="sitemap" />
+        <span v-if="openWindows.includes('skillTree')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['skillTree'] }"></span>
+      </div>
+
 
       <!-- Easter Egg Icon -->
       <div v-for="app in easterEggApps" :key="app" class="taskbar-icon" :class="iconState(app)" @click="openApp(app)" title="Easter Egg">

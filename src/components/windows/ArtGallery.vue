@@ -4,7 +4,23 @@
       <span>Photo {{ selectedImageIndex + 1 }} / {{ artGalleryImages.length }}</span>
     </div>
     <div class="viewer-canvas">
+      <button
+        v-if="selectedImageIndex > 0"
+        class="nav-arrow left"
+        aria-label="Vorige foto"
+        @click="previousImage"
+      >
+        &#8249;
+      </button>
       <img :src="artGalleryImages[selectedImageIndex]" alt="Selected Art" class="main-photo" />
+      <button
+        v-if="selectedImageIndex < artGalleryImages.length - 1"
+        class="nav-arrow right"
+        aria-label="Volgende foto"
+        @click="nextImage"
+      >
+        &#8250;
+      </button>
     </div>
     <div class="viewer-strip">
       <button
@@ -43,6 +59,10 @@ export default {
   },
   mounted() {
     this.extractGifFirstFrames();
+    window.addEventListener('keydown', this.handleKeydown);
+  },
+  beforeUnmount() {
+    window.removeEventListener('keydown', this.handleKeydown);
   },
   methods: {
     extractGifFirstFrames() {
@@ -61,6 +81,23 @@ export default {
           img.src = image;
         }
       });
+    },
+    nextImage() {
+      if (this.selectedImageIndex < this.artGalleryImages.length - 1) {
+        this.selectedImageIndex += 1;
+      }
+    },
+    previousImage() {
+      if (this.selectedImageIndex > 0) {
+        this.selectedImageIndex -= 1;
+      }
+    },
+    handleKeydown(e) {
+      if (e.key === 'ArrowRight') {
+        this.nextImage();
+      } else if (e.key === 'ArrowLeft') {
+        this.previousImage();
+      }
     },
   },
 };
@@ -87,12 +124,55 @@ export default {
 }
 
 .viewer-canvas {
+  position: relative;
   flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
   min-height: 0;
+}
+
+.nav-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: transparent;
+  color: #fff;
+  font-size: 48px;
+  line-height: 1;
+  cursor: pointer;
+  opacity: 0.4;
+  text-shadow: 0 0 4px rgba(0, 0, 0, 0.8);
+  transition: opacity 0.2s ease, transform 0.2s ease;
+  z-index: 2;
+}
+
+.nav-arrow.left {
+  left: 12px;
+}
+
+.nav-arrow.right {
+  right: 12px;
+}
+
+.photo-viewer:hover .nav-arrow {
+  opacity: 1;
+}
+
+.nav-arrow:hover {
+  transform: translateY(-50%) scale(1.15);
+}
+
+.nav-arrow:focus-visible {
+  outline: 2px solid #9b20b7;
+  outline-offset: 2px;
 }
 
 .main-photo {

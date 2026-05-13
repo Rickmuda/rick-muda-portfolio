@@ -237,6 +237,7 @@ export default {
         'quiet1.webp', 'quiet2.webp', 'quiet3.webp',
         'rickvlogs1.webp',
         'beer.png',
+        'Lunar1.webp', 'Lunar2.webp', 'Lunar3.webp',
       ];
       projectImages.forEach(filename => {
         const img = new Image();

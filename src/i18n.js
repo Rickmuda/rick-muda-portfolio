@@ -13,6 +13,9 @@ const messages = {
     threeDPrinting: "3D Printing",
     guestbook: "Guestbook",
     certificates: "Certificates",
+    vinylCollection: "Vinyl Collection",
+    vinylDisclaimer: "This is just a showcase of my real vinyl collection, no music is actually played.",
+    skillTree: "Skill Tree",
 
     // About me
     aboutMeIntro: "Hey there! Welcome to my portfolio.",
@@ -46,9 +49,9 @@ const messages = {
     whatAreYourSkills: "What are your skills?",
     goBack: "Go back.",
     canISeeYourCV: "Can I see your CV?",
-    cvSure: "Of course! Here you go — feel free to download it.",
+    cvSure: "Of course! Here you go - feel free to download it.",
     whatAreYourSocials: "What are your socials?",
-    socialsIntro: "Sure! Here are my social media links — feel free to connect with me!",
+    socialsIntro: "Sure! Here are my social media links - feel free to connect with me!",
     showMeYourCertificates: "Show me your certificates.",
     certificatesIntro: "Here are some fun certificates I've collected! Click to expand.",
     funFacts: "Fun Facts",
@@ -104,6 +107,8 @@ const messages = {
     fypDescription: "My first portfolio I made for my first year at school.",
     qt: "Quiet Turn",
     qtDescription: "A magic the gathering game tracker for neurodivergent people to make the game more accessible.",
+    lh: "LunarHome",
+    lhDescription: "A personal streaming service for the DVDs I collect.",
     goToProject: "Go to Project",
 
     // Start menu
@@ -170,6 +175,9 @@ const messages = {
     threeDPrinting: "3D Printen",
     guestbook: "Gastenboek",
     certificates: "Certificaten",
+    vinylCollection: "Vinyl Collectie",
+    vinylDisclaimer: "Dit is enkel een showcase van mijn echte platencollectie, er wordt geen muziek afgespeeld.",
+    skillTree: "Vaardighedenboom",
     // About me
     aboutMeIntro: "Hey daar! Welkom op mijn portfolio.",
     greeting: "Hoi daar! Welkom op mijn portfolio. Vraag me gerust wat je wilt weten!",
@@ -200,14 +208,14 @@ const messages = {
     whatAreYourSkills: "Wat zijn je vaardigheden?",
     goBack: "Ga terug.",
     canISeeYourCV: "Kan ik je CV zien?",
-    cvSure: "Natuurlijk! Hier is het — download het gerust.",
+    cvSure: "Natuurlijk! Hier is het - download het gerust.",
     whatAreYourSocials: "Wat zijn je socials?",
-    socialsIntro: "Natuurlijk! Hier zijn mijn social media links — voel je vrij om contact te maken!",
+    socialsIntro: "Natuurlijk! Hier zijn mijn social media links - voel je vrij om contact te maken!",
     showMeYourCertificates: "Laat me je certificaten zien.",
     certificatesIntro: "Hier zijn een paar leuke certificaten die ik heb verzameld! Klik om te vergroten.",
     funFacts: "Leuke Weetjes",
     funFact1: "Ik heb ooit een volledige portfolio-website in één weekend gebouwd.",
-    funFact2: "Mijn eerste regel code was in Scratch — ik maakte een dansende kat.",
+    funFact2: "Mijn eerste regel code was in Scratch - ik maakte een dansende kat.",
     funFact3: "Ik heb meer dan 30 vinylplaten en het worden er steeds meer.",
     funFact4: "Bloodborne is de enige game die ik twee keer heb geplatinumd.",
     funFact5: "Ik kan elke Spider-Man filmsoundtrack uit mijn hoofd opnoemen.",
@@ -262,6 +270,8 @@ const messages = {
       "Mijn allereerste portfolio dat ik heb gemaakt voor mijn eerste jaar op school.",
     qt: "Quiet Turn",
     qtDescription: "Een magic the gathering game tracker voor neurodivergente mensen om het spel toegankelijker te maken.",
+    lh: "LunarHome",
+    lhDescription: "Een persoonlijke streaming service voor de dvd's die ik verzamel.",
     goToProject: "Ga naar Project",
 
     // Start menu

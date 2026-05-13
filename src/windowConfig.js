@@ -5,6 +5,8 @@ import ArtGallery from "./components/windows/ArtGallery.vue";
 import MiniGame from "./components/windows/MiniGame.vue";
 import Settings from "./components/windows/Settings.vue";
 import OldVideo from "./components/windows/OldVideo.vue";
+import VinylCollection from "./components/windows/VinylCollection.vue";
+import SkillTree from "./components/windows/SkillTree.vue";
 
 export const windowConfig = {
   aboutMe: {
@@ -54,5 +56,21 @@ export const windowConfig = {
     defaultHeight: 600,
     defaultX: 300,
     defaultY: 200,
+  },
+  vinylCollection: {
+    component: VinylCollection,
+    title: "vinylCollection",
+    defaultWidth: 900,
+    defaultHeight: 700,
+    defaultX: 220,
+    defaultY: 60,
+  },
+  skillTree: {
+    component: SkillTree,
+    title: "skillTree",
+    defaultWidth: 1100,
+    defaultHeight: 750,
+    defaultX: 150,
+    defaultY: 40,
   },
 };

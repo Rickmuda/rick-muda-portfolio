@@ -25,6 +25,8 @@ import {
   faWrench,
   faSun,
   faMoon,
+  faCompactDisc,
+  faSitemap,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faTwitter,
@@ -53,7 +55,9 @@ library.add(
   faCertificate,
   faWrench,
   faSun,
-  faMoon
+  faMoon,
+  faCompactDisc,
+  faSitemap
 );
 library.add(faTwitter, faInstagram, faLinkedin, faGithub, faYoutube, faTiktok, faSpotify, faSteam, faCodepen);
 
