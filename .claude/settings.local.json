@@ -3,7 +3,8 @@
     "allow": [
       "Bash(npm run *)",
       "Bash(git check-ignore *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(git rm *)"
     ]
   }
 }
