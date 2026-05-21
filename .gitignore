@@ -27,3 +27,8 @@ coverage
 *.sln
 *.sw?
 .env
+
+# Password-protected download files must never be committed (public repo!).
+# Deploy them to the server out-of-band. Keep the folder + its README only.
+protected-files/*
+!protected-files/README.md

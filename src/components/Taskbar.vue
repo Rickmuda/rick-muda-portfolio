@@ -20,10 +20,22 @@
         <span v-if="openWindows.includes('projects')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['projects'] }"></span>
       </div>
 
+      <!-- Art Gallery -->
+      <div class="taskbar-icon" :class="iconState('artGallery')" @click="openApp('artGallery')">
+        <font-awesome-icon icon="palette" />
+        <span v-if="openWindows.includes('artGallery')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['artGallery'] }"></span>
+      </div>
+
       <!-- Contact -->
       <div class="taskbar-icon" :class="iconState('contact')" @click="openApp('contact')">
         <font-awesome-icon icon="envelope" />
         <span v-if="openWindows.includes('contact')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['contact'] }"></span>
+      </div>
+
+      <!-- Downloads -->
+      <div class="taskbar-icon" :class="iconState('downloads')" @click="openApp('downloads')">
+        <font-awesome-icon icon="download" />
+        <span v-if="openWindows.includes('downloads')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['downloads'] }"></span>
       </div>
 
 
@@ -31,12 +43,6 @@
       <div class="taskbar-icon" :class="iconState('miniGame')" @click="openApp('miniGame')">
         <font-awesome-icon icon="gamepad" />
         <span v-if="openWindows.includes('miniGame')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['miniGame'] }"></span>
-      </div>
-
-      <!-- Art Gallery -->
-      <div class="taskbar-icon" :class="iconState('artGallery')" @click="openApp('artGallery')">
-        <font-awesome-icon icon="palette" />
-        <span v-if="openWindows.includes('artGallery')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['artGallery'] }"></span>
       </div>
 
       <!-- Vinyl Collection -->

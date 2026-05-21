@@ -32,6 +32,14 @@
       <div class="app-icon-text">{{ $t('contact') }}</div>
     </div>
 
+    <!-- Downloads (5th) -->
+    <div class="app-icon" @click="openApp('downloads')">
+      <div class="app-icon-image">
+        <font-awesome-icon icon="download" class="app-icon-inner" />
+      </div>
+      <div class="app-icon-text">{{ $t('downloads') }}</div>
+    </div>
+
 
     <!-- Desktop-only apps (hidden on mobile) -->
     <div class="desktop-only app-icon" @click="openApp('miniGame')">

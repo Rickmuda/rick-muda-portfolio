@@ -95,9 +95,6 @@ export default {
       easterEggTriggered: false,
       keydownListenerAdded: false,
       easterEggApps: [],
-      guestbookEntries: [],
-      guestbookLoading: true,
-      guestbookError: null,
       showUnderDevelopment: false,
       unfinishedApps: ['threeDPrinting'],
       isMobile: false,
@@ -156,14 +153,6 @@ export default {
           "onUpdate:currentLanguage": (value) => (this.currentLanguage = value),
         };
       }
-      if (windowName === "guestbook") {
-        return {
-          entries: this.guestbookEntries,
-          isLoading: this.guestbookLoading,
-          error: this.guestbookError,
-          onEntryAdded: this.fetchGuestbookEntries
-        };
-      }
       return windowConfig[windowName]?.props || {};
     },
     handleKeydown(event) {
@@ -183,26 +172,6 @@ export default {
       this.easterEggTriggered = true;
       if (!this.easterEggApps.includes("oldVideo")) {
         this.easterEggApps.push("oldVideo");
-      }
-    },
-    async fetchGuestbookEntries() {
-      try {
-        const baseUrl = import.meta.env.VITE_API_URL;
-        if (baseUrl) {
-          const response = await fetch(`${baseUrl}/guestbook`);
-          if (!response.ok) throw new Error('Failed to fetch entries');
-          this.guestbookEntries = await response.json();
-        } else {
-          const saved = localStorage.getItem('guestbookEntries');
-          this.guestbookEntries = saved ? JSON.parse(saved) : [];
-        }
-      } catch (error) {
-        console.error('Error fetching guestbook entries:', error);
-        const saved = localStorage.getItem('guestbookEntries');
-        this.guestbookEntries = saved ? JSON.parse(saved) : [];
-        this.guestbookError = error.message;
-      } finally {
-        this.guestbookLoading = false;
       }
     },
     closeUnderDevelopment() {
@@ -292,8 +261,6 @@ export default {
       window.addEventListener("keydown", this.handleKeydown);
       this.keydownListenerAdded = true;
     }
-
-    await this.fetchGuestbookEntries();
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.checkMobile);

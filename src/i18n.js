@@ -11,11 +11,22 @@ const messages = {
     miniGame: "Mini Game",
     settings: "Settings",
     threeDPrinting: "3D Printing",
-    guestbook: "Guestbook",
     certificates: "Certificates",
     vinylCollection: "Vinyl Collection",
     vinylDisclaimer: "This is just a showcase of my real vinyl collection, no music is actually played.",
     skillTree: "Skill Tree",
+    downloads: "Downloads",
+
+    // Downloads
+    download: "Download",
+    comingSoon: "Coming soon",
+    protected: "Protected",
+    downloadEnterPassword: "Enter password",
+    unlock: "Unlock",
+    downloadWrongPassword: "Wrong password.",
+    downloadError: "Something went wrong. Please try again.",
+    dlPhotoTitle: "Portfolio opdracht: Fotografie",
+    dlPhotoDesc: "A photography portfolio assignment I made.",
 
     // About me
     aboutMeIntro: "Hey there! Welcome to my portfolio.",
@@ -150,17 +161,6 @@ const messages = {
     // Easter egg
     oldVideo: "Old Video",
     easterEgg: "Easter Egg",
-
-    // Guestbook
-    signGuestbook: "Sign Guestbook",
-    guestbookName: "Your Name",
-    guestbookMessage: "Your Message",
-    guestbookSubmit: "Submit",
-    guestbookSuccess: "Thank you for signing the guestbook!",
-    guestbookError: "Error submitting your message. Please try again.",
-    guestbookInfo:
-      "Welcome to my guestbook! Leave a message for future visitors.",
-    noEntries: "No entries yet. Be the first to sign!",
   },
 
   nl: {
@@ -173,11 +173,23 @@ const messages = {
     miniGame: "Mini Spel",
     settings: "Instellingen",
     threeDPrinting: "3D Printen",
-    guestbook: "Gastenboek",
     certificates: "Certificaten",
     vinylCollection: "Vinyl Collectie",
     vinylDisclaimer: "Dit is enkel een showcase van mijn echte platencollectie, er wordt geen muziek afgespeeld.",
     skillTree: "Vaardighedenboom",
+    downloads: "Downloads",
+
+    // Downloads
+    download: "Downloaden",
+    comingSoon: "Binnenkort",
+    protected: "Beveiligd",
+    downloadEnterPassword: "Voer wachtwoord in",
+    unlock: "Ontgrendelen",
+    downloadWrongPassword: "Verkeerd wachtwoord.",
+    downloadError: "Er ging iets mis. Probeer het opnieuw.",
+    dlPhotoTitle: "Portfolio opdracht: Fotografie",
+    dlPhotoDesc: "Een portfolio-opdracht over fotografie die ik gemaakt heb.",
+
     // About me
     aboutMeIntro: "Hey daar! Welkom op mijn portfolio.",
     greeting: "Hoi daar! Welkom op mijn portfolio. Vraag me gerust wat je wilt weten!",
@@ -313,18 +325,6 @@ const messages = {
     // Easter egg
     oldVideo: "Oude Video",
     easterEgg: "Easter Egg",
-
-    // Guestbook
-    signGuestbook: "Gastenboek Tekenen",
-    guestbookName: "Jouw Naam",
-    guestbookMessage: "Jouw Bericht",
-    guestbookSubmit: "Versturen",
-    guestbookSuccess: "Bedankt voor het tekenen van het gastenboek!",
-    guestbookError:
-      "Fout bij het versturen van je bericht. Probeer het opnieuw.",
-    guestbookInfo:
-      "Welkom bij mijn gastenboek! Laat een bericht achter voor toekomstige bezoekers.",
-    noEntries: "Nog geen berichten. Wees de eerste om te tekenen!",
   },
 };
 

@@ -7,6 +7,7 @@ import Settings from "./components/windows/Settings.vue";
 import OldVideo from "./components/windows/OldVideo.vue";
 import VinylCollection from "./components/windows/VinylCollection.vue";
 import SkillTree from "./components/windows/SkillTree.vue";
+import Downloads from "./components/windows/Downloads.vue";
 
 export const windowConfig = {
   aboutMe: {
@@ -72,5 +73,13 @@ export const windowConfig = {
     defaultHeight: 750,
     defaultX: 150,
     defaultY: 40,
+  },
+  downloads: {
+    component: Downloads,
+    title: "downloads",
+    defaultWidth: 1000,
+    defaultHeight: 720,
+    defaultX: 260,
+    defaultY: 50,
   },
 };
