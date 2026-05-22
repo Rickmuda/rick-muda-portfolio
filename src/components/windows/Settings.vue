@@ -49,6 +49,17 @@ export default {
 </script>
 
 <style scoped>
+.settings {
+  height: 100%;
+  background: #1a1a24;
+  box-sizing: border-box;
+}
+
+.language-selection select,
+.language-selection select option {
+  font-family: 'PortfolioFont', sans-serif;
+}
+
 /* Mobile-only restyle: card layout for the settings controls */
 @media (max-width: 768px) {
   .settings {

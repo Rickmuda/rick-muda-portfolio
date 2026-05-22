@@ -89,7 +89,12 @@
     <!-- Detail page -->
     <div v-else class="pm-detail">
       <button class="pm-back" @click="pmBack">&#8592; Back</button>
-      <div class="pm-carousel">
+      <div
+        class="pm-carousel"
+        @touchstart.passive="pmTouchStart"
+        @touchmove.passive="pmTouchMove"
+        @touchend="pmTouchEnd"
+      >
         <img :src="pmSelected.images[pmDetailIndex]" :alt="pmSelected.title" class="pm-image" />
         <div class="pm-dots" v-if="pmSelected.images.length > 1">
           <button
@@ -127,6 +132,10 @@ export default {
       sortDirection: 'desc',
       pmSelected: null,
       pmDetailIndex: 0,
+      pmTouchStartX: 0,
+      pmTouchStartY: 0,
+      pmTouchDeltaX: 0,
+      pmIsSwiping: false,
     };
   },
   computed: {
@@ -228,6 +237,40 @@ export default {
     },
     setPmDetailIndex(idx) {
       this.pmDetailIndex = idx;
+    },
+    pmTouchStart(e) {
+      this.pmTouchStartX = e.touches[0].clientX;
+      this.pmTouchStartY = e.touches[0].clientY;
+      this.pmTouchDeltaX = 0;
+      this.pmIsSwiping = false;
+    },
+    pmTouchMove(e) {
+      const dx = e.touches[0].clientX - this.pmTouchStartX;
+      const dy = e.touches[0].clientY - this.pmTouchStartY;
+      // Treat as a horizontal swipe only once it clearly outpaces vertical scroll
+      if (!this.pmIsSwiping && Math.abs(dx) > Math.abs(dy) && Math.abs(dx) > 10) {
+        this.pmIsSwiping = true;
+      }
+      if (this.pmIsSwiping) {
+        this.pmTouchDeltaX = dx;
+      }
+    },
+    pmTouchEnd() {
+      if (!this.pmIsSwiping || !this.pmSelected) {
+        this.pmIsSwiping = false;
+        return;
+      }
+      const count = this.pmSelected.images.length;
+      const threshold = 50;
+      if (this.pmTouchDeltaX <= -threshold) {
+        // Swipe left -> next image
+        this.pmDetailIndex = (this.pmDetailIndex + 1) % count;
+      } else if (this.pmTouchDeltaX >= threshold) {
+        // Swipe right -> previous image
+        this.pmDetailIndex = (this.pmDetailIndex - 1 + count) % count;
+      }
+      this.pmTouchDeltaX = 0;
+      this.pmIsSwiping = false;
     },
     initializeProjects() {
       this.projects = [
@@ -755,6 +798,7 @@ export default {
     position: relative;
     width: 100%;
     flex-shrink: 0;
+    touch-action: pan-y;
   }
 
   .pm-image {
@@ -764,6 +808,8 @@ export default {
     background: #0a0a0f;
     border: 2px solid #4f115d;
     border-radius: 6px;
+    user-select: none;
+    -webkit-user-drag: none;
   }
 
   .pm-dots {
