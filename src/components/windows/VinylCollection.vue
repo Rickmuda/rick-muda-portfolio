@@ -38,6 +38,13 @@
 
       <template v-else>
         <div v-if="activeTab === 'nowPlaying'" class="now-playing">
+          <button
+            class="np-hamburger"
+            @click="showTracklist = !showTracklist"
+            :aria-label="showTracklist ? 'Show cover' : 'Show tracklist'"
+          >
+            <span></span><span></span><span></span>
+          </button>
           <div class="media-panel">
             <div v-if="!showTracklist" class="cover-frame">
               <img
@@ -1007,5 +1014,80 @@ export default {
 .now-playing::-webkit-scrollbar-thumb {
   background: linear-gradient(180deg, #555, #2a2a2a);
   border-radius: 4px;
+}
+
+/* Hamburger toggle for cover/tracklist (mobile only) */
+.np-hamburger {
+  display: none;
+  position: absolute;
+  top: 12px;
+  left: 12px;
+  z-index: 3;
+  width: 40px;
+  height: 40px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.45);
+  border: 1px solid rgba(155, 32, 183, 0.6);
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.np-hamburger span {
+  display: block;
+  width: 18px;
+  height: 2px;
+  background: #fff;
+  border-radius: 1px;
+}
+
+/* Mobile: stack now-playing, fluid cover, 2-column library */
+@media (max-width: 768px) {
+  .now-playing {
+    position: relative;
+    grid-template-columns: 1fr;
+    gap: 16px;
+    padding: 16px;
+    padding-top: 60px;
+    justify-items: center;
+    align-items: start;
+  }
+
+  .np-hamburger {
+    display: flex;
+  }
+
+  .info-toggle {
+    display: none;
+  }
+
+  .media-panel {
+    width: 100%;
+    max-width: 280px;
+    flex-shrink: 1;
+  }
+
+  .cover-frame {
+    width: 100%;
+    max-width: 280px;
+    height: auto;
+    aspect-ratio: 1 / 1;
+  }
+
+  .tracklist-frame {
+    width: 100%;
+    max-width: 280px;
+    height: 280px;
+  }
+
+  .track-info {
+    text-align: center;
+  }
+
+  .library-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
 }
 </style>

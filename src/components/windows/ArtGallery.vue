@@ -3,7 +3,7 @@
     <div class="viewer-top">
       <span>Photo {{ selectedImageIndex + 1 }} / {{ artGalleryImages.length }}</span>
     </div>
-    <div class="viewer-canvas">
+    <div class="viewer-canvas" @touchstart="onTouchStart" @touchend="onTouchEnd">
       <button
         v-if="selectedImageIndex > 0"
         class="nav-arrow left"
@@ -12,7 +12,14 @@
       >
         &#8249;
       </button>
-      <img :src="artGalleryImages[selectedImageIndex]" alt="Selected Art" class="main-photo" />
+      <transition :name="slideName">
+        <img
+          :key="selectedImageIndex"
+          :src="artGalleryImages[selectedImageIndex]"
+          alt="Selected Art"
+          class="main-photo"
+        />
+      </transition>
       <button
         v-if="selectedImageIndex < artGalleryImages.length - 1"
         class="nav-arrow right"
@@ -22,13 +29,13 @@
         &#8250;
       </button>
     </div>
-    <div class="viewer-strip">
+    <div class="viewer-strip" ref="strip">
       <button
         v-for="(image, index) in artGalleryImages"
         :key="index"
         class="thumb"
         :class="{ active: selectedImageIndex === index }"
-        @click="selectedImageIndex = index"
+        @click="selectImage(index)"
       >
         <img 
           :src="selectedImageIndex === index || !image.endsWith('.gif') ? image : (frozenGifFrames[index] || image)"
@@ -55,6 +62,8 @@ export default {
       ],
       selectedImageIndex: 0,
       frozenGifFrames: {},
+      touchStartX: 0,
+      slideName: 'slide-next',
     };
   },
   mounted() {
@@ -63,6 +72,11 @@ export default {
   },
   beforeUnmount() {
     window.removeEventListener('keydown', this.handleKeydown);
+  },
+  watch: {
+    selectedImageIndex() {
+      this.$nextTick(this.scrollActiveThumb);
+    },
   },
   methods: {
     extractGifFirstFrames() {
@@ -84,12 +98,27 @@ export default {
     },
     nextImage() {
       if (this.selectedImageIndex < this.artGalleryImages.length - 1) {
+        this.slideName = 'slide-next';
         this.selectedImageIndex += 1;
       }
     },
     previousImage() {
       if (this.selectedImageIndex > 0) {
+        this.slideName = 'slide-prev';
         this.selectedImageIndex -= 1;
+      }
+    },
+    selectImage(index) {
+      if (index === this.selectedImageIndex) return;
+      this.slideName = index > this.selectedImageIndex ? 'slide-next' : 'slide-prev';
+      this.selectedImageIndex = index;
+    },
+    scrollActiveThumb() {
+      const strip = this.$refs.strip;
+      if (!strip) return;
+      const active = strip.querySelector('.thumb.active');
+      if (active) {
+        active.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
       }
     },
     handleKeydown(e) {
@@ -97,6 +126,19 @@ export default {
         this.nextImage();
       } else if (e.key === 'ArrowLeft') {
         this.previousImage();
+      }
+    },
+    onTouchStart(e) {
+      this.touchStartX = e.changedTouches[0].clientX;
+    },
+    onTouchEnd(e) {
+      const dx = e.changedTouches[0].clientX - this.touchStartX;
+      if (Math.abs(dx) > 40) {
+        if (dx < 0) {
+          this.nextImage();
+        } else {
+          this.previousImage();
+        }
       }
     },
   },
@@ -131,6 +173,7 @@ export default {
   justify-content: center;
   padding: 16px;
   min-height: 0;
+  overflow: hidden;
 }
 
 .nav-arrow {
@@ -176,9 +219,41 @@ export default {
 }
 
 .main-photo {
+  position: absolute;
+  inset: 0;
   width: 100%;
   height: 100%;
   object-fit: contain;
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+/* Slide transition between photos (direction-aware) */
+.slide-next-enter-active,
+.slide-next-leave-active,
+.slide-prev-enter-active,
+.slide-prev-leave-active {
+  transition: transform 0.3s ease, opacity 0.3s ease;
+}
+
+.slide-next-enter-from {
+  transform: translateX(100%);
+  opacity: 0;
+}
+
+.slide-next-leave-to {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.slide-prev-enter-from {
+  transform: translateX(-100%);
+  opacity: 0;
+}
+
+.slide-prev-leave-to {
+  transform: translateX(100%);
+  opacity: 0;
 }
 
 .viewer-strip {
@@ -207,5 +282,29 @@ export default {
 
 .thumb.active {
   border-color: #9b20b7;
+}
+
+@media (max-width: 768px) {
+  .photo-viewer {
+    height: 100%;
+    overflow: hidden;
+  }
+
+  .nav-arrow {
+    display: none !important;
+  }
+
+  .viewer-canvas {
+    padding: 10px;
+  }
+
+  .viewer-strip {
+    height: 72px;
+  }
+
+  .thumb img {
+    width: 60px;
+    height: 44px;
+  }
 }
 </style>

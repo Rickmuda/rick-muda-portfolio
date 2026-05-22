@@ -1,13 +1,5 @@
 <template>
   <div id="app">
-    <!-- Mobile Overlay -->
-    <div v-if="isMobile" class="mobile-overlay" @click="playMobileAudio">
-      <div class="mobile-overlay-text">This version still has to be made but I'm a lil lazy.</div>
-      <audio ref="mobileAudio" loop>
-        <source :src="oopsieAudio" type="audio/mpeg">
-      </audio>
-    </div>
-
     <!-- Router View for Error Pages -->
     <router-view v-if="$route.name === 'NotFound'" />
 
@@ -15,12 +7,14 @@
     <template v-else>
       <!-- Background -->
       <div class="background" :class="{ 'dark-mode': darkMode }">
-        <!-- Desktop: always shown -->
-        <Desktop :openApp="openApp" :easterEggApps="easterEggApps" />
+        <!-- Mobile: phone-style launcher. Desktop: OS metaphor. -->
+        <MobileHome v-if="isMobile" :openApp="openApp" :apps="mobileApps" />
+        <Desktop v-else :openApp="openApp" :easterEggApps="easterEggApps" />
       </div>
 
-      <!-- Taskbar: always shown -->
+      <!-- Taskbar: desktop only -->
       <Taskbar
+        v-if="!isMobile"
         :openApp="openApp"
         :commitSummary="commitSummary"
         :commitDescription="commitDescription"
@@ -44,7 +38,8 @@
         :defaultHeight="windowConfig[window].defaultHeight"
         :defaultX="windowConfig[window].defaultX"
         :defaultY="windowConfig[window].defaultY"
-        :zIndex="windowZIndices[window]" 
+        :zIndex="windowZIndices[window]"
+        :isMobile="isMobile"
         @close="closeApp(window)"
         @minimize="minimizeApp(window)"
         @bringToFront="bringWindowToFront(window)"
@@ -66,15 +61,17 @@
 
 <script>
 import Desktop from "./components/Desktop.vue";
+import MobileHome from "./components/MobileHome.vue";
 import Taskbar from "./components/Taskbar.vue";
 import AppWindow from "./components/AppWindow.vue";
 import UnderDevelopment from "./components/UnderDevelopment.vue";
-import { windowConfig } from "./windowConfig";
+import { windowConfig, appList } from "./windowConfig";
 
 export default {
   name: 'App',
   components: {
     Desktop,
+    MobileHome,
     Taskbar,
     AppWindow,
     UnderDevelopment,
@@ -98,12 +95,19 @@ export default {
       showUnderDevelopment: false,
       unfinishedApps: ['threeDPrinting'],
       isMobile: false,
-      oopsieAudio: new URL('@/assets/sounds/oopsie.mp3', import.meta.url).href,
     };
   },
   computed: {
     windowConfig() {
       return windowConfig;
+    },
+    mobileApps() {
+      const eggs = this.easterEggApps.map((name) => ({
+        name,
+        icon: "egg",
+        labelKey: "easterEgg",
+      }));
+      return [...appList, ...eggs];
     },
   },
   methods: {
@@ -153,6 +157,9 @@ export default {
           "onUpdate:currentLanguage": (value) => (this.currentLanguage = value),
         };
       }
+      if (windowName === "minigames") {
+        return { openApp: this.openApp };
+      }
       return windowConfig[windowName]?.props || {};
     },
     handleKeydown(event) {
@@ -179,17 +186,6 @@ export default {
     },
     checkMobile() {
       this.isMobile = window.innerWidth <= 768;
-      if (this.isMobile && this.$refs.mobileAudio) {
-        this.$refs.mobileAudio.play().catch(() => {});
-      } else if (!this.isMobile && this.$refs.mobileAudio) {
-        this.$refs.mobileAudio.pause();
-        this.$refs.mobileAudio.currentTime = 0;
-      }
-    },
-    playMobileAudio() {
-      if (this.$refs.mobileAudio) {
-        this.$refs.mobileAudio.play().catch(() => {});
-      }
     },
     preloadProjectImages() {
       const projectImages = [
@@ -272,30 +268,3 @@ export default {
 };
 </script>
 
-<style scoped>
-.mobile-overlay {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100%;
-  background: rgba(0, 0, 0, 0.85);
-  backdrop-filter: blur(10px);
-  z-index: 99999;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 20px;
-  box-sizing: border-box;
-}
-
-.mobile-overlay-text {
-  color: #fff;
-  font-size: clamp(16px, 5vw, 24px);
-  font-weight: bold;
-  text-align: center;
-  line-height: 1.5;
-  max-width: 90%;
-  margin: 0 auto;
-}
-</style>

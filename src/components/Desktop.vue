@@ -42,11 +42,11 @@
 
 
     <!-- Desktop-only apps (hidden on mobile) -->
-    <div class="desktop-only app-icon" @click="openApp('miniGame')">
+    <div class="desktop-only app-icon" @click="openApp('minigames')">
       <div class="app-icon-image">
-        <font-awesome-icon icon="gamepad" class="app-icon-inner" />
+        <font-awesome-icon icon="folder" class="app-icon-inner" />
       </div>
-      <div class="app-icon-text">{{ $t('miniGame') }}</div>
+      <div class="app-icon-text">{{ $t('minigames') }}</div>
     </div>
 
     <!-- Vinyl Collection -->

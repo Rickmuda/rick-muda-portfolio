@@ -72,6 +72,30 @@
         <p class="tooltip-desc">{{ hoveredSkill.desc }}</p>
       </div>
     </div>
+
+    <!-- Mobile: readable categorized list instead of the SVG graph -->
+    <div class="tree-mobile-list">
+      <section v-for="cat in categoriesWithSkills" :key="cat.id" class="tree-cat">
+        <h3 class="tree-cat-header">
+          <span class="legend-dot" :style="{ background: cat.color }"></span>
+          {{ cat.label }}
+        </h3>
+        <div v-for="skill in cat.skills" :key="skill.id" class="skill-card">
+          <div class="skill-card-top">
+            <span class="skill-card-name">{{ skill.name }}</span>
+            <span class="skill-card-level">
+              <span
+                v-for="n in 5"
+                :key="n"
+                class="level-pip"
+                :class="{ filled: n <= skill.level }"
+              ></span>
+            </span>
+          </div>
+          <p class="skill-card-desc">{{ skill.desc }}</p>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
@@ -142,6 +166,14 @@ export default {
     },
     hoveredSkill() {
       return this.hoveredId ? this.skillIndex[this.hoveredId] : null;
+    },
+    categoriesWithSkills() {
+      return this.categories
+        .map((cat) => ({
+          ...cat,
+          skills: this.skills.filter((s) => s.category === cat.id),
+        }))
+        .filter((cat) => cat.skills.length);
     },
     tooltipStyle() {
       if (!this.hoveredSkill) return {};
@@ -301,5 +333,77 @@ circle.pulse {
   margin: 0;
   font-size: 12px;
   line-height: 1.5;
+}
+
+/* Mobile list view (hidden on desktop) */
+.tree-mobile-list {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .tree-canvas-wrap {
+    display: none;
+  }
+
+  .tree-mobile-list {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    padding: 12px;
+    gap: 18px;
+  }
+
+  .tree-cat {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  .tree-cat-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin: 0;
+    font-size: 15px;
+    padding-bottom: 4px;
+    border-bottom: 1px solid rgba(155, 32, 183, 0.4);
+  }
+
+  .skill-card {
+    background: rgba(20, 8, 30, 0.85);
+    border: 1px solid #4a1d6e;
+    border-radius: 8px;
+    padding: 10px 12px;
+  }
+
+  .skill-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+    margin-bottom: 6px;
+  }
+
+  .skill-card-name {
+    font-size: 14px;
+    font-weight: bold;
+  }
+
+  .skill-card-level {
+    display: flex;
+    gap: 4px;
+    flex-shrink: 0;
+  }
+
+  .skill-card-desc {
+    margin: 0;
+    font-size: 12px;
+    line-height: 1.5;
+    color: rgba(255, 255, 255, 0.85);
+  }
 }
 </style>

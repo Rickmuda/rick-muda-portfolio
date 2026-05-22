@@ -63,7 +63,7 @@
             red: card.color === 'red',
             selected: isSelectedTableauCard(pileIndex, cardIndex)
           }"
-          :style="{ top: `${cardIndex * 24}px` }"
+          :style="{ '--card-index': cardIndex }"
           :draggable="card.faceUp"
           @click.stop="selectTableauCard(pileIndex, cardIndex)"
           @dragstart="card.faceUp && onDragStart($event, 'tableau', pileIndex, cardIndex)"
@@ -462,6 +462,7 @@ export default {
   position: absolute;
   left: 6px;
   right: 6px;
+  top: calc(var(--card-index) * 24px);
   height: 70px;
   background: #f7f7f7;
   color: #111;
@@ -520,6 +521,77 @@ export default {
 
   .tableau-pile {
     min-width: 92px;
+  }
+}
+
+/* Mobile: fit all 7 tableau columns on screen, tap-to-move (no horizontal scroll) */
+@media (max-width: 768px) {
+  .solitaire-window {
+    gap: 6px;
+    padding: 6px;
+    overflow: hidden;
+  }
+
+  .tableau-row {
+    min-height: 0;
+  }
+
+  .solitaire-header h2 {
+    font-size: 15px;
+  }
+
+  .header-actions button {
+    padding: 4px 8px;
+    font-size: 12px;
+  }
+
+  .top-row {
+    gap: 6px;
+  }
+
+  .stock-waste {
+    gap: 4px;
+  }
+
+  .top-card,
+  .waste-card {
+    width: 44px;
+    height: 44px;
+    font-size: 13px;
+    border-radius: 4px;
+  }
+
+  .foundations {
+    gap: 4px;
+  }
+
+  .foundation {
+    min-width: 44px;
+    min-height: 44px;
+    font-size: 14px;
+    border-radius: 4px;
+  }
+
+  .tableau-row {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 4px;
+    overflow-x: visible;
+  }
+
+  .tableau-pile {
+    min-width: 0;
+    min-height: 70px;
+  }
+
+  .card {
+    left: 1px;
+    right: 1px;
+    top: calc(var(--card-index) * 9px);
+    height: 30px;
+    padding: 2px 3px;
+    font-size: 11px;
+    border-radius: 3px;
   }
 }
 </style>

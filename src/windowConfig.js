@@ -8,6 +8,8 @@ import OldVideo from "./components/windows/OldVideo.vue";
 import VinylCollection from "./components/windows/VinylCollection.vue";
 import SkillTree from "./components/windows/SkillTree.vue";
 import Downloads from "./components/windows/Downloads.vue";
+import MinigamesFolder from "./components/windows/MinigamesFolder.vue";
+import { minigames } from "./minigames";
 
 export const windowConfig = {
   aboutMe: {
@@ -44,7 +46,7 @@ export const windowConfig = {
   },
   miniGame: {
     component: MiniGame,
-    title: "miniGame",
+    title: "solitaire",
     defaultWidth: 1000,
     defaultHeight: 700,
     defaultX: 600,
@@ -82,4 +84,34 @@ export const windowConfig = {
     defaultX: 260,
     defaultY: 50,
   },
+  settings: {
+    component: Settings,
+    title: "settings",
+    defaultWidth: 700,
+    defaultHeight: 600,
+    defaultX: 300,
+    defaultY: 150,
+  },
+  minigames: {
+    component: MinigamesFolder,
+    title: "minigames",
+    defaultWidth: 720,
+    defaultHeight: 520,
+    defaultX: 320,
+    defaultY: 90,
+  },
 };
+
+// Ordered app list used by the mobile launcher (and a single source of truth
+// for icon + i18n label per app).
+export const appList = [
+  { name: "aboutMe",         icon: "user",         labelKey: "aboutMe" },
+  { name: "projects",        icon: "folder",       labelKey: "projects" },
+  { name: "artGallery",      icon: "palette",      labelKey: "artGallery" },
+  { name: "contact",         icon: "envelope",     labelKey: "contact" },
+  { name: "downloads",       icon: "download",     labelKey: "downloads" },
+  { name: "minigames",       icon: "folder",       labelKey: "minigames", folder: true, items: minigames },
+  { name: "vinylCollection", icon: "compact-disc", labelKey: "vinylCollection" },
+  { name: "skillTree",       icon: "sitemap",      labelKey: "skillTree" },
+  { name: "settings",        icon: "cog",          labelKey: "settings" },
+];

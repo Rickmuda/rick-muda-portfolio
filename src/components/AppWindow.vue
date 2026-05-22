@@ -1,25 +1,28 @@
 <template>
   <div
     class="draggable-window"
-    :style="{
-      zIndex: zIndex,
-      left: windowState.x + 'px',
-      top: windowState.y + 'px',
-      width: windowState.w + 'px',
-      height: windowState.h + 'px',
-    }"
+    :class="{ mobile: isMobile }"
+    :style="isMobile
+      ? { zIndex: zIndex }
+      : {
+          zIndex: zIndex,
+          left: windowState.x + 'px',
+          top: windowState.y + 'px',
+          width: windowState.w + 'px',
+          height: windowState.h + 'px',
+        }"
     @mousedown="bringToFront"
   >
     <div class="app-window">
       <div class="top-bar" @mousedown="startDrag">
         <span class="window-title">{{ title }}</span>
         <div class="window-controls">
-          <button class="window-control minimize" @click.stop="minimizeWindow" title="Minimize" aria-label="Minimize">
+          <button v-if="!isMobile" class="window-control minimize" @click.stop="minimizeWindow" title="Minimize" aria-label="Minimize">
             <svg class="control-icon" viewBox="0 0 10 10" aria-hidden="true">
               <line x1="1" y1="5" x2="9" y2="5" stroke="currentColor" stroke-width="1" stroke-linecap="square" />
             </svg>
           </button>
-          <button class="window-control maximize" @click.stop="toggleMaximize" title="Maximize / Restore" aria-label="Maximize or restore">
+          <button v-if="!isMobile" class="window-control maximize" @click.stop="toggleMaximize" title="Maximize / Restore" aria-label="Maximize or restore">
             <svg class="control-icon" viewBox="0 0 10 10" aria-hidden="true">
               <rect x="1" y="1" width="8" height="8" fill="none" stroke="currentColor" stroke-width="1" />
             </svg>
@@ -66,6 +69,10 @@ export default {
       type: Number,
       required: true,
     },
+    isMobile: {
+      type: Boolean,
+      default: false,
+    },
   },
   components: {},
   data() {
@@ -93,6 +100,8 @@ export default {
       this.$emit("minimize");
     },
     startDrag(e) {
+      // Windows are fullscreen and fixed on mobile - no dragging.
+      if (this.isMobile) return;
       // Don't start drag if clicking on window controls
       if (e.target.closest('.window-controls')) {
         return;
@@ -255,9 +264,54 @@ export default {
   padding: 0;
 }
 
+.draggable-window.mobile {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100vw;
+  height: 100vh;
+  height: 100dvh;
+  border-radius: 0;
+}
+
+.draggable-window.mobile .app-window {
+  border-radius: 0;
+  border: none;
+  height: 100%;
+}
+
+.draggable-window.mobile .top-bar {
+  cursor: default;
+}
+
 @media (max-width: 768px) {
   .window-control {
     width: 48px;
+  }
+
+  /* Fullscreen, square, edge-to-edge windows on mobile (width-based so it
+     applies regardless of the isMobile prop). */
+  .draggable-window {
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    right: auto !important;
+    bottom: auto !important;
+    width: 100vw !important;
+    height: 100vh !important;
+    height: 100dvh !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+  }
+
+  .app-window {
+    border-radius: 0 !important;
+    border: none !important;
+    height: 100% !important;
+  }
+
+  .top-bar {
+    border-radius: 0 !important;
   }
 }
 </style>

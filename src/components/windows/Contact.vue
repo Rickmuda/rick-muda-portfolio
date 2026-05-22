@@ -155,4 +155,63 @@ export default {
   font-size: 13px;
   margin-left: auto;
 }
+
+@media (max-width: 768px) {
+  .mail-client {
+    overflow-x: hidden;
+  }
+
+  .mail-form {
+    max-width: 100%;
+    width: 100%;
+    padding: 16px;
+    gap: 16px;
+    box-sizing: border-box;
+  }
+
+  .field-row {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+  }
+
+  .field-row span,
+  .field-column span {
+    min-width: 0;
+    padding-top: 0;
+    font-size: 14px;
+  }
+
+  .field-row input,
+  .field-column textarea {
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    padding: 12px;
+    font-size: 15px;
+  }
+
+  .field-column textarea {
+    min-height: 90px;
+  }
+
+  .mail-actions {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 10px;
+    padding-top: 16px;
+  }
+
+  .mail-actions button {
+    width: 100%;
+    padding: 14px;
+    font-size: 15px;
+  }
+
+  .mail-status {
+    margin-left: 0;
+    text-align: center;
+  }
+}
 </style>

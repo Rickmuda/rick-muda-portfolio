@@ -29,6 +29,17 @@ import {
   faSitemap,
   faDownload,
   faLock,
+  faSignal,
+  faWifi,
+  faBolt,
+  faBatteryFull,
+  faBatteryThreeQuarters,
+  faBatteryHalf,
+  faBatteryQuarter,
+  faBatteryEmpty,
+  faSkull,
+  faDove,
+  faClone,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faTwitter,
@@ -61,7 +72,18 @@ library.add(
   faCompactDisc,
   faSitemap,
   faDownload,
-  faLock
+  faLock,
+  faSignal,
+  faWifi,
+  faBolt,
+  faBatteryFull,
+  faBatteryThreeQuarters,
+  faBatteryHalf,
+  faBatteryQuarter,
+  faBatteryEmpty,
+  faSkull,
+  faDove,
+  faClone
 );
 library.add(faTwitter, faInstagram, faLinkedin, faGithub, faYoutube, faTiktok, faSpotify, faSteam, faCodepen);
 

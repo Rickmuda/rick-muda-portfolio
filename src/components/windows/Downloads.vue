@@ -44,8 +44,20 @@
 
             <!-- Password-protected: reveal field on demand -->
             <template v-else-if="item.protected">
+              <!-- Not for mobile: greyed-out, disabled unlock button -->
               <button
-                v-if="!revealedIds[item.id]"
+                v-if="isMobile && item.mobileUnavailable"
+                class="card-btn disabled"
+                type="button"
+                disabled
+                :title="$t('desktopOnly')"
+              >
+                <font-awesome-icon icon="lock" />
+                {{ $t('unlock') }}
+              </button>
+
+              <button
+                v-else-if="!revealedIds[item.id]"
                 class="card-btn"
                 type="button"
                 @click="reveal(item)"
@@ -127,6 +139,9 @@ export default {
           // Flip to true once the file is on the server (protected-files/) and the
           // password is set. Until then the card shows "Coming soon".
           available: true,
+          // Not meant for mobile: the unlock button is greyed out/disabled on
+          // phones (<=768px). Set false for downloads that work fine on mobile.
+          mobileUnavailable: true,
           // For unprotected downloads instead use: file: { url, name }
         },
       ],
@@ -134,6 +149,7 @@ export default {
       errors: {},
       loadingIds: {},
       revealedIds: {},
+      isMobile: false,
     };
   },
   created() {
@@ -146,6 +162,17 @@ export default {
       this.loadingIds[item.id] = false;
       this.revealedIds[item.id] = false;
     });
+  },
+  mounted() {
+    this.mq = window.matchMedia("(max-width: 768px)");
+    this.isMobile = this.mq.matches;
+    this.onMqChange = (e) => {
+      this.isMobile = e.matches;
+    };
+    this.mq.addEventListener("change", this.onMqChange);
+  },
+  beforeUnmount() {
+    if (this.mq) this.mq.removeEventListener("change", this.onMqChange);
   },
   methods: {
     isComingSoon(item) {

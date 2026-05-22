@@ -58,13 +58,59 @@
       </div>
 
       <div class="project-links">
-        <a 
-          :href="selectedProject.disabled ? null : selectedProject.link" 
-          :target="selectedProject.disabled ? null : '_blank'" 
-          class="project-link" 
+        <a
+          :href="selectedProject.disabled ? null : selectedProject.link"
+          :target="selectedProject.disabled ? null : '_blank'"
+          class="project-link"
           :class="{ disabled: selectedProject.disabled }"
         >{{ $t('goToProject') }}</a>
       </div>
+    </div>
+  </div>
+
+  <!-- Mobile: master-detail (desktop uses the explorer above) -->
+  <div class="projects-mobile">
+    <!-- Main list page -->
+    <div v-if="!pmSelected" class="pm-list">
+      <button
+        v-for="project in sortedProjects"
+        :key="project.title"
+        class="pm-row"
+        @click="pmOpen(project)"
+      >
+        <img :src="project.images[0]" :alt="project.title" class="pm-row-thumb" />
+        <span class="pm-row-info">
+          <span class="pm-row-title">{{ project.title }}</span>
+          <span class="pm-row-meta">{{ project.type }} - {{ project.status || 'Published' }}</span>
+        </span>
+      </button>
+    </div>
+
+    <!-- Detail page -->
+    <div v-else class="pm-detail">
+      <button class="pm-back" @click="pmBack">&#8592; Back</button>
+      <div class="pm-carousel">
+        <img :src="pmSelected.images[pmDetailIndex]" :alt="pmSelected.title" class="pm-image" />
+        <div class="pm-dots" v-if="pmSelected.images.length > 1">
+          <button
+            v-for="(_, idx) in pmSelected.images"
+            :key="idx"
+            class="pm-dot"
+            :class="{ active: pmDetailIndex === idx }"
+            @click="setPmDetailIndex(idx)"
+            :aria-label="`Image ${idx + 1}`"
+          ></button>
+        </div>
+      </div>
+      <h3 class="pm-title">{{ pmSelected.title }}</h3>
+      <div class="pm-meta">{{ pmSelected.type }} - {{ pmSelected.status || 'Published' }}</div>
+      <p class="pm-desc">{{ pmSelected.description }}</p>
+      <a
+        :href="pmSelected.disabled ? null : pmSelected.link"
+        :target="pmSelected.disabled ? null : '_blank'"
+        class="pm-link"
+        :class="{ disabled: pmSelected.disabled }"
+      >{{ $t('goToProject') }}</a>
     </div>
   </div>
 </template>
@@ -79,6 +125,8 @@ export default {
       carouselInterval: null,
       sortBy: 'date',
       sortDirection: 'desc',
+      pmSelected: null,
+      pmDetailIndex: 0,
     };
   },
   computed: {
@@ -170,6 +218,16 @@ export default {
     restartCarousel() {
       clearInterval(this.carouselInterval);
       this.startCarousel();
+    },
+    pmOpen(project) {
+      this.pmSelected = project;
+      this.pmDetailIndex = 0;
+    },
+    pmBack() {
+      this.pmSelected = null;
+    },
+    setPmDetailIndex(idx) {
+      this.pmDetailIndex = idx;
     },
     initializeProjects() {
       this.projects = [
@@ -587,6 +645,187 @@ export default {
 
   .preview-pane h3 {
     font-size: 18px;
+  }
+}
+
+/* Mobile swipeable project cards (hidden on desktop) */
+.projects-mobile {
+  display: none;
+}
+
+@media (max-width: 768px) {
+  .explorer-window {
+    display: none;
+  }
+
+  .projects-mobile {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    background: #1a1a24;
+    border: 2px solid #000;
+  }
+
+  /* Main list page */
+  .pm-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .pm-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 10px 14px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid #3a3a48;
+    text-align: left;
+    cursor: pointer;
+    font-family: inherit;
+    color: #d0c8db;
+  }
+
+  .pm-row:active {
+    background: #2a2a3a;
+  }
+
+  .pm-row-thumb {
+    width: 64px;
+    height: 48px;
+    object-fit: cover;
+    border-radius: 4px;
+    border: 1px solid #4f115d;
+    background: #0a0a0f;
+    flex-shrink: 0;
+  }
+
+  .pm-row-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .pm-row-title {
+    font-size: 15px;
+    font-weight: 700;
+    color: #fff;
+  }
+
+  .pm-row-meta {
+    font-size: 12px;
+    color: #b98dc7;
+    font-weight: 600;
+  }
+
+  /* Detail page */
+  .pm-detail {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    overscroll-behavior: none;
+    -webkit-overflow-scrolling: touch;
+    display: flex;
+    flex-direction: column;
+    padding: 14px;
+  }
+
+  .pm-back {
+    align-self: flex-start;
+    background: #2a2a35;
+    border: 1px solid #4f115d;
+    color: #fff;
+    border-radius: 6px;
+    padding: 8px 14px;
+    font-family: inherit;
+    font-size: 14px;
+    font-weight: 600;
+    cursor: pointer;
+    margin-bottom: 14px;
+  }
+
+  .pm-carousel {
+    position: relative;
+    width: 100%;
+    flex-shrink: 0;
+  }
+
+  .pm-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    background: #0a0a0f;
+    border: 2px solid #4f115d;
+    border-radius: 6px;
+  }
+
+  .pm-dots {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+    padding: 10px 0 0;
+  }
+
+  .pm-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    border: none;
+    background: rgba(255, 255, 255, 0.4);
+    padding: 0;
+    cursor: pointer;
+  }
+
+  .pm-dot.active {
+    background: #fff;
+  }
+
+  .pm-title {
+    font-size: 20px;
+    font-weight: 700;
+    color: #fff;
+    margin: 14px 0 4px;
+  }
+
+  .pm-meta {
+    color: #b98dc7;
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 10px;
+  }
+
+  .pm-desc {
+    color: #c0b8cc;
+    font-size: 14px;
+    line-height: 1.6;
+    margin: 0 0 16px;
+  }
+
+  .pm-link {
+    display: block;
+    text-align: center;
+    padding: 14px;
+    border-radius: 8px;
+    color: #fff;
+    text-decoration: none;
+    background: #9b20b7;
+    border: 1px solid #7a1897;
+    font-size: 15px;
+    font-weight: 600;
+    margin-top: auto;
+    flex-shrink: 0;
+  }
+
+  .pm-link.disabled {
+    opacity: 0.5;
+    pointer-events: none;
   }
 }
 </style>

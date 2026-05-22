@@ -1,70 +1,36 @@
 /* Mobile-specific styles */
 @media (max-width: 768px) {
-  /* Mobile Login Screen Styles */
-  .slide-container {
-    width: 300px;
-    position: absolute;
-    top: calc(40% + 180px);
-    left: 50%;
-    transform: translate(-50%, -50%);
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    gap: 15px;
-  }
-
-  .slide-track {
+  /* Lock the document so fullscreen windows stay put (no rubber-band / overscroll) */
+  html, body {
+    height: 100dvh;
+    min-height: 0;
     width: 100%;
-    height: 60px;
-    background: linear-gradient(145deg, #9b20b7, #7a1793);
-    border: 3px solid #8404a1;
-    border-radius: 30px;
-    position: relative;
-    cursor: pointer;
     overflow: hidden;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(155, 32, 183, 0.3);
+    overscroll-behavior: none;
+    position: fixed;
+    inset: 0;
   }
 
-  .slide-track:active {
-    transform: scale(0.98);
-    box-shadow: 0 2px 8px rgba(155, 32, 183, 0.4);
+  #app {
+    height: 100dvh;
   }
 
-  .slide-bar {
-    height: 100%;
-    background: linear-gradient(90deg, #8404a1, #b824d9, #9b20b7);
-    border-radius: 27px;
-    transition: width 0.1s ease;
-    position: absolute;
-    top: 0;
-    left: 0;
-    box-shadow: inset 0 2px 4px rgba(255, 255, 255, 0.2);
+  /* Hide the chunky styled scrollbars on mobile (touch scrolling still works).
+     Prevents the purple scrollbar thumb showing as a strip inside windows. */
+  * {
+    scrollbar-width: none !important;
+    scrollbar-color: transparent transparent !important;
+    -ms-overflow-style: none !important;
   }
 
-  .slide-handle {
-    width: 50px;
-    height: 50px;
-    background: linear-gradient(145deg, #ffffff, #f0f0f0);
-    border: 3px solid #8404a1;
-    border-radius: 50%;
-    position: absolute;
-    top: 50%;
-    transform: translate(-50%, -50%);
-    transition: left 0.1s ease;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-    z-index: 2;
+  *::-webkit-scrollbar {
+    width: 0 !important;
+    height: 0 !important;
+    display: none !important;
   }
 
-  .slide-handle::before {
-    content: '>';
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    color: #8404a1;
-    font-size: 18px;
-    font-weight: bold;
+  *::-webkit-resizer {
+    display: none !important;
   }
 
   /* Hide Taskbar on Mobile */
@@ -77,354 +43,25 @@
     display: none !important;
   }
 
-  /* Mobile Desktop Icons - FULL SCREEN CONTAINER */
-  .desktop {
-    position: fixed; /* Take up entire screen */
-    top: 0;
-    left: 0;
-    width: 100vw; /* Full viewport width */
-    height: 100vh; /* Full viewport height */
-    display: grid;
-    grid-template-columns: repeat(2, 1fr); /* Exactly 2 columns */
-    grid-template-rows: repeat(3, 1fr); /* 4 rows of equal height */
-    gap: 20px; /* Adjusted gap for better spacing */
-    justify-content: center; /* Center the grid horizontally */
-    align-content: center; /* Center the grid vertically */
-    justify-items: center; /* Center items within grid cells */
-    align-items: center; /* Center items vertically within cells */
-    padding: 0; /* Remove padding to use full screen */
-    z-index: 1; /* Ensure it's above background but below windows */
-  }
-
-  /* Create a container to constrain and center the grid */
-  .desktop::before {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    width: 80%; /* Constrain width */
-    height: 80%; /* Constrain height */
-    z-index: -1;
-  }
-
-  /* Position specific mobile apps in 2x4 grid */
-  .desktop .app-icon:nth-child(1) { grid-column: 1; grid-row: 1; } /* About Me */
-  .desktop .app-icon:nth-child(2) { grid-column: 2; grid-row: 1; } /* Projects */
-  .desktop .app-icon:nth-child(3) { grid-column: 1; grid-row: 2; } /* Art Gallery */
-  .desktop .app-icon:nth-child(4) { grid-column: 2; grid-row: 2; } /* Contact (replaced Certificates) */
-  .desktop .app-icon:nth-child(5) { grid-column: 1; grid-row: 3; } /* Socials */
-  .desktop .app-icon:nth-child(6) { grid-column: 2; grid-row: 3; } /* Settings */
-
-  .app-icon {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 5px;
-    width: 100%;
-    max-width: 120px; /* Increased from 100px to accommodate text better */
-  }
-
-  .app-icon-image {
-    width: 70px; /* Good size for touch */
-    height: 70px;
-    font-size: 30px;
-    border-radius: 15px;
-    transition: transform 0.2s ease;
-    background-color: #9B20B7;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-  }
-
-  .app-icon-image:active {
-    transform: scale(0.95);
-  }
-
-  .app-icon-inner {
-    font-size: 28px;
-    color: white;
-  }
-
-  .app-icon-text {
-    font-size: 14px; /* Slightly smaller font size for better fit */
-    margin-top: 8px;
-    text-align: center;
-    color: white;
-    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-    font-weight: bold;
-    width: 100%; /* Use full width of parent container */
-    max-width: none; /* Remove max-width constraint */
-    word-wrap: break-word; /* Break words if needed */
-    line-height: 1.2;
-    padding: 0 5px; /* Add small horizontal padding */
-    overflow: visible; /* Ensure text isn't cut off */
-    hyphens: auto; /* Enable hyphenation for very long words */
-  }
-
-  /* Mobile App Windows - Smaller, centered, and non-draggable */
-  .draggable-window {
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
-    transform: none !important;
-    width: 100vw !important;
-    height: 100vh !important;
-    max-width: none !important;
-    max-height: none !important;
-    display: flex !important;
-    flex-direction: column !important;
-    overflow: hidden !important;
-  }
-
-  /* Completely disable draggable window for mobile */
-  .vue3-draggable-resizable {
-    position: static !important;
-    width: 100% !important;
-    height: 100% !important;
-    transform: none !important;
-    overflow: hidden !important;
-  }
-
-  .app-window {
-    border-radius: 15px; /* Keep rounded corners */
-    border: 3px solid black;
-    height: 70% !important; /* Adjust height for mobile */
-    width: 90% !important; /* Adjust width for mobile */
-    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4); /* Add shadow for depth */
-    overflow: auto !important;
-    display: flex !important;
-    flex-direction: column !important;
-    position: absolute !important; /* Change from relative to absolute */
-    top: 50% !important; /* Position at 50% from the top */
-    left: 50% !important; /* Position at 50% from the left */
-    transform: translate(-50%, -50%) !important; /* Center the element */
-  }
-
-  .top-bar {
-    height: 50px; /* Slightly smaller top bar */
-    border-radius: 12px 12px 0 0; /* Rounded top corners only */
-    padding: 0 15px;
-    background: rgba(217, 217, 217, 1);
-    border-bottom: 3px solid #000;
-  }
-
-  .window-title {
-    font-size: 16px;
-    font-weight: bold;
-    color: white;
-  }
-
-  .close-button {
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 0, 0, 1);
-    border-radius: 5px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-  }
-
-  .close-button span {
-    font-size: 16px;
-    color: white;
-    font-weight: bold;
-    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-  }
-
+  /* Fullscreen app content on mobile (windows are sized by AppWindow.vue) */
   .app-content {
     flex: 1 !important;
-    padding: 10px;
+    padding: 0;
+    display: flex !important;
+    flex-direction: column !important;
     overflow-y: auto !important;
+    overscroll-behavior: none !important;
     -webkit-overflow-scrolling: touch !important;
     position: relative !important;
     z-index: 1 !important;
     color: white;
   }
 
-  /* Mobile About Me - Optimized layout with smaller content */
-  .about-me-container {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: flex-start;
-    height: 100%;
-    gap: 8px; /* Reduced gap between elements */
-    padding: 4px; /* Smaller padding */
-    overflow-y: auto;
-  }
-
-  .speaker-images {
-    display: flex;
-    justify-content: center;
-    margin-bottom: 4px; /* Reduced margin */
-  }
-
-  .speaker-image {
-    width: 200px; /* Even smaller image for mobile */
-    height: auto;
-    object-fit: cover;
-    border: 2px solid #9b20b7;
-    border-radius: 6px; /* Smaller border radius */
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.3);
-  }
-
-  .dialogue-box {
-    width: 100%;
-    padding: 6px; /* Smaller padding */
-    font-size: 10px; /* Smaller font size */
-    line-height: 1.2; /* Tighter line height */
-    background-color: rgba(79, 17, 93, 0.8);
-    color: white;
-    border-radius: 6px; /* Smaller border radius */
-    text-align: center;
-    border: 1px solid black;
-    margin: 4px 0; /* Smaller margin */
-    min-height: 48px; /* Smaller minimum height */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .dialogue-box p {
-    margin: 0;
-    word-wrap: break-word;
-  }
-
-  .choices {
-    width: 100%;
-    display: grid;
-    grid-template-columns: 1fr;
-    gap: 4px; /* Smaller gap between buttons */
-    margin-top: 8px; /* Smaller top margin */
-  }
-
-  .choice-button {
-    padding: 6px 10px; /* Smaller padding */
-    font-size: 9px; /* Smaller font size */
-    border-radius: 5px; /* Smaller border radius */
-    background-color: rgb(108, 22, 128);
-    color: white;
-    border: 1px solid black;
-    cursor: pointer;
-    transition: background-color 0.3s ease, transform 0.2s ease;
-    min-height: 28px; /* Smaller minimum height */
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    line-height: 1.1; /* Tighter line height */
-  }
-
-  .choice-button:hover {
-    background-color: rgb(72, 14, 85);
-    transform: scale(1.02);
-  }
-
-  /* Mobile-specific content adjustments */
-  .projects-window {
-    flex-direction: column;
-  }
-
-  .projects-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    padding: 10px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch; /* Enable momentum scrolling on iOS */
-    height: 100%;
-    width: 100%;
-  }
-
-  /* Ensure art gallery is scrollable on mobile */
-  .gallery-grid {
-    grid-template-columns: repeat(2, 1fr);
-    gap: 10px;
-    padding: 10px;
-    overflow-y: auto;
-    -webkit-overflow-scrolling: touch; /* Enable momentum scrolling on iOS */
-    height: 100%;
-    max-height: calc(100% - 20px); /* Account for padding */
-  }
-
-  .project-details {
-    width: 100%;
-    border-left: none;
-    border-top: 2px solid #000;
-    padding: 10px;
-    max-height: 200px;
-    overflow-y: auto;
-  }
-
-  .socials-icons {
-    display: grid;
-    grid-template-columns: repeat(3, 1fr); /* 3 columns */
-    grid-template-rows: repeat(3, 1fr); /* 3 rows for a 3x3 grid */
-    gap: 15px;
-    width: 90%; /* Slightly wider for mobile to accommodate 3 columns */
-    height: 80%; /* Give it a defined height */
-    margin: 0 auto; /* Center the grid horizontally */
-    justify-content: center; /* Center grid cells horizontally */
-    align-content: center; /* Center grid cells vertically */
-    align-items: center; /* Center the icons vertically within cells */
-    justify-items: center; /* Center the icons horizontally within cells */
-    padding: 10px; /* Add some padding around the grid */
-    height: 100%; /* Take full height of parent container */
-  }
-
-  .social-icon {
-    font-size: 50px; /* Smaller icon size to fit 3 columns on mobile */
-    padding: 8px;
-    border-radius: 8px;
-    background: rgba(155, 32, 183, 0.2);
-    display: flex; /* Use flexbox for icon centering */
-    justify-content: center; /* Center icon horizontally */
-    align-items: center; /* Center icon vertically */
-    width: 100%; /* Take full width of grid cell */
-    height: 100%; /* Take full height of grid cell */
-    text-align: center;
-    overflow: hidden; /* Hide overflow for icons */
-  }
-
-  /* Make sure the socials window takes full height */
-  .socials-window {
-    height: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  .settings {
-    gap: 20px;
-    padding: 15px;
-  }
-
-  .language-selection {
-    flex-direction: column;
-    gap: 10px;
-  }
-
-  .language-selection select {
-    width: 100%;
-    padding: 10px;
-    font-size: 14px;
-  }
-
-  .certificate-grid {
-    grid-template-columns: 1fr;
-    gap: 15px;
-    padding: 10px;
-  }
-
-  .certificate-item {
-    padding: 15px;
-  }
-
-  .certificate-image {
-    height: 120px;
+  /* Force each window's root to fill the content area exactly (avoids the
+     flex-item percentage-height quirk that let content overflow + scroll). */
+  .app-content > * {
+    flex: 1 1 0% !important;
+    min-height: 0 !important;
   }
 
   /* Remove Start Menu on Mobile */
@@ -443,193 +80,6 @@
   input, textarea {
     -webkit-user-select: text;
     user-select: text;
-  }
-
-  /* Image Modal for mobile */
-  .image-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw; /* Use viewport width */
-    height: 100vh; /* Use viewport height */
-    background-color: rgba(0, 0, 0, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999 !important; /* Even higher z-index to ensure it appears above everything */
-    margin: 0;
-    padding: 0;
-    transform: translateZ(0); /* Force hardware acceleration */
-    overflow: hidden; /* Prevent scrolling */
-    position: fixed !important; /* Double ensure fixed positioning */
-    inset: 0 !important; /* Cover all edges */
-  }
-
-  .modal-image {
-    max-width: 90%;
-    max-height: 90%;
-    border-radius: 10px;
-  }
-
-  .arrow {
-    position: absolute;
-    top: 50%;
-    transform: translateY(-50%);
-    background-color: rgba(255, 255, 255, 0.8);
-    border: 2px solid #000;
-    color: black;
-    width: 40px;
-    height: 40px;
-    font-size: 20px;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 1501;
-  }
-
-  .left-arrow {
-    left: 10px;
-  }
-
-  .right-arrow {
-    right: 10px;
-  }
-
-  .close-modal {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 0, 0, 1);
-    border-radius: 5px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    z-index: 1501;
-  }
-
-  .close-modal span {
-    color: black;
-    font-size: 24px;
-    font-weight: bold;
-  }
-
-  /* Projects Modal for mobile */
-  .projects-modal {
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100vw; /* Use viewport width */
-    height: 100vh; /* Use viewport height */
-    background-color: rgba(0, 0, 0, 0.8);
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    z-index: 9999 !important; /* Even higher z-index to ensure it appears above everything */
-    margin: 0;
-    padding: 0;
-    transform: translateZ(0); /* Force hardware acceleration */
-    overflow: hidden; /* Prevent scrolling */
-    position: fixed !important; /* Double ensure fixed positioning */
-    inset: 0 !important; /* Cover all edges */
-  }
-
-  .project-modal-content {
-    width: 100vw; /* Use viewport width */
-    height: 100vh; /* Use viewport height */
-    max-width: 100vw; /* No maximum constraint */
-    max-height: 100vh; /* No maximum constraint */
-    background-color:rgba(107, 0, 131, 0.50);
-    padding: 20px;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    text-align: center;
-    overflow-y: auto;
-    margin: 0;
-    position: fixed !important; /* Use fixed positioning */
-    top: 0 !important;
-    left: 0 !important;
-    right: 0 !important;
-    bottom: 0 !important;
-    border: none; /* Remove any borders that might affect positioning */
-    box-sizing: border-box; /* Include padding in the width/height calculations */
-  }
-
-  .project-modal-image {
-    max-width: 100%;
-    max-height: 200px;
-    object-fit: contain;
-    margin-bottom: 15px;
-    border: 2px solid #000000;
-    border-radius: 5px;
-  }
-
-  .project-modal-title {
-    font-size: 18px;
-    margin-bottom: 10px;
-    color: white;
-    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-  }
-
-  .project-modal-description {
-    font-size: 14px;
-    margin-bottom: 15px;
-    color: white;
-    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-  }
-
-  .project-modal-link {
-    padding: 10px 20px;
-    background-color: #9b20b7;
-    color: white;
-    text-decoration: none;
-    border-radius: 5px;
-    transition: background-color 0.3s;
-    border: 1px solid black;
-    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-  }
-
-  .project-modal-link:hover {
-    background-color: #7a1793;
-  }
-
-  .project-modal-close {
-    position: absolute;
-    top: 10px;
-    right: 10px;
-    width: 40px;
-    height: 40px;
-    background: rgba(255, 0, 0, 1);
-    border-radius: 5px;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    cursor: pointer;
-    z-index: 1501;
-    border: none;
-
-  }
-
-  .project-modal-close span {
-    color: white;
-    font-size: 24px;
-    font-weight: bold;
-    font-family: 'PortfolioFont';
-    font-size: 16px;
-    color: white;
-    font-weight: bold;
-    text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
-  }
-
-  /* Override any hidden overflow that might be preventing scrolling */
-  .projects-window, .art-gallery {
-    overflow-y: visible;
-    height: 100%;
   }
 }
 

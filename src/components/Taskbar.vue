@@ -39,10 +39,10 @@
       </div>
 
 
-      <!-- Mini Game -->
-      <div class="taskbar-icon" :class="iconState('miniGame')" @click="openApp('miniGame')">
-        <font-awesome-icon icon="gamepad" />
-        <span v-if="openWindows.includes('miniGame')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['miniGame'] }"></span>
+      <!-- Minigames folder -->
+      <div class="taskbar-icon" :class="iconState('minigames')" @click="openApp('minigames')">
+        <font-awesome-icon icon="folder" />
+        <span v-if="openWindows.includes('minigames')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['minigames'] }"></span>
       </div>
 
       <!-- Vinyl Collection -->
