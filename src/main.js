@@ -40,6 +40,7 @@ import {
   faSkull,
   faDove,
   faClone,
+  faTerminal,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faTwitter,
@@ -83,7 +84,8 @@ library.add(
   faBatteryEmpty,
   faSkull,
   faDove,
-  faClone
+  faClone,
+  faTerminal
 );
 library.add(faTwitter, faInstagram, faLinkedin, faGithub, faYoutube, faTiktok, faSpotify, faSteam, faCodepen);
 

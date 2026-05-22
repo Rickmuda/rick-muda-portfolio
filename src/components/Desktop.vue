@@ -65,6 +65,14 @@
       <div class="app-icon-text">{{ $t('skillTree') }}</div>
     </div>
 
+    <!-- MudaDigitaal terminal -->
+    <div class="app-icon" @click="openApp('mudaDigitaal')">
+      <div class="app-icon-image">
+        <font-awesome-icon icon="terminal" class="app-icon-inner" />
+      </div>
+      <div class="app-icon-text">{{ $t('mudaDigitaal') }}</div>
+    </div>
+
 
     <!-- Easter egg apps -->
     <div class="app-icon" v-for="app in easterEggApps" :key="app" @click="openApp(app)">

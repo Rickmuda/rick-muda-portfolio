@@ -10,6 +10,7 @@ import SkillTree from "./components/windows/SkillTree.vue";
 import Downloads from "./components/windows/Downloads.vue";
 import MinigamesFolder from "./components/windows/MinigamesFolder.vue";
 import FlappyRick from "./components/windows/FlappyRick.vue";
+import MudaTerminal from "./components/windows/MudaTerminal.vue";
 import { minigames } from "./minigames";
 
 export const windowConfig = {
@@ -109,6 +110,14 @@ export const windowConfig = {
     defaultX: 360,
     defaultY: 40,
   },
+  mudaDigitaal: {
+    component: MudaTerminal,
+    title: "mudaDigitaal",
+    defaultWidth: 760,
+    defaultHeight: 520,
+    defaultX: 240,
+    defaultY: 80,
+  },
 };
 
 // Ordered app list used by the mobile launcher (and a single source of truth
@@ -122,5 +131,6 @@ export const appList = [
   { name: "minigames",       icon: "folder",       labelKey: "minigames", folder: true, items: minigames },
   { name: "vinylCollection", icon: "compact-disc", labelKey: "vinylCollection" },
   { name: "skillTree",       icon: "sitemap",      labelKey: "skillTree" },
+  { name: "mudaDigitaal",    icon: "terminal",     labelKey: "mudaDigitaal" },
   { name: "settings",        icon: "cog",          labelKey: "settings" },
 ];

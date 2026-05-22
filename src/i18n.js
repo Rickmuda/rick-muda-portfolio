@@ -26,6 +26,16 @@ const messages = {
     vinylDisclaimer: "This is just a showcase of my real vinyl collection, no music is actually played.",
     skillTree: "Skill Tree",
     downloads: "Downloads",
+    mudaDigitaal: "MudaDigitaal",
+
+    // MudaDigitaal terminal
+    mudaWelcome: "MudaDigitaal terminal v1.0\nType 'help' to get started.",
+    mudaHelp: "Available commands:\n  help      - show this list\n  about     - what MudaDigitaal does\n  services  - what we offer\n  contact   - get in touch\n  open      - open mudadigitaal.nl\n  clear     - clear the screen",
+    mudaAbout: "MudaDigitaal - UX-First Webdesign Bureau.\nWe design and build fast, mobile-ready websites.\nYou see the design before you pay. Fixed pricing, ~3-6 weeks.",
+    mudaServices: "What we offer:\n  - UX Design\n  - Conversion optimization\n  - Performance optimization\n  - Redesign\n  - Maintenance & support",
+    mudaContactLine: "Email: {email}",
+    mudaOpening: "Opening mudadigitaal.nl ...",
+    mudaUnknown: "command not found: {cmd} - type 'help'",
 
     // Downloads
     download: "Download",
@@ -199,6 +209,16 @@ const messages = {
     vinylDisclaimer: "Dit is enkel een showcase van mijn echte platencollectie, er wordt geen muziek afgespeeld.",
     skillTree: "Vaardighedenboom",
     downloads: "Downloads",
+    mudaDigitaal: "MudaDigitaal",
+
+    // MudaDigitaal terminal
+    mudaWelcome: "MudaDigitaal terminal v1.0\nTyp 'help' om te beginnen.",
+    mudaHelp: "Beschikbare commando's:\n  help      - toon deze lijst\n  about     - wat MudaDigitaal doet\n  services  - wat we aanbieden\n  contact   - neem contact op\n  open      - open mudadigitaal.nl\n  clear     - maak het scherm leeg",
+    mudaAbout: "MudaDigitaal - UX-First Webdesign Bureau.\nWij ontwerpen en bouwen snelle, mobiel-klare websites.\nJe ziet het ontwerp voordat je betaalt. Vaste prijs, ~3-6 weken.",
+    mudaServices: "Wat we aanbieden:\n  - UX Design\n  - Conversie-optimalisatie\n  - Performance-optimalisatie\n  - Redesign\n  - Onderhoud & support",
+    mudaContactLine: "E-mail: {email}",
+    mudaOpening: "mudadigitaal.nl wordt geopend ...",
+    mudaUnknown: "commando niet gevonden: {cmd} - typ 'help'",
 
     // Downloads
     download: "Downloaden",
