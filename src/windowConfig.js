@@ -9,6 +9,7 @@ import VinylCollection from "./components/windows/VinylCollection.vue";
 import SkillTree from "./components/windows/SkillTree.vue";
 import Downloads from "./components/windows/Downloads.vue";
 import MinigamesFolder from "./components/windows/MinigamesFolder.vue";
+import FlappyRick from "./components/windows/FlappyRick.vue";
 import { minigames } from "./minigames";
 
 export const windowConfig = {
@@ -99,6 +100,14 @@ export const windowConfig = {
     defaultHeight: 520,
     defaultX: 320,
     defaultY: 90,
+  },
+  flappyRick: {
+    component: FlappyRick,
+    title: "flappyRick",
+    defaultWidth: 480,
+    defaultHeight: 720,
+    defaultX: 360,
+    defaultY: 40,
   },
 };
 
