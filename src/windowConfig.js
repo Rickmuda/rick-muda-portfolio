@@ -2,14 +2,14 @@ import AboutMe from "./components/windows/AboutMe.vue";
 import Projects from "./components/windows/Projects.vue";
 import Contact from "./components/windows/Contact.vue";
 import ArtGallery from "./components/windows/ArtGallery.vue";
-import MiniGame from "./components/windows/MiniGame.vue";
+import Solitaire from "./components/games/Solitaire.vue";
 import Settings from "./components/windows/Settings.vue";
 import OldVideo from "./components/windows/OldVideo.vue";
 import VinylCollection from "./components/windows/VinylCollection.vue";
 import SkillTree from "./components/windows/SkillTree.vue";
 import Downloads from "./components/windows/Downloads.vue";
 import MinigamesFolder from "./components/windows/MinigamesFolder.vue";
-import FlappyRick from "./components/windows/FlappyRick.vue";
+import FlappyRick from "./components/games/FlappyRick.vue";
 import MudaTerminal from "./components/windows/MudaTerminal.vue";
 import { minigames } from "./minigames";
 
@@ -47,7 +47,7 @@ export const windowConfig = {
     defaultY: 20,
   },
   miniGame: {
-    component: MiniGame,
+    component: Solitaire,
     title: "solitaire",
     defaultWidth: 1000,
     defaultHeight: 700,

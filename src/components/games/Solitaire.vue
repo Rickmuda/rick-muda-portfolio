@@ -65,7 +65,7 @@
           }"
           :style="{ '--card-index': cardIndex }"
           :draggable="card.faceUp"
-          @click.stop="selectTableauCard(pileIndex, cardIndex)"
+          @click.stop="onTableauCardTap(pileIndex, cardIndex)"
           @dragstart="card.faceUp && onDragStart($event, 'tableau', pileIndex, cardIndex)"
           @dragend="onDragEnd"
         >
@@ -169,6 +169,15 @@ export default {
       const card = this.tableau[pileIndex][cardIndex];
       if (!card.faceUp) return;
       this.selected = { type: "tableau", pileIndex, cardIndex };
+    },
+    onTableauCardTap(pileIndex, cardIndex) {
+      const isOwnSelection =
+        this.selected?.type === "tableau" && this.selected.pileIndex === pileIndex;
+      if (this.selected && !isOwnSelection) {
+        this.moveToTableau(pileIndex);
+        if (this.selected === null) return;
+      }
+      this.selectTableauCard(pileIndex, cardIndex);
     },
     isSelectedTableauCard(pileIndex, cardIndex) {
       if (!this.selected || this.selected.type !== "tableau") return false;
@@ -367,6 +376,9 @@ export default {
   cursor: grab;
   flex-shrink: 0;
   text-shadow: none;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .top-card.red {
@@ -412,6 +424,9 @@ export default {
   text-shadow: none;
   cursor: grab;
   box-shadow: 0 2px 4px rgba(0,0,0,0.3);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .foundations {
@@ -431,6 +446,9 @@ export default {
   border: 2px dashed rgba(255, 255, 255, 0.5);
   border-radius: 6px;
   cursor: pointer;
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .foundation-filled {
@@ -478,6 +496,9 @@ export default {
   text-shadow: none;
   cursor: grab;
   box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  touch-action: manipulation;
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .card:active {
@@ -529,7 +550,8 @@ export default {
   .solitaire-window {
     gap: 6px;
     padding: 6px;
-    overflow: hidden;
+    overflow-y: auto;
+    overflow-x: hidden;
   }
 
   .tableau-row {
@@ -537,12 +559,12 @@ export default {
   }
 
   .solitaire-header h2 {
-    font-size: 15px;
+    font-size: 14px;
   }
 
   .header-actions button {
-    padding: 4px 8px;
-    font-size: 12px;
+    padding: 3px 6px;
+    font-size: 11px;
   }
 
   .top-row {
@@ -555,9 +577,9 @@ export default {
 
   .top-card,
   .waste-card {
-    width: 44px;
-    height: 44px;
-    font-size: 13px;
+    width: 46px;
+    height: 60px;
+    font-size: 14px;
     border-radius: 4px;
   }
 
@@ -566,8 +588,8 @@ export default {
   }
 
   .foundation {
-    min-width: 44px;
-    min-height: 44px;
+    min-width: 46px;
+    min-height: 60px;
     font-size: 14px;
     border-radius: 4px;
   }
@@ -577,21 +599,30 @@ export default {
     grid-template-columns: repeat(7, 1fr);
     gap: 4px;
     overflow-x: visible;
+    align-items: start;
   }
 
   .tableau-pile {
     min-width: 0;
-    min-height: 70px;
+    min-height: 60px;
+    display: flex;
+    flex-direction: column;
   }
 
   .card {
-    left: 1px;
-    right: 1px;
-    top: calc(var(--card-index) * 9px);
-    height: 30px;
+    position: relative;
+    left: 0;
+    right: 0;
+    top: 0;
+    margin-top: -20px;
+    height: 32px;
     padding: 2px 3px;
-    font-size: 11px;
+    font-size: 12px;
     border-radius: 3px;
+  }
+
+  .tableau-pile .card:first-child {
+    margin-top: 0;
   }
 }
 </style>
