@@ -29,14 +29,14 @@
 import birdSrc from "../../assets/img/self-image-1.webp";
 import bgSrc from "../../assets/img/imggallery/room.webp";
 
-const GRAVITY = 0.2;
-const FLAP = -5.4;
+const GRAVITY = 0.35;
+const FLAP = -7;
 const BIRD_SIZE = 44;
 const PIPE_WIDTH = 64;
 const PIPE_GAP = 250;
 const PIPE_SPACING = 340; // horizontal distance between pipe pairs
-const PIPE_SPEED = 1.2;
-const BG_SPEED = 0.5; // background scrolls slower than pipes for a parallax feel
+const PIPE_SPEED = 2.4;
+const BG_SPEED = 1.0; // background scrolls slower than pipes for a parallax feel
 
 export default {
   name: "FlappyRick",
