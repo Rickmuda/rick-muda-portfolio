@@ -193,6 +193,8 @@
 </template>
 
 <script>
+import { unlock as unlockAchievement } from "../../achievements";
+
 const PALETTE = [
   "#ffffff",
   "#000000",
@@ -319,6 +321,7 @@ export default {
       const canvas = this.$refs.canvas;
       this.ctx.clearRect(0, 0, canvas.width, canvas.height);
       this.persist();
+      unlockAchievement("paint-clear");
     },
     async savePng() {
       const canvas = this.$refs.canvas;
@@ -359,6 +362,7 @@ export default {
     },
     beginStroke(x, y) {
       this.pushUndo();
+      unlockAchievement("paint-stroke");
       this.isDrawing = true;
       this.lastX = x;
       this.lastY = y;
@@ -475,6 +479,7 @@ export default {
 
       this.ctx.putImageData(imageData, 0, 0);
       this.persist();
+      unlockAchievement("paint-bucket");
     },
     onMouseDown(e) {
       const { x, y } = this.pointerPos(e.clientX, e.clientY);

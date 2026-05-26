@@ -81,6 +81,22 @@
       <div class="app-icon-text">{{ $t('paint') }}</div>
     </div>
 
+    <!-- Achievements -->
+    <div class="app-icon" @click="openApp('achievements')">
+      <div class="app-icon-image">
+        <font-awesome-icon icon="trophy" class="app-icon-inner" />
+      </div>
+      <div class="app-icon-text">{{ $t('achievements') }}</div>
+    </div>
+
+    <!-- Settings -->
+    <div class="app-icon" @click="openApp('settings')">
+      <div class="app-icon-image">
+        <font-awesome-icon icon="cog" class="app-icon-inner" />
+      </div>
+      <div class="app-icon-text">{{ $t('settings') }}</div>
+    </div>
+
 
     <!-- Easter egg apps -->
     <div class="app-icon" v-for="app in easterEggApps" :key="app" @click="openApp(app)">

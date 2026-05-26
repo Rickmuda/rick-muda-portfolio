@@ -9,61 +9,97 @@
     <div class="taskbar-icons">
 
       <!-- About me -->
-      <div class="taskbar-icon" :class="iconState('aboutMe')" @click="openApp('aboutMe')">
+      <div class="taskbar-icon" :class="iconState('aboutMe')" @click="openApp('aboutMe')" @mouseenter="onIconEnter('aboutMe', $event)" @mouseleave="onIconLeave">
         <font-awesome-icon icon="user" />
         <span v-if="openWindows.includes('aboutMe')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['aboutMe'] }"></span>
       </div>
 
       <!-- Projects -->
-      <div class="taskbar-icon" :class="iconState('projects')" @click="openApp('projects')">
+      <div class="taskbar-icon" :class="iconState('projects')" @click="openApp('projects')" @mouseenter="onIconEnter('projects', $event)" @mouseleave="onIconLeave">
         <font-awesome-icon icon="folder" />
         <span v-if="openWindows.includes('projects')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['projects'] }"></span>
       </div>
 
       <!-- Art Gallery -->
-      <div class="taskbar-icon" :class="iconState('artGallery')" @click="openApp('artGallery')">
+      <div class="taskbar-icon" :class="iconState('artGallery')" @click="openApp('artGallery')" @mouseenter="onIconEnter('artGallery', $event)" @mouseleave="onIconLeave">
         <font-awesome-icon icon="palette" />
         <span v-if="openWindows.includes('artGallery')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['artGallery'] }"></span>
       </div>
 
       <!-- Contact -->
-      <div class="taskbar-icon" :class="iconState('contact')" @click="openApp('contact')">
+      <div class="taskbar-icon" :class="iconState('contact')" @click="openApp('contact')" @mouseenter="onIconEnter('contact', $event)" @mouseleave="onIconLeave">
         <font-awesome-icon icon="envelope" />
         <span v-if="openWindows.includes('contact')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['contact'] }"></span>
       </div>
 
       <!-- Downloads -->
-      <div class="taskbar-icon" :class="iconState('downloads')" @click="openApp('downloads')">
+      <div class="taskbar-icon" :class="iconState('downloads')" @click="openApp('downloads')" @mouseenter="onIconEnter('downloads', $event)" @mouseleave="onIconLeave">
         <font-awesome-icon icon="download" />
         <span v-if="openWindows.includes('downloads')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['downloads'] }"></span>
       </div>
 
 
       <!-- Minigames folder -->
-      <div class="taskbar-icon" :class="iconState('minigames')" @click="openApp('minigames')">
+      <div class="taskbar-icon" :class="iconState('minigames')" @click="openApp('minigames')" @mouseenter="onIconEnter('minigames', $event)" @mouseleave="onIconLeave">
         <font-awesome-icon icon="folder" />
         <span v-if="openWindows.includes('minigames')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['minigames'] }"></span>
       </div>
 
       <!-- Vinyl Collection -->
-      <div class="taskbar-icon" :class="iconState('vinylCollection')" @click="openApp('vinylCollection')">
+      <div class="taskbar-icon" :class="iconState('vinylCollection')" @click="openApp('vinylCollection')" @mouseenter="onIconEnter('vinylCollection', $event)" @mouseleave="onIconLeave">
         <font-awesome-icon icon="compact-disc" />
         <span v-if="openWindows.includes('vinylCollection')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['vinylCollection'] }"></span>
       </div>
 
       <!-- Skill Tree -->
-      <div class="taskbar-icon" :class="iconState('skillTree')" @click="openApp('skillTree')">
+      <div class="taskbar-icon" :class="iconState('skillTree')" @click="openApp('skillTree')" @mouseenter="onIconEnter('skillTree', $event)" @mouseleave="onIconLeave">
         <font-awesome-icon icon="sitemap" />
         <span v-if="openWindows.includes('skillTree')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['skillTree'] }"></span>
       </div>
 
+      <!-- MudaDigitaal terminal -->
+      <div class="taskbar-icon" :class="iconState('mudaDigitaal')" @click="openApp('mudaDigitaal')" @mouseenter="onIconEnter('mudaDigitaal', $event)" @mouseleave="onIconLeave">
+        <font-awesome-icon icon="terminal" />
+        <span v-if="openWindows.includes('mudaDigitaal')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['mudaDigitaal'] }"></span>
+      </div>
+
+      <!-- Paint -->
+      <div class="taskbar-icon" :class="iconState('paint')" @click="openApp('paint')" @mouseenter="onIconEnter('paint', $event)" @mouseleave="onIconLeave">
+        <font-awesome-icon icon="paintbrush" />
+        <span v-if="openWindows.includes('paint')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['paint'] }"></span>
+      </div>
+
+      <!-- Achievements -->
+      <div class="taskbar-icon" :class="iconState('achievements')" @click="openApp('achievements')" @mouseenter="onIconEnter('achievements', $event)" @mouseleave="onIconLeave">
+        <font-awesome-icon icon="trophy" />
+        <span v-if="openWindows.includes('achievements')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['achievements'] }"></span>
+      </div>
+
+      <!-- Settings -->
+      <div class="taskbar-icon" :class="iconState('settings')" @click="openApp('settings')" @mouseenter="onIconEnter('settings', $event)" @mouseleave="onIconLeave">
+        <font-awesome-icon icon="cog" />
+        <span v-if="openWindows.includes('settings')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['settings'] }"></span>
+      </div>
+
 
       <!-- Easter Egg Icon -->
-      <div v-for="app in easterEggApps" :key="app" class="taskbar-icon" :class="iconState(app)" @click="openApp(app)" title="Easter Egg">
+      <div v-for="app in easterEggApps" :key="app" class="taskbar-icon" :class="iconState(app)" @click="openApp(app)" @mouseenter="onIconEnter(app, $event)" @mouseleave="onIconLeave" title="Easter Egg">
         <font-awesome-icon icon="egg" />
         <span v-if="openWindows.includes(app)" class="taskbar-indicator" :class="{ minimized: minimizedWindows[app] }"></span>
       </div>
     </div>
+
+    <!-- Hover preview of a minimized window -->
+    <Teleport to="body">
+      <div
+        v-if="previewFor"
+        class="taskbar-preview"
+        :style="{ left: previewLeft + 'px', bottom: previewBottom + 'px' }"
+      >
+        <img v-if="windowThumbnails[previewFor]" :src="windowThumbnails[previewFor]" :alt="previewFor" />
+        <div v-else class="taskbar-preview-empty">{{ previewFor }}</div>
+      </div>
+    </Teleport>
 
     <!-- Right Box -->
     <div class="taskbar-right">
@@ -77,10 +113,6 @@
       v-if="startMenuOpen"
       :commitSummary="commitSummary"
       :commitDescription="commitDescription"
-      :darkMode="darkMode"
-      :currentLanguage="currentLanguage"
-      @toggle-dark-mode="$emit('toggle-dark-mode')"
-      @update-language="(lang) => $emit('update-language', lang)"
       @mouseover="keepStartMenuOpen"
       @mouseleave="closeStartMenu"
     />
@@ -113,19 +145,15 @@ export default {
       type: Array,
       required: true,
     },
-    darkMode: {
-      type: Boolean,
-      required: true,
-    },
-    currentLanguage: {
-      type: String,
-      required: true,
-    },
     openWindows: {
       type: Array,
       default: () => [],
     },
     minimizedWindows: {
+      type: Object,
+      default: () => ({}),
+    },
+    windowThumbnails: {
       type: Object,
       default: () => ({}),
     },
@@ -136,6 +164,9 @@ export default {
       currentTime: new Date().toLocaleTimeString(),
       startMenuOpen: false,
       closeTimer: null,
+      previewFor: null,
+      previewLeft: 0,
+      previewBottom: 0,
     };
   },
   methods: {
@@ -157,6 +188,25 @@ export default {
     iconState(app) {
       if (!this.openWindows.includes(app)) return '';
       return this.minimizedWindows[app] ? 'app-minimized' : 'app-open';
+    },
+    onIconEnter(app, event) {
+      // Only preview minimized windows (open ones are already on screen).
+      if (!this.minimizedWindows[app]) {
+        this.previewFor = null;
+        return;
+      }
+      const rect = event.currentTarget.getBoundingClientRect();
+      const previewWidth = 240;
+      const left = Math.max(8, Math.min(
+        rect.left + rect.width / 2 - previewWidth / 2,
+        window.innerWidth - previewWidth - 8,
+      ));
+      this.previewFor = app;
+      this.previewLeft = left;
+      this.previewBottom = window.innerHeight - rect.top + 8;
+    },
+    onIconLeave() {
+      this.previewFor = null;
     },
   },
   mounted() {
@@ -196,5 +246,36 @@ export default {
 
 .app-minimized {
   background: rgba(255, 255, 255, 0.05);
+}
+</style>
+
+<!-- Non-scoped: the preview tooltip is teleported to <body>. -->
+<style>
+.taskbar-preview {
+  position: fixed;
+  width: 240px;
+  padding: 6px;
+  background: linear-gradient(180deg, #2a2a35, #1f1f2d);
+  border: 2px solid #8404a1;
+  border-radius: 8px;
+  box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
+  z-index: 99999;
+  pointer-events: none;
+}
+
+.taskbar-preview img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: 4px;
+}
+
+.taskbar-preview-empty {
+  padding: 18px 8px;
+  text-align: center;
+  color: #d4a8e8;
+  font-family: "PortfolioFont", sans-serif;
+  font-size: 13px;
+  font-weight: 600;
 }
 </style>

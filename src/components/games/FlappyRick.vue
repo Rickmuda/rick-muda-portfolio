@@ -28,6 +28,7 @@
 // window; a ResizeObserver keeps the drawing buffer in sync with the layout.
 import birdSrc from "../../assets/img/self-image-1.webp";
 import bgSrc from "../../assets/img/imggallery/room.webp";
+import { unlock as unlockAchievement } from "../../achievements";
 
 const GRAVITY = 0.35;
 const FLAP = -7;
@@ -158,6 +159,7 @@ export default {
         if (!pipe.scored && pipe.x + PIPE_WIDTH < bird.x) {
           pipe.scored = true;
           this.score++;
+          if (this.score >= 10) unlockAchievement("flappy-score-10");
         }
       }
       if (this.pipes.length && this.pipes[0].x + PIPE_WIDTH < 0) {

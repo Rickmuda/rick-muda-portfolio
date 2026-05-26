@@ -14,7 +14,7 @@
     @mousedown="bringToFront"
   >
     <div class="app-window">
-      <div class="top-bar" @mousedown="startDrag">
+      <div class="top-bar" @mousedown="startDrag" @dblclick="onTitleBarDblClick">
         <span class="window-title">{{ title }}</span>
         <div class="window-controls">
           <button v-if="!isMobile" class="window-control minimize" @click.stop="minimizeWindow" title="Minimize" aria-label="Minimize">
@@ -39,6 +39,29 @@
         <slot></slot>
       </div>
     </div>
+
+    <!-- Resize handles (desktop only, hidden when maximized/snapped) -->
+    <template v-if="!isMobile && !isSnapped">
+      <div class="resize-handle resize-n"  @mousedown.stop="startResize('n',  $event)"></div>
+      <div class="resize-handle resize-s"  @mousedown.stop="startResize('s',  $event)"></div>
+      <div class="resize-handle resize-e"  @mousedown.stop="startResize('e',  $event)"></div>
+      <div class="resize-handle resize-w"  @mousedown.stop="startResize('w',  $event)"></div>
+      <div class="resize-handle resize-ne" @mousedown.stop="startResize('ne', $event)"></div>
+      <div class="resize-handle resize-nw" @mousedown.stop="startResize('nw', $event)"></div>
+      <div class="resize-handle resize-se" @mousedown.stop="startResize('se', $event)"></div>
+      <div class="resize-handle resize-sw" @mousedown.stop="startResize('sw', $event)"></div>
+    </template>
+
+    <!-- Snap preview overlay (renders globally during drag near an edge).
+         Kept inside the root so AppWindow stays a single-root component and
+         v-show from the parent works. Teleport still moves it to <body>. -->
+    <Teleport to="body">
+      <div
+        v-if="snapPreview"
+        class="snap-preview"
+        :style="snapPreviewStyle"
+      ></div>
+    </Teleport>
   </div>
 </template>
 
@@ -85,12 +108,38 @@ export default {
       },
       restoreState: null,
       isMaximized: false,
+      isSnapped: false, // true when window is in a top/left/right snapped state
       isDragging: false,
       dragStartX: 0,
       dragStartY: 0,
       windowStartX: 0,
       windowStartY: 0,
+      // Snap preview: null or one of 'max' | 'left' | 'right' during drag.
+      snapPreview: null,
+      // Resize state
+      isResizing: false,
+      resizeDir: null,
+      resizeStartMouseX: 0,
+      resizeStartMouseY: 0,
+      resizeStartState: null,
     };
+  },
+  computed: {
+    snapPreviewStyle() {
+      if (!this.snapPreview) return {};
+      const vw = window.innerWidth;
+      const vh = window.innerHeight - 60; // taskbar gap
+      if (this.snapPreview === "max") {
+        return { left: "0px", top: "0px", width: vw + "px", height: vh + "px" };
+      }
+      if (this.snapPreview === "left") {
+        return { left: "0px", top: "0px", width: vw / 2 + "px", height: vh + "px" };
+      }
+      if (this.snapPreview === "right") {
+        return { left: vw / 2 + "px", top: "0px", width: vw / 2 + "px", height: vh + "px" };
+      }
+      return {};
+    },
   },
   methods: {
     closeWindow() {
@@ -106,70 +155,202 @@ export default {
       if (e.target.closest('.window-controls')) {
         return;
       }
+
+      // If dragging from a snapped/maximized window, restore size first so the
+      // window pops out under the cursor (Windows-style drag-away unsnap).
+      if (this.isMaximized || this.isSnapped) {
+        const restored = this.restoreState || {
+          x: this.defaultX,
+          y: this.defaultY,
+          w: this.defaultWidth,
+          h: this.defaultHeight,
+        };
+        // Position so cursor stays roughly centered on the title bar.
+        const newX = Math.max(0, Math.min(e.clientX - restored.w / 2, window.innerWidth - restored.w));
+        const newY = Math.max(0, e.clientY - 20);
+        this.windowState = { x: newX, y: newY, w: restored.w, h: restored.h };
+        this.isMaximized = false;
+        this.isSnapped = false;
+      }
+
       this.isDragging = true;
       this.dragStartX = e.clientX;
       this.dragStartY = e.clientY;
       this.windowStartX = this.windowState.x;
       this.windowStartY = this.windowState.y;
-      
+
       document.addEventListener('mousemove', this.onDrag);
       document.addEventListener('mouseup', this.stopDrag);
     },
     onDrag(e) {
       if (!this.isDragging) return;
-      
+
       const deltaX = e.clientX - this.dragStartX;
       const deltaY = e.clientY - this.dragStartY;
-      
+
       let newX = this.windowStartX + deltaX;
       let newY = this.windowStartY + deltaY;
-      
+
       // Constrain to parent bounds
       const maxX = window.innerWidth - this.windowState.w;
       const maxY = window.innerHeight - this.windowState.h - 60; // Account for taskbar
-      
+
       newX = Math.max(0, Math.min(newX, maxX));
       newY = Math.max(0, Math.min(newY, maxY));
-      
+
       this.windowState.x = newX;
       this.windowState.y = newY;
+
+      // Snap zone detection (Aero-style). Cursor near top/left/right edge
+      // triggers a preview overlay that commits on mouse up.
+      const THRESHOLD = 8;
+      if (e.clientY <= THRESHOLD) {
+        this.snapPreview = "max";
+      } else if (e.clientX <= THRESHOLD) {
+        this.snapPreview = "left";
+      } else if (e.clientX >= window.innerWidth - THRESHOLD) {
+        this.snapPreview = "right";
+      } else {
+        this.snapPreview = null;
+      }
     },
     stopDrag() {
       this.isDragging = false;
       document.removeEventListener('mousemove', this.onDrag);
       document.removeEventListener('mouseup', this.stopDrag);
+
+      // Commit pending snap.
+      if (this.snapPreview) {
+        this.applySnap(this.snapPreview);
+        this.snapPreview = null;
+      }
+    },
+    applySnap(side) {
+      // Save restoreState only if this is a fresh snap (not snap-to-snap).
+      if (!this.isMaximized && !this.isSnapped) {
+        this.restoreState = { ...this.windowState };
+      }
+      const vw = window.innerWidth;
+      const vh = Math.max(window.innerHeight - 60, 300);
+      if (side === "max") {
+        this.windowState = { x: 0, y: 0, w: vw, h: vh };
+        this.isMaximized = true;
+        this.isSnapped = false;
+      } else if (side === "left") {
+        this.windowState = { x: 0, y: 0, w: Math.round(vw / 2), h: vh };
+        this.isMaximized = false;
+        this.isSnapped = true;
+      } else if (side === "right") {
+        const half = Math.round(vw / 2);
+        this.windowState = { x: vw - half, y: 0, w: half, h: vh };
+        this.isMaximized = false;
+        this.isSnapped = true;
+      }
+    },
+    onTitleBarDblClick(e) {
+      if (this.isMobile) return;
+      if (e.target.closest('.window-controls')) return;
+      this.toggleMaximize();
     },
     toggleMaximize() {
-      if (!this.isMaximized) {
-        this.restoreState = { ...this.windowState };
+      if (!this.isMaximized && !this.isSnapped) {
+        this.applySnap("max");
+        return;
+      }
+      // Restore.
+      if (this.restoreState) {
+        this.windowState = { ...this.restoreState };
+      }
+      this.isMaximized = false;
+      this.isSnapped = false;
+    },
+    startResize(dir, e) {
+      if (this.isMobile) return;
+      this.isResizing = true;
+      this.resizeDir = dir;
+      this.resizeStartMouseX = e.clientX;
+      this.resizeStartMouseY = e.clientY;
+      this.resizeStartState = { ...this.windowState };
+      document.addEventListener('mousemove', this.onResize);
+      document.addEventListener('mouseup', this.stopResize);
+    },
+    onResize(e) {
+      if (!this.isResizing) return;
+      const MIN_W = 320;
+      const MIN_H = 240;
+      const taskbarGap = 60;
+      const dx = e.clientX - this.resizeStartMouseX;
+      const dy = e.clientY - this.resizeStartMouseY;
+      const start = this.resizeStartState;
+      const dir = this.resizeDir;
+
+      let x = start.x;
+      let y = start.y;
+      let w = start.w;
+      let h = start.h;
+
+      if (dir.includes('e')) {
+        w = Math.max(MIN_W, Math.min(start.w + dx, window.innerWidth - start.x));
+      }
+      if (dir.includes('w')) {
+        const proposedW = start.w - dx;
+        if (proposedW >= MIN_W) {
+          w = proposedW;
+          x = Math.max(0, start.x + dx);
+        } else {
+          w = MIN_W;
+          x = start.x + (start.w - MIN_W);
+        }
+      }
+      if (dir.includes('s')) {
+        h = Math.max(MIN_H, Math.min(start.h + dy, window.innerHeight - start.y - taskbarGap));
+      }
+      if (dir.includes('n')) {
+        const proposedH = start.h - dy;
+        if (proposedH >= MIN_H) {
+          h = proposedH;
+          y = Math.max(0, start.y + dy);
+        } else {
+          h = MIN_H;
+          y = start.y + (start.h - MIN_H);
+        }
+      }
+
+      this.windowState = { x, y, w, h };
+    },
+    stopResize() {
+      this.isResizing = false;
+      this.resizeDir = null;
+      document.removeEventListener('mousemove', this.onResize);
+      document.removeEventListener('mouseup', this.stopResize);
+    },
+    bringToFront() {
+      this.$emit("bringToFront");
+    },
+    handleResize() {
+      // Re-fit the window to the viewport if it's currently maximized or snapped.
+      if (this.isMaximized) {
         this.windowState = {
           x: 0,
           y: 0,
           w: window.innerWidth,
           h: Math.max(window.innerHeight - 60, 300),
         };
-        this.isMaximized = true;
         return;
       }
-
-      if (this.restoreState) {
-        this.windowState = { ...this.restoreState };
+      if (this.isSnapped) {
+        const vw = window.innerWidth;
+        const half = Math.round(vw / 2);
+        const vh = Math.max(window.innerHeight - 60, 300);
+        // Preserve which side we're snapped to.
+        const isLeftSnap = this.windowState.x === 0;
+        this.windowState = {
+          x: isLeftSnap ? 0 : vw - half,
+          y: 0,
+          w: half,
+          h: vh,
+        };
       }
-      this.isMaximized = false;
-    },
-    bringToFront() {
-      this.$emit("bringToFront");
-    },
-    handleResize() {
-      if (!this.isMaximized) {
-        return;
-      }
-      this.windowState = {
-        x: 0,
-        y: 0,
-        w: window.innerWidth,
-        h: Math.max(window.innerHeight - 60, 300),
-      };
     },
   },
   mounted() {
@@ -179,6 +360,8 @@ export default {
     window.removeEventListener("resize", this.handleResize);
     document.removeEventListener('mousemove', this.onDrag);
     document.removeEventListener('mouseup', this.stopDrag);
+    document.removeEventListener('mousemove', this.onResize);
+    document.removeEventListener('mouseup', this.stopResize);
   },
 };
 </script>
@@ -186,6 +369,76 @@ export default {
 <style scoped>
 .draggable-window {
   position: fixed;
+}
+
+/* Resize handles - invisible strips around the window edges. */
+.resize-handle {
+  position: absolute;
+  z-index: 10;
+}
+
+.resize-n {
+  top: -4px;
+  left: 12px;
+  right: 12px;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.resize-s {
+  bottom: -4px;
+  left: 12px;
+  right: 12px;
+  height: 8px;
+  cursor: ns-resize;
+}
+
+.resize-e {
+  right: -4px;
+  top: 12px;
+  bottom: 12px;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+.resize-w {
+  left: -4px;
+  top: 12px;
+  bottom: 12px;
+  width: 8px;
+  cursor: ew-resize;
+}
+
+.resize-ne {
+  top: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  cursor: nesw-resize;
+}
+
+.resize-nw {
+  top: -4px;
+  left: -4px;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+}
+
+.resize-se {
+  bottom: -4px;
+  right: -4px;
+  width: 16px;
+  height: 16px;
+  cursor: nwse-resize;
+}
+
+.resize-sw {
+  bottom: -4px;
+  left: -4px;
+  width: 16px;
+  height: 16px;
+  cursor: nesw-resize;
 }
 
 .app-window {
@@ -289,6 +542,11 @@ export default {
     width: 48px;
   }
 
+  /* Mobile is fullscreen - no resize handles. */
+  .resize-handle {
+    display: none !important;
+  }
+
   /* Fullscreen, square, edge-to-edge windows on mobile (width-based so it
      applies regardless of the isMobile prop). */
   .draggable-window {
@@ -313,5 +571,19 @@ export default {
   .top-bar {
     border-radius: 0 !important;
   }
+}
+</style>
+
+<!-- Non-scoped: the snap preview is teleported to <body>. -->
+<style>
+.snap-preview {
+  position: fixed;
+  background: rgba(155, 32, 183, 0.25);
+  border: 2px solid #c637e6;
+  box-shadow: 0 0 24px rgba(155, 32, 183, 0.5);
+  border-radius: 8px;
+  pointer-events: none;
+  z-index: 9999;
+  transition: left 0.12s ease, top 0.12s ease, width 0.12s ease, height 0.12s ease;
 }
 </style>

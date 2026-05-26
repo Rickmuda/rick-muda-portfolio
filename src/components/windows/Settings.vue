@@ -7,6 +7,13 @@
       <span class="slider"></span>
     </label>
 
+    <!-- Sound Toggle -->
+    <label class="dark-mode-toggle">
+      <span class="label-text">{{ $t('enableSounds') }}</span>
+      <input type="checkbox" :checked="soundsEnabled" @change="toggleSounds" />
+      <span class="slider"></span>
+    </label>
+
     <!-- Language Selection -->
     <div class="language-selection">
       <label for="language-select" class="label-text">{{ $t('selectLanguage') }}</label>
@@ -20,6 +27,9 @@
 </template>
 
 <script>
+import { sounds } from "../../sounds";
+import { unlock as unlockAchievement } from "../../achievements";
+
 export default {
   props: {
     darkMode: {
@@ -34,15 +44,23 @@ export default {
   data() {
     return {
       selectedLanguage: this.currentLanguage, // Initialize with the current language
+      soundsEnabled: sounds.isEnabled(),
     };
   },
   methods: {
     toggleDarkMode() {
       this.$emit("update:darkMode", !this.darkMode); // Emit the updated value to App.vue
+      unlockAchievement("night-owl");
+    },
+    toggleSounds() {
+      this.soundsEnabled = !this.soundsEnabled;
+      sounds.setEnabled(this.soundsEnabled);
+      if (this.soundsEnabled) sounds.play("open");
     },
     changeLanguage() {
       this.$emit("update:currentLanguage", this.selectedLanguage); // Emit the selected language to App.vue
       this.$i18n.locale = this.selectedLanguage; // Update the locale dynamically
+      unlockAchievement("bilingual");
     },
   },
 };
@@ -58,6 +76,35 @@ export default {
 .language-selection select,
 .language-selection select option {
   font-family: 'PortfolioFont', sans-serif;
+}
+
+/* Desktop: card-style rows with consistent padding, label left, control right. */
+@media (min-width: 769px) {
+  .settings {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding: 24px;
+    max-width: 560px;
+    margin: 0 auto;
+  }
+
+  .dark-mode-toggle,
+  .language-selection {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    padding: 14px 18px;
+    background: rgba(0, 0, 0, 0.28);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 10px;
+  }
+
+  .language-selection select {
+    margin-left: 0;
+    padding: 8px 12px;
+  }
 }
 
 /* Mobile-only restyle: card layout for the settings controls */

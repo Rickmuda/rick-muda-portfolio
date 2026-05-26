@@ -46,6 +46,7 @@ import {
   faRotateLeft,
   faTrash,
   faFillDrip,
+  faTrophy,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faTwitter,
@@ -95,7 +96,8 @@ library.add(
   faEraser,
   faRotateLeft,
   faTrash,
-  faFillDrip
+  faFillDrip,
+  faTrophy
 );
 library.add(faTwitter, faInstagram, faLinkedin, faGithub, faYoutube, faTiktok, faSpotify, faSteam, faCodepen);
 

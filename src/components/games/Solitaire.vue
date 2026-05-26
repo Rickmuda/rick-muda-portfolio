@@ -79,6 +79,7 @@
 </template>
 
 <script>
+import { unlock as unlockAchievement } from "../../achievements";
 const SUITS = ["hearts", "diamonds", "clubs", "spades"];
 
 export default {
@@ -101,6 +102,11 @@ export default {
   computed: {
     isWon() {
       return SUITS.every((suit) => this.foundations[suit].length === 13);
+    },
+  },
+  watch: {
+    isWon(value) {
+      if (value) unlockAchievement("solitaire-won");
     },
   },
   created() {
