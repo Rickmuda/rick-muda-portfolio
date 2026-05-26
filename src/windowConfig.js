@@ -11,6 +11,7 @@ import Downloads from "./components/windows/Downloads.vue";
 import MinigamesFolder from "./components/windows/MinigamesFolder.vue";
 import FlappyRick from "./components/games/FlappyRick.vue";
 import MudaTerminal from "./components/windows/MudaTerminal.vue";
+import Paint from "./components/windows/Paint.vue";
 import { minigames } from "./minigames";
 
 export const windowConfig = {
@@ -118,6 +119,14 @@ export const windowConfig = {
     defaultX: 240,
     defaultY: 80,
   },
+  paint: {
+    component: Paint,
+    title: "paint",
+    defaultWidth: 760,
+    defaultHeight: 560,
+    defaultX: 280,
+    defaultY: 80,
+  },
 };
 
 // Ordered app list used by the mobile launcher (and a single source of truth
@@ -132,5 +141,6 @@ export const appList = [
   { name: "vinylCollection", icon: "compact-disc", labelKey: "vinylCollection" },
   { name: "skillTree",       icon: "sitemap",      labelKey: "skillTree" },
   { name: "mudaDigitaal",    icon: "terminal",     labelKey: "mudaDigitaal" },
+  { name: "paint",           icon: "paintbrush",   labelKey: "paint" },
   { name: "settings",        icon: "cog",          labelKey: "settings" },
 ];

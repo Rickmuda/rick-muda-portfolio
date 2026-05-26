@@ -27,6 +27,17 @@ const messages = {
     skillTree: "Skill Tree",
     downloads: "Downloads",
     mudaDigitaal: "MudaDigitaal",
+    paint: "Paint",
+
+    // Paint app
+    paintBrush: "Brush",
+    paintBucket: "Fill",
+    paintEraser: "Eraser",
+    paintUndo: "Undo",
+    paintClear: "Clear",
+    paintSave: "Save PNG",
+    paintCancel: "Cancel",
+    paintClearConfirm: "Clear the whole canvas?",
 
     // MudaDigitaal terminal
     mudaWelcome: "MudaDigitaal terminal v1.0\nType 'help' to get started.",
@@ -210,6 +221,17 @@ const messages = {
     skillTree: "Vaardighedenboom",
     downloads: "Downloads",
     mudaDigitaal: "MudaDigitaal",
+    paint: "Tekenen",
+
+    // Paint app
+    paintBrush: "Penseel",
+    paintBucket: "Vullen",
+    paintEraser: "Gum",
+    paintUndo: "Ongedaan maken",
+    paintClear: "Wissen",
+    paintSave: "Opslaan",
+    paintCancel: "Annuleren",
+    paintClearConfirm: "Hele canvas wissen?",
 
     // MudaDigitaal terminal
     mudaWelcome: "MudaDigitaal terminal v1.0\nTyp 'help' om te beginnen.",

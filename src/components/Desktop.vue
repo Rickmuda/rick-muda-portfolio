@@ -73,6 +73,14 @@
       <div class="app-icon-text">{{ $t('mudaDigitaal') }}</div>
     </div>
 
+    <!-- Paint -->
+    <div class="app-icon" @click="openApp('paint')">
+      <div class="app-icon-image">
+        <font-awesome-icon icon="paintbrush" class="app-icon-inner" />
+      </div>
+      <div class="app-icon-text">{{ $t('paint') }}</div>
+    </div>
+
 
     <!-- Easter egg apps -->
     <div class="app-icon" v-for="app in easterEggApps" :key="app" @click="openApp(app)">

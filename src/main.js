@@ -41,6 +41,11 @@ import {
   faDove,
   faClone,
   faTerminal,
+  faPaintbrush,
+  faEraser,
+  faRotateLeft,
+  faTrash,
+  faFillDrip,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faTwitter,
@@ -85,7 +90,12 @@ library.add(
   faSkull,
   faDove,
   faClone,
-  faTerminal
+  faTerminal,
+  faPaintbrush,
+  faEraser,
+  faRotateLeft,
+  faTrash,
+  faFillDrip
 );
 library.add(faTwitter, faInstagram, faLinkedin, faGithub, faYoutube, faTiktok, faSpotify, faSteam, faCodepen);
 
