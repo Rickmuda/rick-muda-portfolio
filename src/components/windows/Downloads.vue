@@ -10,7 +10,7 @@
       >
         <!-- Thumbnail -->
         <div class="card-thumb">
-          <img :src="item.thumbnail" :alt="$t(item.titleKey)" class="card-thumb-img" />
+          <img :src="item.thumbnail" :alt="$t(item.titleKey)" class="card-thumb-img" loading="lazy" decoding="async" />
           <span v-if="isComingSoon(item)" class="coming-soon-ribbon">{{ $t('comingSoon') }}</span>
         </div>
 

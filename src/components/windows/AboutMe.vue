@@ -8,7 +8,7 @@
     ></div>
     
     <aside class="messenger-sidebar">
-      <img src="/src/assets/img/self-image-1.webp" alt="Rick" class="avatar" />
+      <img src="/src/assets/img/self-image-1.webp" alt="Rick" class="avatar" loading="lazy" decoding="async" />
       <p class="status">Rick · Online</p>
     </aside>
 
@@ -75,7 +75,7 @@
                 :class="{ expanded: expandedCertificates[certIndex] }"
                 @click.stop="toggleCertificate(certIndex)"
               >
-                <img :src="cert.image" :alt="cert.title" />
+                <img :src="cert.image" :alt="cert.title" loading="lazy" decoding="async" />
                 <span class="cert-title">{{ cert.title }}</span>
                 <span v-if="expandedCertificates[certIndex]" class="cert-close-hint">Click to close</span>
               </div>

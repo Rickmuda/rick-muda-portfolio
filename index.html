@@ -3,24 +3,83 @@
   <head>
     <meta charset="UTF-8">
     <link rel="icon" href="/favicon.ico">
+    <link rel="apple-touch-icon" href="/apple-touch-icon.png">
+    <link rel="manifest" href="/site.webmanifest">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="theme-color" content="#9b20b7">
+    <meta name="author" content="Rick Ambergen">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://rickmuda.nl/">
+
     <title>Rick Ambergen - Web Developer & Digital Portfolio</title>
-    <meta name="description" content="Rick Ambergen's portfolio showcasing web projects, art, videos, certificates, and contact information.">
+    <meta name="description" content="Portfolio of Rick Ambergen (Rick Muda), a web developer building Vue.js sites, interactive web apps, art and small games. Browse projects, art, vinyl, certificates and contact info.">
 
     <!-- Open Graph / Facebook -->
-    <meta property="og:title" content="Rick Ambergen - Software Developer">
-    <meta property="og:description" content="Rick Ambergen's portfolio.">
+    <meta property="og:title" content="Rick Ambergen - Web Developer & Digital Portfolio">
+    <meta property="og:description" content="Portfolio of Rick Ambergen (Rick Muda), a web developer building Vue.js sites, interactive web apps, art and small games.">
     <meta property="og:type" content="website">
-    <meta property="og:url" content="https://your-domain.example/">
-    <meta property="og:image" content="https://your-domain.example/og-image.png">
+    <meta property="og:url" content="https://rickmuda.nl/">
+    <meta property="og:site_name" content="Rick Ambergen Portfolio">
+    <meta property="og:image" content="https://rickmuda.nl/og-image.webp">
+    <meta property="og:image:alt" content="Pixel-art room scene from the Rick Ambergen portfolio">
+    <meta property="og:locale" content="en_US">
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Rick Ambergen - Software Developer">
-    <meta name="twitter:description" content="Rick Ambergen's portfolio showcasing software projects, art, and videos.">
+    <meta name="twitter:title" content="Rick Ambergen - Web Developer & Digital Portfolio">
+    <meta name="twitter:description" content="Portfolio of Rick Ambergen (Rick Muda), a web developer building Vue.js sites, interactive web apps, art and small games.">
+    <meta name="twitter:image" content="https://rickmuda.nl/og-image.webp">
+    <meta name="twitter:creator" content="@Rick_rickerd">
+
+    <!-- JSON-LD Person schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "Person",
+      "name": "Rick Ambergen",
+      "alternateName": "Rick Muda",
+      "url": "https://rickmuda.nl/",
+      "jobTitle": "Web Developer",
+      "email": "mailto:rickmudaportfolio@gmail.com",
+      "sameAs": [
+        "https://github.com/rickmuda",
+        "https://www.linkedin.com/in/rick-ambergen-30b73a29a/",
+        "https://twitter.com/Rick_rickerd",
+        "https://www.instagram.com/rick_muda/",
+        "https://www.youtube.com/channel/UCHSimkVEkXs0Xp1U4nInA0w"
+      ]
+    }
+    </script>
   </head>
   <body>
     <div id="app"></div>
+    <noscript>
+      <h1>Rick Ambergen - Web Developer</h1>
+      <p>
+        Portfolio of Rick Ambergen (also known as Rick Muda), a web developer
+        based in the Netherlands. This site is an interactive desktop-OS themed
+        portfolio built with Vue.js and requires JavaScript to run.
+      </p>
+      <h2>What you can find here</h2>
+      <ul>
+        <li>Web development projects (Vue.js, JavaScript, web apps and games)</li>
+        <li>Art gallery and visual work</li>
+        <li>Vinyl collection</li>
+        <li>Certificates and skills</li>
+        <li>Small browser games (Flappy Rick, Whack-a-Mom, Undertale Sudoku)</li>
+        <li>Downloads and contact information</li>
+      </ul>
+      <h2>Contact</h2>
+      <p>Email: <a href="mailto:rickmudaportfolio@gmail.com">rickmudaportfolio@gmail.com</a></p>
+      <h2>Links</h2>
+      <ul>
+        <li><a href="https://github.com/rickmuda">GitHub</a></li>
+        <li><a href="https://www.linkedin.com/in/rick-ambergen-30b73a29a/">LinkedIn</a></li>
+        <li><a href="https://twitter.com/Rick_rickerd">Twitter</a></li>
+        <li><a href="https://www.instagram.com/rick_muda/">Instagram</a></li>
+        <li><a href="https://www.youtube.com/channel/UCHSimkVEkXs0Xp1U4nInA0w">YouTube</a></li>
+      </ul>
+    </noscript>
     <script type="module" src="/src/main.js"></script>
   </body>
 </html>

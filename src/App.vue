@@ -187,51 +187,6 @@ export default {
     checkMobile() {
       this.isMobile = window.innerWidth <= 768;
     },
-    preloadProjectImages() {
-      const projectImages = [
-        'weather1.webp', 'weather2.webp', 'weather3.webp',
-        'annoying1.webp', 'annoying2.webp', 'annoying3.webp',
-        'whack1.webp', 'whack2.webp', 'whack3.webp',
-        'gym-list.webp',
-        'one-pager.webp',
-        'snackbar-podcast.webp',
-        'undertale-sudoku.webp',
-        'longvideotheater.webp',
-        'dungeon and music.webp',
-        'portfolio1.webp', 'portfolio2.webp', 'portfolio3.webp',
-        'quiet1.webp', 'quiet2.webp', 'quiet3.webp',
-        'rickvlogs1.webp',
-        'beer.png',
-        'Lunar1.webp', 'Lunar2.webp', 'Lunar3.webp',
-      ];
-      projectImages.forEach(filename => {
-        const img = new Image();
-        img.src = new URL(`./assets/img/projects/${filename}`, import.meta.url).href;
-      });
-
-      // Preload gallery images
-      const galleryImages = [
-        'dance.gif', 'fnf.webp', 'panels.webp', 'pepe.webp', 'pose.webp',
-        'room.webp', 'roomdark.webp', 'swag.webp', 'vtuber.webp'
-      ];
-      galleryImages.forEach(filename => {
-        const img = new Image();
-        img.src = new URL(`./assets/img/imggallery/${filename}`, import.meta.url).href;
-      });
-
-      // Preload root images
-      ['self-image-1.webp', 'self-image-2.webp', 'pfp.webp', 'peterthinking.webp', 'minigame.webp'].forEach(filename => {
-        const img = new Image();
-        img.src = new URL(`./assets/img/${filename}`, import.meta.url).href;
-      });
-
-      // Preload certificate images
-      const certImages = ['rattickling.webp', 'dudeism.webp', 'dudeism.gif'];
-      certImages.forEach(filename => {
-        const img = new Image();
-        img.src = new URL(`./assets/img/certificates/${filename}`, import.meta.url).href;
-      });
-    },
     updateLanguage(lang) {
       this.currentLanguage = lang;
       this.$i18n.locale = lang;
@@ -239,7 +194,6 @@ export default {
   },
   async mounted() {
     this.checkMobile();
-    this.preloadProjectImages();
     window.addEventListener('resize', this.checkMobile);
 
     const savedLanguage = localStorage.getItem("portfolio-language");

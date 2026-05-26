@@ -37,7 +37,7 @@
       <!-- Image carousel container -->
       <div class="carousel-container">
         <div class="carousel-viewport">
-          <img :src="selectedProject.images[currentImageIndex]" alt="Project Image" class="carousel-image" />
+          <img :src="selectedProject.images[currentImageIndex]" alt="Project Image" class="carousel-image" loading="lazy" decoding="async" />
         </div>
         <!-- Navigation dots -->
         <div class="carousel-dots" v-if="selectedProject.images.length > 1">
@@ -78,7 +78,7 @@
         class="pm-row"
         @click="pmOpen(project)"
       >
-        <img :src="project.images[0]" :alt="project.title" class="pm-row-thumb" />
+        <img :src="project.images[0]" :alt="project.title" class="pm-row-thumb" loading="lazy" decoding="async" />
         <span class="pm-row-info">
           <span class="pm-row-title">{{ project.title }}</span>
           <span class="pm-row-meta">{{ project.type }} - {{ project.status || 'Published' }}</span>
@@ -95,7 +95,7 @@
         @touchmove.passive="pmTouchMove"
         @touchend="pmTouchEnd"
       >
-        <img :src="pmSelected.images[pmDetailIndex]" :alt="pmSelected.title" class="pm-image" />
+        <img :src="pmSelected.images[pmDetailIndex]" :alt="pmSelected.title" class="pm-image" loading="lazy" decoding="async" />
         <div class="pm-dots" v-if="pmSelected.images.length > 1">
           <button
             v-for="(_, idx) in pmSelected.images"

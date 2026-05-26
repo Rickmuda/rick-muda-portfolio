@@ -18,6 +18,8 @@
           :src="artGalleryImages[selectedImageIndex]"
           alt="Selected Art"
           class="main-photo"
+          loading="lazy"
+          decoding="async"
         />
       </transition>
       <button
@@ -37,9 +39,11 @@
         :class="{ active: selectedImageIndex === index }"
         @click="selectImage(index)"
       >
-        <img 
+        <img
           :src="selectedImageIndex === index || !image.endsWith('.gif') ? image : (frozenGifFrames[index] || image)"
           alt="Art thumbnail"
+          loading="lazy"
+          decoding="async"
         />
       </button>
     </div>

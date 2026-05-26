@@ -52,6 +52,8 @@
                 :src="currentAlbum.cover"
                 :alt="currentAlbum.title"
                 class="cover-image"
+                loading="lazy"
+                decoding="async"
               />
               <div v-else class="cover-fallback">♪</div>
               <div class="cover-glow"></div>
@@ -93,7 +95,7 @@
               :title="album.title"
             >
               <div class="tile-cover">
-                <img v-if="album.thumb" :src="album.thumb" :alt="album.title" />
+                <img v-if="album.thumb" :src="album.thumb" :alt="album.title" loading="lazy" decoding="async" />
                 <div v-else class="tile-fallback">♪</div>
               </div>
               <div class="tile-title">{{ album.title }}</div>
