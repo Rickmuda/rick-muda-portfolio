@@ -85,12 +85,16 @@ export default {
     flex-direction: column;
     gap: 12px;
     padding: 24px;
-    max-width: 560px;
-    margin: 0 auto;
+    width: 100%;
+    box-sizing: border-box;
   }
 
   .dark-mode-toggle,
   .language-selection {
+    align-self: center;
+    width: 100%;
+    max-width: 560px;
+    box-sizing: border-box;
     display: flex;
     align-items: center;
     justify-content: space-between;
