@@ -6,7 +6,11 @@
     <!-- Main App Content -->
     <template v-else>
       <!-- Background -->
-      <div class="background" :class="{ 'dark-mode': darkMode }">
+      <div
+        class="background"
+        :class="{ 'dark-mode': darkMode }"
+        :style="{ backgroundImage: wallpaperCss }"
+      >
         <!-- Mobile: phone-style launcher. Desktop: OS metaphor. -->
         <MobileHome v-if="isMobile" :openApp="openApp" :apps="mobileApps" />
         <Desktop v-else :openApp="openApp" :easterEggApps="easterEggApps" />
@@ -74,6 +78,7 @@ import AchievementToast from "./components/AchievementToast.vue";
 import { windowConfig, appList, preloadAllWindows } from "./windowConfig";
 import { sounds } from "./sounds";
 import { unlock as unlockAchievement, achievements as allAchievements } from "./achievements";
+import { getCurrent as getCurrentWallpaper, onChange as onWallpaperChange } from "./wallpapers";
 
 export default {
   name: 'App',
@@ -99,8 +104,15 @@ export default {
       windowZIndices: {},
       konamiCode: ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "b", "a"],
       currentInput: [],
+      // Mobile equivalent: swipe up/up/down/down/left/right/left/right, then two taps.
+      gestureKonami: ["ArrowUp", "ArrowUp", "ArrowDown", "ArrowDown", "ArrowLeft", "ArrowRight", "ArrowLeft", "ArrowRight", "Tap", "Tap"],
+      currentGestureInput: [],
+      touchStartX: null,
+      touchStartY: null,
+      touchStartTime: 0,
       easterEggTriggered: false,
       keydownListenerAdded: false,
+      touchListenersAdded: false,
       easterEggApps: [],
       showUnderDevelopment: false,
       unfinishedApps: ['threeDPrinting'],
@@ -108,6 +120,9 @@ export default {
       booting: typeof sessionStorage !== "undefined" && sessionStorage.getItem("booted") !== "1",
       openedAppsEver: new Set(),
       windowThumbnails: {},
+      wallpaperId: getCurrentWallpaper().id,
+      wallpaperCss: getCurrentWallpaper().cssValue,
+      wallpaperUnsubscribe: null,
     };
   },
   computed: {
@@ -205,6 +220,7 @@ export default {
         return {
           darkMode: this.darkMode,
           currentLanguage: this.currentLanguage,
+          currentWallpaperId: this.wallpaperId,
           "onUpdate:darkMode": (value) => (this.darkMode = value),
           "onUpdate:currentLanguage": (value) => (this.currentLanguage = value),
         };
@@ -222,6 +238,51 @@ export default {
         this.currentInput.shift();
       }
       if (this.currentInput.join("") === this.konamiCode.join("")) {
+        this.triggerEasterEgg();
+      }
+    },
+    handleTouchStart(event) {
+      if (this.easterEggTriggered) return;
+      const t = event.changedTouches && event.changedTouches[0];
+      if (!t) return;
+      this.touchStartX = t.clientX;
+      this.touchStartY = t.clientY;
+      this.touchStartTime = Date.now();
+    },
+    handleTouchEnd(event) {
+      if (this.easterEggTriggered) return;
+      if (this.touchStartX == null) return;
+      const t = event.changedTouches && event.changedTouches[0];
+      const startX = this.touchStartX;
+      const startY = this.touchStartY;
+      const startTime = this.touchStartTime;
+      this.touchStartX = null;
+      this.touchStartY = null;
+      if (!t) return;
+
+      const dx = t.clientX - startX;
+      const dy = t.clientY - startY;
+      const absX = Math.abs(dx);
+      const absY = Math.abs(dy);
+      const dt = Date.now() - startTime;
+      const TAP_MAX = 10;
+      const SWIPE_MIN = 30;
+
+      let gesture = null;
+      if (absX < TAP_MAX && absY < TAP_MAX && dt < 500) {
+        gesture = "Tap";
+      } else if (absX >= SWIPE_MIN && absX > absY) {
+        gesture = dx > 0 ? "ArrowRight" : "ArrowLeft";
+      } else if (absY >= SWIPE_MIN && absY > absX) {
+        gesture = dy > 0 ? "ArrowDown" : "ArrowUp";
+      }
+      if (!gesture) return;
+
+      this.currentGestureInput.push(gesture);
+      if (this.currentGestureInput.length > this.gestureKonami.length) {
+        this.currentGestureInput.shift();
+      }
+      if (this.currentGestureInput.join(",") === this.gestureKonami.join(",")) {
         this.triggerEasterEgg();
       }
     },
@@ -268,12 +329,31 @@ export default {
       window.addEventListener("keydown", this.handleKeydown);
       this.keydownListenerAdded = true;
     }
+    if (!this.touchListenersAdded) {
+      window.addEventListener("touchstart", this.handleTouchStart, { passive: true });
+      window.addEventListener("touchend", this.handleTouchEnd, { passive: true });
+      this.touchListenersAdded = true;
+    }
+
+    this.wallpaperUnsubscribe = onWallpaperChange((wp) => {
+      this.wallpaperId = wp.id;
+      this.wallpaperCss = wp.cssValue;
+    });
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.checkMobile);
     if (this.keydownListenerAdded) {
       window.removeEventListener("keydown", this.handleKeydown);
       this.keydownListenerAdded = false;
+    }
+    if (this.touchListenersAdded) {
+      window.removeEventListener("touchstart", this.handleTouchStart);
+      window.removeEventListener("touchend", this.handleTouchEnd);
+      this.touchListenersAdded = false;
+    }
+    if (this.wallpaperUnsubscribe) {
+      this.wallpaperUnsubscribe();
+      this.wallpaperUnsubscribe = null;
     }
   },
 };

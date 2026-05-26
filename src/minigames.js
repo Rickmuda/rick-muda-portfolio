@@ -3,7 +3,6 @@
 // opens via openApp(name). Add new games here.
 export const minigames = [
   { name: "miniGame", icon: "clone", labelKey: "solitaire" },
-  // Not built yet: shown greyed-out / "coming soon" and not openable.
-  { name: "doom", icon: "skull", labelKey: "doom", comingSoon: true },
+  { name: "minesweeper", icon: "bomb", labelKey: "minesweeper" },
   { name: "flappyRick", icon: "dove", labelKey: "flappyRick" },
 ];

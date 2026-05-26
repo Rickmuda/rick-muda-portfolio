@@ -2,6 +2,14 @@
   <div class="photo-viewer">
     <div class="viewer-top">
       <span>Photo {{ selectedImageIndex + 1 }} / {{ artGalleryImages.length }}</span>
+      <button
+        class="fullscreen-btn"
+        :aria-label="$t('viewFullscreen')"
+        :title="$t('viewFullscreen')"
+        @click="openFullscreen"
+      >
+        <font-awesome-icon icon="expand" />
+      </button>
     </div>
     <div class="viewer-canvas" @touchstart="onTouchStart" @touchend="onTouchEnd">
       <button
@@ -20,6 +28,7 @@
           class="main-photo"
           loading="lazy"
           decoding="async"
+          @click="openFullscreen"
         />
       </transition>
       <button
@@ -47,10 +56,44 @@
         />
       </button>
     </div>
+
+    <Teleport to="body">
+      <div
+        v-if="isFullscreen"
+        class="lightbox-overlay"
+        @click.self="closeFullscreen"
+        @touchstart="onTouchStart"
+        @touchend="onTouchEnd"
+      >
+        <button class="lightbox-close" :aria-label="$t('closeFullscreen')" @click="closeFullscreen">
+          <font-awesome-icon icon="xmark" />
+        </button>
+        <button
+          v-if="selectedImageIndex > 0"
+          class="lightbox-nav left"
+          aria-label="Previous"
+          @click.stop="previousImage"
+        >&#8249;</button>
+        <img
+          :src="artGalleryImages[selectedImageIndex]"
+          class="lightbox-image"
+          alt="Art fullscreen"
+          @click.stop
+        />
+        <button
+          v-if="selectedImageIndex < artGalleryImages.length - 1"
+          class="lightbox-nav right"
+          aria-label="Next"
+          @click.stop="nextImage"
+        >&#8250;</button>
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script>
+import { unlock as unlockAchievement } from "../../achievements";
+
 export default {
   data() {
     return {
@@ -68,6 +111,7 @@ export default {
       frozenGifFrames: {},
       touchStartX: 0,
       slideName: 'slide-next',
+      isFullscreen: false,
     };
   },
   mounted() {
@@ -130,7 +174,17 @@ export default {
         this.nextImage();
       } else if (e.key === 'ArrowLeft') {
         this.previousImage();
+      } else if (e.key === 'Escape' && this.isFullscreen) {
+        this.closeFullscreen();
       }
+    },
+    openFullscreen() {
+      if (this.isFullscreen) return;
+      this.isFullscreen = true;
+      unlockAchievement("art-collector");
+    },
+    closeFullscreen() {
+      this.isFullscreen = false;
     },
     onTouchStart(e) {
       this.touchStartX = e.changedTouches[0].clientX;
@@ -164,9 +218,29 @@ export default {
   border-bottom: 1px solid #000;
   display: flex;
   align-items: center;
+  justify-content: space-between;
   padding: 0 12px;
   color: #fff;
   text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 1px 1px 0 #000;
+}
+
+.fullscreen-btn {
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  text-shadow: inherit;
+  transition: transform 0.15s ease;
+}
+
+.fullscreen-btn:hover {
+  transform: scale(1.15);
+}
+
+.main-photo {
+  cursor: zoom-in;
 }
 
 .viewer-canvas {
@@ -310,5 +384,91 @@ export default {
     width: 60px;
     height: 44px;
   }
+}
+</style>
+
+<!-- Lightbox styles live in an unscoped block because <Teleport to="body"> moves
+     the overlay outside this component's scope. -->
+<style>
+.lightbox-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+  background: rgba(0, 0, 0, 0.92);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  box-sizing: border-box;
+  animation: lightbox-fade-in 0.18s ease-out;
+}
+
+@keyframes lightbox-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+.lightbox-image {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.6);
+  cursor: default;
+}
+
+.lightbox-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  background: rgba(0, 0, 0, 0.4);
+  border: none;
+  color: #fff;
+  font-size: 22px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.lightbox-close:hover {
+  background: rgba(255, 255, 255, 0.18);
+  transform: scale(1.08);
+}
+
+.lightbox-nav {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(0, 0, 0, 0.35);
+  border: none;
+  color: #fff;
+  font-size: 48px;
+  line-height: 1;
+  width: 56px;
+  height: 56px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  border-radius: 50%;
+  transition: background 0.15s ease, transform 0.15s ease;
+}
+
+.lightbox-nav.left  { left: 16px; }
+.lightbox-nav.right { right: 16px; }
+
+.lightbox-nav:hover {
+  background: rgba(255, 255, 255, 0.2);
+  transform: translateY(-50%) scale(1.08);
+}
+
+@media (max-width: 768px) {
+  .lightbox-overlay { padding: 12px; }
+  .lightbox-nav     { display: none; }
+  .lightbox-close   { top: 8px; right: 8px; }
 }
 </style>

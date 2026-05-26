@@ -45,7 +45,6 @@ body {
     align-items: center;
     overflow: hidden;
     z-index: 0; /* Set the background to the lowest layer */
-    background-image: url('/src/assets/img/imggallery/room.webp');
 }
 
 

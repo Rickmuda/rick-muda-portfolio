@@ -11,7 +11,15 @@ const messages = {
     miniGame: "Mini Game",
     minigames: "Minigames",
     solitaire: "Solitaire",
-    doom: "Doom",
+    minesweeper: "Minesweeper",
+    mineEasy: "Easy",
+    mineMedium: "Medium",
+    mineHard: "Hard",
+    mineNewGame: "New Game",
+    mineWin: "You cleared the board!",
+    mineLose: "Boom! You hit a mine.",
+    mineFlagged: "Mines remaining",
+    mineBest: "Best",
     flappyRick: "Flappy Rick",
     flappyStart: "Start",
     flappyRestart: "Play again",
@@ -44,6 +52,9 @@ const messages = {
     achHackerTitle: "Hacker",                        achHackerDesc: "Discover the secret code.",
     achNightOwlTitle: "Night Owl",                   achNightOwlDesc: "Toggle dark mode.",
     achBilingualTitle: "Bilingual",                  achBilingualDesc: "Switch the language.",
+    achMinesweeperTitle: "Bomb Squad",               achMinesweeperDesc: "Win a game of Minesweeper.",
+    achDecoratorTitle: "Decorator",                  achDecoratorDesc: "Change the wallpaper.",
+    achArtCollectorTitle: "Art Collector",           achArtCollectorDesc: "View art in fullscreen.",
     paintBrush: "Brush",
     paintBucket: "Fill",
     paintEraser: "Eraser",
@@ -204,6 +215,19 @@ const messages = {
     dutch: "Dutch",
     german: "German",
 
+    // Wallpaper
+    selectWallpaper: "Wallpaper",
+    wpDefault: "Room",
+    wpAurora: "Aurora",
+    wpSunset: "Sunset",
+    wpOcean: "Ocean",
+    wpForest: "Forest",
+    wpMidnight: "Midnight",
+
+    // Art gallery
+    viewFullscreen: "View fullscreen",
+    closeFullscreen: "Close fullscreen",
+
     // Easter egg
     oldVideo: "Old Video",
     easterEgg: "Easter Egg",
@@ -219,7 +243,15 @@ const messages = {
     miniGame: "Mini Spel",
     minigames: "Minigames",
     solitaire: "Solitaire",
-    doom: "Doom",
+    minesweeper: "Mijnenveger",
+    mineEasy: "Makkelijk",
+    mineMedium: "Gemiddeld",
+    mineHard: "Moeilijk",
+    mineNewGame: "Nieuw spel",
+    mineWin: "Je hebt het bord leeggespeeld!",
+    mineLose: "Boem! Je raakte een mijn.",
+    mineFlagged: "Resterende mijnen",
+    mineBest: "Beste",
     flappyRick: "Flappy Rick",
     flappyStart: "Start",
     flappyRestart: "Opnieuw spelen",
@@ -252,6 +284,9 @@ const messages = {
     achHackerTitle: "Hacker",                        achHackerDesc: "Ontdek de geheime code.",
     achNightOwlTitle: "Nachtbraker",                 achNightOwlDesc: "Zet donkere modus aan.",
     achBilingualTitle: "Tweetalig",                  achBilingualDesc: "Verander de taal.",
+    achMinesweeperTitle: "Mijnopruimer",             achMinesweeperDesc: "Win een potje Mijnenveger.",
+    achDecoratorTitle: "Decorateur",                 achDecoratorDesc: "Verander de achtergrond.",
+    achArtCollectorTitle: "Kunstverzamelaar",        achArtCollectorDesc: "Bekijk kunst op volledig scherm.",
     paintBrush: "Penseel",
     paintBucket: "Vullen",
     paintEraser: "Gum",
@@ -413,6 +448,19 @@ const messages = {
     english: "Engels",
     dutch: "Nederlands",
     german: "Duits",
+
+    // Wallpaper
+    selectWallpaper: "Achtergrond",
+    wpDefault: "Kamer",
+    wpAurora: "Aurora",
+    wpSunset: "Zonsondergang",
+    wpOcean: "Oceaan",
+    wpForest: "Bos",
+    wpMidnight: "Middernacht",
+
+    // Art gallery
+    viewFullscreen: "Volledig scherm",
+    closeFullscreen: "Sluit volledig scherm",
 
     // Easter egg
     oldVideo: "Oude Video",

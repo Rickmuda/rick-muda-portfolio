@@ -25,6 +25,9 @@ export const achievements = [
   { id: "easter-egg-found",   icon: "egg",          titleKey: "achHackerTitle",           descKey: "achHackerDesc" },
   { id: "night-owl",          icon: "moon",         titleKey: "achNightOwlTitle",         descKey: "achNightOwlDesc" },
   { id: "bilingual",          icon: "book",         titleKey: "achBilingualTitle",        descKey: "achBilingualDesc" },
+  { id: "minesweeper-won",    icon: "bomb",         titleKey: "achMinesweeperTitle",      descKey: "achMinesweeperDesc" },
+  { id: "decorator",          icon: "palette",      titleKey: "achDecoratorTitle",        descKey: "achDecoratorDesc" },
+  { id: "art-collector",      icon: "image",        titleKey: "achArtCollectorTitle",     descKey: "achArtCollectorDesc" },
 ];
 
 export function unlock(id) {
