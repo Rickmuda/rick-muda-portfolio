@@ -9,7 +9,7 @@
       <div
         class="background"
         :class="{ 'dark-mode': darkMode }"
-        :style="{ backgroundImage: wallpaperCss }"
+        :style="{ backgroundImage: backgroundCss }"
       >
         <!-- Mobile: phone-style launcher. Desktop: OS metaphor. -->
         <MobileHome v-if="isMobile" :openApp="openApp" :apps="mobileApps" />
@@ -109,14 +109,26 @@ export default {
       booting: typeof sessionStorage !== "undefined" && sessionStorage.getItem("booted") !== "1",
       openedAppsEver: new Set(),
       windowThumbnails: {},
-      wallpaperId: getCurrentWallpaper().id,
-      wallpaperCss: getCurrentWallpaper().cssValue,
+      wallpaper: getCurrentWallpaper(),
       wallpaperUnsubscribe: null,
+      // Cached html2canvas module so minimize doesn't pay the dynamic-import cost.
+      html2canvas: null,
     };
   },
   computed: {
     windowConfig() {
       return windowConfig;
+    },
+    wallpaperId() {
+      return this.wallpaper.id;
+    },
+    // Effective desktop background. Each wallpaper has an optional darkCssValue
+    // variant; if missing we fall back to the light value so darkMode still
+    // tracks the toggle even on wallpapers we haven't styled.
+    backgroundCss() {
+      return this.darkMode && this.wallpaper.darkCssValue
+        ? this.wallpaper.darkCssValue
+        : this.wallpaper.cssValue;
     },
     mobileApps() {
       const eggs = this.easterEggApps.map((name) => ({
@@ -157,29 +169,32 @@ export default {
       delete this.windowZIndices[appName];
       sounds.play("close");
     },
-    async minimizeApp(appName) {
-      // Snapshot the window content for the taskbar hover preview BEFORE we
-      // hide it. html2canvas is dynamically imported so it stays out of the
-      // initial bundle.
-      if (!this.isMobile) {
+    minimizeApp(appName) {
+      // Kick off the taskbar-preview snapshot synchronously, BEFORE hiding the
+      // window. html2canvas reads the live DOM in its own microtask, which
+      // runs before Vue applies display:none from v-show - so by the time the
+      // user sees the window vanish, we have already captured it.
+      // Crucially we do not await the snapshot: the user's click feels instant
+      // and the thumbnail updates whenever the rasterization finishes.
+      if (!this.isMobile && this.html2canvas) {
         try {
           const el = document.querySelector(`[data-app-name="${appName}"]`);
           if (el) {
-            const html2canvas = (await import("html2canvas")).default;
-            const canvas = await html2canvas(el, {
+            this.html2canvas(el, {
               scale: 0.25,
               backgroundColor: null,
               logging: false,
               useCORS: true,
-            });
-            this.windowThumbnails = {
-              ...this.windowThumbnails,
-              [appName]: canvas.toDataURL("image/png"),
-            };
+            })
+              .then((canvas) => {
+                this.windowThumbnails = {
+                  ...this.windowThumbnails,
+                  [appName]: canvas.toDataURL("image/png"),
+                };
+              })
+              .catch(() => {});
           }
-        } catch (_) {
-          // Snapshot failed (CORS / WebGL canvas / etc.) - skip preview.
-        }
+        } catch (_) {}
       }
       this.minimizedWindows = { ...this.minimizedWindows, [appName]: true };
       sounds.play("minimize");
@@ -291,6 +306,17 @@ export default {
     // opens instantly instead of triggering a network fetch.
     preloadAllWindows();
 
+    // Pre-load html2canvas so the first minimize doesn't pay the dynamic
+    // import cost on top of the rasterization. Schedule for idle time.
+    const schedule = typeof window !== "undefined" && typeof window.requestIdleCallback === "function"
+      ? (cb) => window.requestIdleCallback(cb, { timeout: 2500 })
+      : (cb) => setTimeout(cb, 800);
+    schedule(() => {
+      import("html2canvas")
+        .then((mod) => { this.html2canvas = mod.default; })
+        .catch(() => {});
+    });
+
     const savedLanguage = localStorage.getItem("portfolio-language");
     if (savedLanguage) {
       this.updateLanguage(savedLanguage);
@@ -313,8 +339,7 @@ export default {
     }
 
     this.wallpaperUnsubscribe = onWallpaperChange((wp) => {
-      this.wallpaperId = wp.id;
-      this.wallpaperCss = wp.cssValue;
+      this.wallpaper = wp;
     });
   },
   beforeUnmount() {

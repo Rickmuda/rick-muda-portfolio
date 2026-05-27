@@ -1056,15 +1056,12 @@ sorting-bar button:hover {
   transform: scale(1.05);
 }
 
+/* Note: background-image is set inline from App.vue's `backgroundCss` computed
+   property, which already accounts for the current wallpaper + darkMode. */
 .background {
-  background-image: url('/src/assets/img/imggallery/room.webp');
   background-size: cover;
   background-position: center;
   transition: background-image 0.3s ease;
-}
-
-.background.dark-mode {
-  background-image: url('/src/assets/img/imggallery/roomdark.webp');
 }
 
 .dark-mode-toggle {
