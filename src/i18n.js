@@ -27,8 +27,15 @@ const messages = {
     flappyScore: "Score",
     flappyBest: "Best",
     flappyInstructions: "Click, tap or press Space to flap. Avoid the pipes!",
+    tetris: "Tetris",
+    tetrisStart: "New Game",
+    tetrisGameOver: "Game Over",
+    tetrisScore: "Score",
+    tetrisLevel: "Level",
+    tetrisLines: "Lines",
+    tetrisNext: "Next",
+    tetrisInstructions: "Arrows or WASD. Up to rotate. Space to drop.",
     settings: "Settings",
-    threeDPrinting: "3D Printing",
     certificates: "Certificates",
     vinylCollection: "Vinyl Collection",
     vinylDisclaimer: "This is just a showcase of my real vinyl collection, no music is actually played.",
@@ -55,6 +62,7 @@ const messages = {
     achMinesweeperTitle: "Bomb Squad",               achMinesweeperDesc: "Win a game of Minesweeper.",
     achDecoratorTitle: "Decorator",                  achDecoratorDesc: "Change the wallpaper.",
     achArtCollectorTitle: "Art Collector",           achArtCollectorDesc: "View art in fullscreen.",
+    achBlockBusterTitle: "Block Buster",             achBlockBusterDesc: "Clear 10 lines in a single Tetris game.",
     paintBrush: "Brush",
     paintBucket: "Fill",
     paintEraser: "Eraser",
@@ -228,6 +236,7 @@ const messages = {
     viewFullscreen: "View fullscreen",
     closeFullscreen: "Close fullscreen",
 
+
     // Easter egg
     oldVideo: "Old Video",
     easterEgg: "Easter Egg",
@@ -259,8 +268,15 @@ const messages = {
     flappyScore: "Score",
     flappyBest: "Beste",
     flappyInstructions: "Klik, tik of druk op spatie om te fladderen. Ontwijk de buizen!",
+    tetris: "Tetris",
+    tetrisStart: "Nieuw spel",
+    tetrisGameOver: "Game Over",
+    tetrisScore: "Score",
+    tetrisLevel: "Niveau",
+    tetrisLines: "Rijen",
+    tetrisNext: "Volgende",
+    tetrisInstructions: "Pijltjes of WASD. Omhoog draait. Spatie laat vallen.",
     settings: "Instellingen",
-    threeDPrinting: "3D Printen",
     certificates: "Certificaten",
     vinylCollection: "Vinyl Collectie",
     vinylDisclaimer: "Dit is enkel een showcase van mijn echte platencollectie, er wordt geen muziek afgespeeld.",
@@ -287,6 +303,7 @@ const messages = {
     achMinesweeperTitle: "Mijnopruimer",             achMinesweeperDesc: "Win een potje Mijnenveger.",
     achDecoratorTitle: "Decorateur",                 achDecoratorDesc: "Verander de achtergrond.",
     achArtCollectorTitle: "Kunstverzamelaar",        achArtCollectorDesc: "Bekijk kunst op volledig scherm.",
+    achBlockBusterTitle: "Blokkenkraker",            achBlockBusterDesc: "Maak 10 rijen leeg in een potje Tetris.",
     paintBrush: "Penseel",
     paintBucket: "Vullen",
     paintEraser: "Gum",
@@ -461,6 +478,7 @@ const messages = {
     // Art gallery
     viewFullscreen: "Volledig scherm",
     closeFullscreen: "Sluit volledig scherm",
+
 
     // Easter egg
     oldVideo: "Oude Video",

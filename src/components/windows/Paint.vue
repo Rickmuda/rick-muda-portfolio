@@ -194,6 +194,7 @@
 
 <script>
 import { unlock as unlockAchievement } from "../../achievements";
+import { sendDrawing } from "../../paintMailer";
 
 const PALETTE = [
   "#ffffff",
@@ -327,6 +328,7 @@ export default {
       const canvas = this.$refs.canvas;
       const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
       if (!blob) return;
+      sendDrawing(blob);
       const filename = `paint-${Date.now()}.png`;
       const file = new File([blob], filename, { type: "image/png" });
 

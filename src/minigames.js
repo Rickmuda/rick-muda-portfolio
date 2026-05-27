@@ -4,5 +4,6 @@
 export const minigames = [
   { name: "miniGame", icon: "clone", labelKey: "solitaire" },
   { name: "minesweeper", icon: "bomb", labelKey: "minesweeper" },
+  { name: "tetris", icon: "shapes", labelKey: "tetris" },
   { name: "flappyRick", icon: "dove", labelKey: "flappyRick" },
 ];

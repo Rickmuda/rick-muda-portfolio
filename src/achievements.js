@@ -28,6 +28,7 @@ export const achievements = [
   { id: "minesweeper-won",    icon: "bomb",         titleKey: "achMinesweeperTitle",      descKey: "achMinesweeperDesc" },
   { id: "decorator",          icon: "palette",      titleKey: "achDecoratorTitle",        descKey: "achDecoratorDesc" },
   { id: "art-collector",      icon: "image",        titleKey: "achArtCollectorTitle",     descKey: "achArtCollectorDesc" },
+  { id: "block-buster",       icon: "shapes",       titleKey: "achBlockBusterTitle",      descKey: "achBlockBusterDesc" },
 ];
 
 export function unlock(id) {

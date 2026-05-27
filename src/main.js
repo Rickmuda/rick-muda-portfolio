@@ -14,16 +14,10 @@ import {
   faUser,
   faFolder,
   faEnvelope,
-  faShareNodes,
-  faGamepad,
   faPalette,
   faCog,
-  faCube,
   faEgg,
   faBook,
-  faCertificate,
-  faWrench,
-  faSun,
   faMoon,
   faCompactDisc,
   faSitemap,
@@ -43,6 +37,7 @@ import {
   faImage,
   faExpand,
   faXmark,
+  faShapes,
   faDove,
   faClone,
   faTerminal,
@@ -62,7 +57,6 @@ import {
   faTiktok,
   faSpotify,
   faSteam,
-  faCodepen,
 } from "@fortawesome/free-brands-svg-icons";
 
 // Add icons to the library
@@ -70,16 +64,10 @@ library.add(
   faUser,
   faFolder,
   faEnvelope,
-  faShareNodes,
-  faGamepad,
   faPalette,
   faCog,
-  faCube,
   faEgg,
   faBook,
-  faCertificate,
-  faWrench,
-  faSun,
   faMoon,
   faCompactDisc,
   faSitemap,
@@ -99,6 +87,7 @@ library.add(
   faImage,
   faExpand,
   faXmark,
+  faShapes,
   faDove,
   faClone,
   faTerminal,
@@ -109,7 +98,7 @@ library.add(
   faFillDrip,
   faTrophy
 );
-library.add(faTwitter, faInstagram, faLinkedin, faGithub, faYoutube, faTiktok, faSpotify, faSteam, faCodepen);
+library.add(faTwitter, faInstagram, faLinkedin, faGithub, faYoutube, faTiktok, faSpotify, faSteam);
 
 const app = createApp(App);
 

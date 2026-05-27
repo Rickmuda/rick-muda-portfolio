@@ -52,12 +52,6 @@
         />
       </AppWindow>
 
-      <!-- Under Development Modal -->
-      <UnderDevelopment
-        v-if="showUnderDevelopment"
-        @close="closeUnderDevelopment"
-      />
-
       <!-- Boot screen (first visit per session) -->
       <BootScreen v-if="booting" @done="onBootDone" />
 
@@ -72,12 +66,11 @@ import Desktop from "./components/Desktop.vue";
 import MobileHome from "./components/MobileHome.vue";
 import Taskbar from "./components/Taskbar.vue";
 import AppWindow from "./components/AppWindow.vue";
-import UnderDevelopment from "./components/UnderDevelopment.vue";
 import BootScreen from "./components/BootScreen.vue";
 import AchievementToast from "./components/AchievementToast.vue";
 import { windowConfig, appList, preloadAllWindows } from "./windowConfig";
 import { sounds } from "./sounds";
-import { unlock as unlockAchievement, achievements as allAchievements } from "./achievements";
+import { unlock as unlockAchievement } from "./achievements";
 import { getCurrent as getCurrentWallpaper, onChange as onWallpaperChange } from "./wallpapers";
 
 export default {
@@ -87,7 +80,6 @@ export default {
     MobileHome,
     Taskbar,
     AppWindow,
-    UnderDevelopment,
     BootScreen,
     AchievementToast,
   },
@@ -97,7 +89,6 @@ export default {
       minimizedWindows: {},
       darkMode: false,
       currentLanguage: "en",
-      currentDate: new Date().toLocaleDateString(),
       commitSummary: __COMMIT_SUMMARY__,
       commitDescription: __COMMIT_DESCRIPTION__,
       zIndexCounter: 10,
@@ -114,8 +105,6 @@ export default {
       keydownListenerAdded: false,
       touchListenersAdded: false,
       easterEggApps: [],
-      showUnderDevelopment: false,
-      unfinishedApps: ['threeDPrinting'],
       isMobile: false,
       booting: typeof sessionStorage !== "undefined" && sessionStorage.getItem("booted") !== "1",
       openedAppsEver: new Set(),
@@ -140,11 +129,6 @@ export default {
   },
   methods: {
     openApp(appName) {
-      if (this.unfinishedApps.includes(appName)) {
-        this.showUnderDevelopment = true;
-        return;
-      }
-
       if (this.openWindows.includes(appName)) {
         if (this.minimizedWindows[appName]) {
           this.minimizedWindows = { ...this.minimizedWindows, [appName]: false };
@@ -203,10 +187,6 @@ export default {
     onBootDone() {
       this.booting = false;
       try { sessionStorage.setItem("booted", "1"); } catch (_) {}
-    },
-    // Removed login logic
-    toggleDarkMode() {
-      this.darkMode = !this.darkMode;
     },
     setDarkModeBasedOnTime() {
       const currentHour = new Date().getHours();
@@ -294,9 +274,6 @@ export default {
         this.easterEggApps.push("oldVideo");
       }
       unlockAchievement("easter-egg-found");
-    },
-    closeUnderDevelopment() {
-      this.showUnderDevelopment = false;
     },
     checkMobile() {
       this.isMobile = window.innerWidth <= 768;
