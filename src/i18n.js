@@ -237,6 +237,9 @@ const messages = {
     closeFullscreen: "Close fullscreen",
 
 
+    // Snap chooser
+    snapChooserTitle: "Snap another window",
+
     // Easter egg
     oldVideo: "Old Video",
     easterEgg: "Easter Egg",
@@ -479,6 +482,9 @@ const messages = {
     viewFullscreen: "Volledig scherm",
     closeFullscreen: "Sluit volledig scherm",
 
+
+    // Snap chooser
+    snapChooserTitle: "Snap een ander venster",
 
     // Easter egg
     oldVideo: "Oude Video",

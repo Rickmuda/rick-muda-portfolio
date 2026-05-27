@@ -251,9 +251,13 @@ export default {
 
 <!-- Non-scoped: the preview tooltip is teleported to <body>. -->
 <style>
+/* Fixed-size preview box: width AND height are constant so the hover
+   tooltip always looks the same regardless of the source window's aspect
+   ratio. The image is letterboxed inside via object-fit: contain. */
 .taskbar-preview {
   position: fixed;
   width: 240px;
+  height: 150px;
   padding: 6px;
   background: linear-gradient(180deg, #2a2a35, #1f1f2d);
   border: 2px solid #8404a1;
@@ -261,17 +265,26 @@ export default {
   box-shadow: 0 6px 18px rgba(0, 0, 0, 0.6);
   z-index: 99999;
   pointer-events: none;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .taskbar-preview img {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  object-fit: contain;
   border-radius: 4px;
 }
 
 .taskbar-preview-empty {
-  padding: 18px 8px;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   text-align: center;
   color: #d4a8e8;
   font-family: "PortfolioFont", sans-serif;

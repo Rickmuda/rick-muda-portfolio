@@ -1222,6 +1222,17 @@ sorting-bar button:hover {
   box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5); /* Add a shadow for better visibility */
 }
 
+.app-window.snapped {
+  border-radius: 0;
+  border: none;
+  box-shadow: none;
+}
+
+.app-window.snapped .top-bar {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
 /* Top Bar */
 .top-bar {
   height: 56px;

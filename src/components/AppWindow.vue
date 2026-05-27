@@ -13,7 +13,7 @@
         }"
     @mousedown="bringToFront"
   >
-    <div class="app-window">
+    <div class="app-window" :class="{ snapped: isSnapped || isMaximized }">
       <div class="top-bar" @mousedown="startDrag" @dblclick="onTitleBarDblClick">
         <span class="window-title">{{ title }}</span>
         <div class="window-controls">
@@ -66,6 +66,8 @@
 </template>
 
 <script>
+import { sounds } from "../sounds";
+
 export default {
   props: {
     title: {
@@ -123,6 +125,18 @@ export default {
       resizeStartMouseY: 0,
       resizeStartState: null,
     };
+  },
+  watch: {
+    // Notify parent when a snapped window becomes unsnapped (drag-away,
+    // restore via title-bar dbl-click, maximize, etc.) so the snap chooser
+    // overlay can dismiss itself.
+    isSnapped(newVal, oldVal) {
+      if (oldVal && !newVal) this.$emit("unsnap");
+    },
+    isMaximized(newVal, oldVal) {
+      // Maximizing replaces a left/right snap - also a dismissal signal.
+      if (newVal && !oldVal) this.$emit("unsnap");
+    },
   },
   computed: {
     snapPreviewStyle() {
@@ -225,13 +239,14 @@ export default {
         this.snapPreview = null;
       }
     },
-    applySnap(side) {
+    applySnap(side, { silent = false } = {}) {
       // Save restoreState only if this is a fresh snap (not snap-to-snap).
       if (!this.isMaximized && !this.isSnapped) {
         this.restoreState = { ...this.windowState };
       }
       const vw = window.innerWidth;
       const vh = Math.max(window.innerHeight - 60, 300);
+      sounds.play("maximize");
       if (side === "max") {
         this.windowState = { x: 0, y: 0, w: vw, h: vh };
         this.isMaximized = true;
@@ -240,11 +255,13 @@ export default {
         this.windowState = { x: 0, y: 0, w: Math.round(vw / 2), h: vh };
         this.isMaximized = false;
         this.isSnapped = true;
+        if (!silent) this.$emit("snap", "left");
       } else if (side === "right") {
         const half = Math.round(vw / 2);
         this.windowState = { x: vw - half, y: 0, w: half, h: vh };
         this.isMaximized = false;
         this.isSnapped = true;
+        if (!silent) this.$emit("snap", "right");
       }
     },
     onTitleBarDblClick(e) {
@@ -263,6 +280,7 @@ export default {
       }
       this.isMaximized = false;
       this.isSnapped = false;
+      sounds.play("restore");
     },
     startResize(dir, e) {
       if (this.isMobile) return;
@@ -450,6 +468,13 @@ export default {
   display: flex;
   flex-direction: column;
   border: 3px solid black;
+}
+
+/* When snapped/maximized the window is flush against the viewport edge, so
+   drop the rounded corners and the black outline for a clean Windows-style fit. */
+.app-window.snapped {
+  border-radius: 0;
+  border: none;
 }
 
 .top-bar {

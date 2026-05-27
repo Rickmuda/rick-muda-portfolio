@@ -37,6 +37,8 @@ class SoundManager {
       case "open":   return this.tone(ctx, 880, 0.06, "square",   0.05);
       case "close":  return this.glide(ctx, 660, 220, 0.18, "sine", 0.04);
       case "minimize": return this.glide(ctx, 660, 330, 0.12, "triangle", 0.04);
+      case "maximize": return this.glide(ctx, 330, 660, 0.12, "triangle", 0.04);
+      case "restore":  return this.glide(ctx, 520, 390, 0.10, "triangle", 0.04);
       case "error":  return this.tone(ctx, 220, 0.22, "sawtooth", 0.06);
       case "boot":   return this.boot(ctx);
       default:       return this.tone(ctx, 600, 0.04, "sine", 0.04);

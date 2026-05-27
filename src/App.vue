@@ -33,6 +33,7 @@
       <AppWindow
         v-for="window in openWindows"
         :key="window"
+        :ref="(el) => setWindowRef(window, el)"
         v-show="!minimizedWindows[window]"
         :title="$t(windowConfig[window].title)"
         :defaultWidth="windowConfig[window].defaultWidth"
@@ -45,12 +46,43 @@
         @close="closeApp(window)"
         @minimize="minimizeApp(window)"
         @bringToFront="bringWindowToFront(window)"
+        @snap="(side) => onWindowSnap(window, side)"
+        @unsnap="onWindowUnsnap(window)"
       >
         <component
           :is="windowConfig[window].component"
           v-bind="getWindowProps(window)"
         />
       </AppWindow>
+
+      <!-- Snap chooser: Windows-style overlay on the empty half after a
+           left/right snap, letting the user fill it with another open window. -->
+      <div
+        v-if="snapChooser && snapCandidates.length"
+        class="snap-chooser"
+        :style="snapChooserStyle"
+        @click.self="closeSnapChooser"
+      >
+        <div class="snap-chooser-inner" @click.stop>
+          <div class="snap-chooser-header">
+            <span class="snap-chooser-title">{{ $t('snapChooserTitle') }}</span>
+            <button class="snap-chooser-close" @click="closeSnapChooser" aria-label="Close">
+              <font-awesome-icon icon="xmark" />
+            </button>
+          </div>
+          <div class="snap-chooser-grid">
+            <button
+              v-for="cand in snapCandidates"
+              :key="cand"
+              class="snap-chooser-card"
+              @click="pickSnapTarget(cand)"
+            >
+              <font-awesome-icon :icon="getAppMeta(cand).icon" class="snap-chooser-icon" />
+              <span class="snap-chooser-label">{{ $t(getAppMeta(cand).labelKey) }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
 
       <!-- Boot screen (first visit per session) -->
       <BootScreen v-if="booting" @done="onBootDone" />
@@ -113,6 +145,11 @@ export default {
       wallpaperUnsubscribe: null,
       // Cached html2canvas module so minimize doesn't pay the dynamic-import cost.
       html2canvas: null,
+      // Function-ref registry: maps appName -> AppWindow component instance so
+      // we can drive snap on a different window than the one that emitted.
+      windowRefs: {},
+      // { fromApp, side } while the snap-fill overlay is visible, null otherwise.
+      snapChooser: null,
     };
   },
   computed: {
@@ -129,6 +166,21 @@ export default {
       return this.darkMode && this.wallpaper.darkCssValue
         ? this.wallpaper.darkCssValue
         : this.wallpaper.cssValue;
+    },
+    snapChooserStyle() {
+      if (!this.snapChooser) return {};
+      const vw = window.innerWidth;
+      const vh = Math.max(window.innerHeight - 60, 300);
+      const half = Math.round(vw / 2);
+      // Cover the half opposite the snapped window.
+      if (this.snapChooser.side === "left") {
+        return { left: half + "px", top: "0px", width: half + "px", height: vh + "px" };
+      }
+      return { left: "0px", top: "0px", width: half + "px", height: vh + "px" };
+    },
+    snapCandidates() {
+      if (!this.snapChooser) return [];
+      return this.openWindows.filter((w) => w !== this.snapChooser.fromApp);
     },
     mobileApps() {
       const eggs = this.easterEggApps.map((name) => ({
@@ -167,7 +219,62 @@ export default {
     closeApp(appName) {
       this.openWindows = this.openWindows.filter(window => window !== appName);
       delete this.windowZIndices[appName];
+      delete this.windowRefs[appName];
+      // Dismiss the chooser if it was anchored to the window we just closed.
+      if (this.snapChooser && this.snapChooser.fromApp === appName) {
+        this.snapChooser = null;
+      }
       sounds.play("close");
+    },
+    setWindowRef(name, el) {
+      // Function ref called on mount with the component instance, and on
+      // unmount with null - we only care about the live instance.
+      if (el) this.windowRefs[name] = el;
+      else delete this.windowRefs[name];
+    },
+    onWindowSnap(appName, side) {
+      // Only left/right open the fill chooser - max takes the whole desktop.
+      if (side !== "left" && side !== "right") return;
+      if (this.isMobile) return;
+      const others = this.openWindows.filter((w) => w !== appName);
+      if (others.length === 0) return;
+      this.snapChooser = { fromApp: appName, side };
+    },
+    onWindowUnsnap(appName) {
+      if (this.snapChooser && this.snapChooser.fromApp === appName) {
+        this.snapChooser = null;
+      }
+    },
+    closeSnapChooser() {
+      this.snapChooser = null;
+    },
+    pickSnapTarget(appName) {
+      if (!this.snapChooser) return;
+      const oppositeSide = this.snapChooser.side === "left" ? "right" : "left";
+      // Restore the target if it's currently minimized so the snap is visible.
+      if (this.minimizedWindows[appName]) {
+        this.minimizedWindows = { ...this.minimizedWindows, [appName]: false };
+      }
+      this.bringWindowToFront(appName);
+      // Wait a tick so v-show / z-index updates apply before snap geometry runs.
+      this.$nextTick(() => {
+        const ref = this.windowRefs[appName];
+        if (ref && typeof ref.applySnap === "function") {
+          // silent: this snap is driven by the chooser itself - emitting
+          // would reopen another chooser on the opposite half forever.
+          ref.applySnap(oppositeSide, { silent: true });
+        }
+      });
+      this.snapChooser = null;
+    },
+    getAppMeta(name) {
+      const fromList = appList.find((a) => a.name === name);
+      if (fromList) return fromList;
+      if (this.easterEggApps.includes(name)) {
+        return { name, icon: "egg", labelKey: "easterEgg" };
+      }
+      const cfg = windowConfig[name];
+      return { name, icon: "folder", labelKey: cfg?.title || name };
     },
     minimizeApp(appName) {
       // Kick off the taskbar-preview snapshot synchronously, BEFORE hiding the
@@ -226,6 +333,10 @@ export default {
       return windowConfig[windowName]?.props || {};
     },
     handleKeydown(event) {
+      if (event.key === "Escape" && this.snapChooser) {
+        this.snapChooser = null;
+        return;
+      }
       if (this.easterEggTriggered) return;
 
       this.currentInput.push(event.key);
@@ -360,4 +471,110 @@ export default {
   },
 };
 </script>
+
+<style scoped>
+.snap-chooser {
+  position: fixed;
+  z-index: 1090;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 12, 30, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: snapChooserFade 0.18s ease-out;
+}
+
+.snap-chooser-inner {
+  width: min(100%, 420px);
+  margin: 24px;
+  padding: 18px;
+  background: linear-gradient(180deg, #2a1a35, #1b1024);
+  border: 2px solid #8404a1;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+.snap-chooser-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.snap-chooser-title {
+  font-family: 'PortfolioFont', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.snap-chooser-close {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.12s ease;
+}
+
+.snap-chooser-close:hover {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+.snap-chooser-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.snap-chooser-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 8px;
+  min-height: 84px;
+  background: rgba(155, 32, 183, 0.18);
+  border: 1px solid rgba(196, 55, 230, 0.4);
+  border-radius: 10px;
+  color: #fff;
+  font-family: 'PortfolioFont', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.12s ease, border-color 0.12s ease;
+}
+
+.snap-chooser-card:hover {
+  background: rgba(155, 32, 183, 0.35);
+  border-color: #c637e6;
+  transform: translateY(-1px);
+}
+
+.snap-chooser-icon {
+  font-size: 22px;
+  color: #d4a8e8;
+}
+
+.snap-chooser-label {
+  text-align: center;
+  word-break: break-word;
+}
+
+@keyframes snapChooserFade {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+</style>
 
