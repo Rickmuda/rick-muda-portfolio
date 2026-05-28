@@ -414,6 +414,7 @@ export default {
           path: this.explorerPath,
           openNode: this.openNode,
           selection: this.explorerSelect,
+          easterEggApps: this.easterEggApps,
           "onUpdate:path": (value) => {
             this.explorerPath = value;
             this.explorerSelect = null; // user navigation clears any search target

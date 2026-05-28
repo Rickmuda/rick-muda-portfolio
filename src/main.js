@@ -61,6 +61,9 @@ import {
   faCode,
   faGamepad,
   faPhotoFilm,
+  faCamera,
+  faCameraRotate,
+  faChevronUp,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faTwitter,
@@ -124,7 +127,10 @@ library.add(
   faPowerOff,
   faCode,
   faGamepad,
-  faPhotoFilm
+  faPhotoFilm,
+  faCamera,
+  faCameraRotate,
+  faChevronUp
 );
 library.add(faTwitter, faInstagram, faLinkedin, faGithub, faYoutube, faTiktok, faSpotify, faSteam);
 

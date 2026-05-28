@@ -25,6 +25,7 @@ const windowLoaders = {
   paint:           () => import("./components/windows/Paint.vue"),
   achievements:    () => import("./components/windows/Achievements.vue"),
   fileExplorer:    () => import("./components/windows/FileExplorer.vue"),
+  camera:          () => import("./components/windows/CameraApp.vue"),
 };
 
 const lazy = (loader) => defineAsyncComponent(loader);
@@ -47,6 +48,7 @@ export const windowConfig = {
   paint:           { component: lazy(windowLoaders.paint),           title: "paint",          defaultWidth: 760,  defaultHeight: 560, defaultX: 280, defaultY: 80 },
   achievements:    { component: lazy(windowLoaders.achievements),    title: "achievements",   defaultWidth: 800,  defaultHeight: 600, defaultX: 320, defaultY: 80 },
   fileExplorer:    { component: lazy(windowLoaders.fileExplorer),    title: "fileExplorer",   defaultWidth: 1240, defaultHeight: 720, defaultX: 180, defaultY: 50 },
+  camera:          { component: lazy(windowLoaders.camera),         title: "camera",         defaultWidth: 480,  defaultHeight: 720, defaultX: 360, defaultY: 40 },
 };
 
 // Warm the dynamic-import cache for every window during browser idle time so
@@ -71,6 +73,7 @@ export function preloadAllWindows() {
 // Ordered app list used by the mobile launcher (and a single source of truth
 // for icon + i18n label per app).
 export const appList = [
+  { name: "camera",          icon: "camera",       labelKey: "camera" },
   { name: "aboutMe",         icon: "user",         labelKey: "aboutMe" },
   { name: "projects",        icon: "folder",       labelKey: "projects" },
   { name: "artGallery",      icon: "palette",      labelKey: "artGallery" },

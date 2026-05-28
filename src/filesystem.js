@@ -64,7 +64,7 @@ export const vfsRoot = {
 
     // Browsable folders (embedded views in the Explorer main pane).
     {
-      id: "projects", type: "folder", labelKey: "projects", icon: "code", descKey: "descProjects",
+      id: "projects", type: "folder", labelKey: "projects", icon: "code", descKey: "descProjects", desktop: true,
       component: lazy(() => import("./components/windows/Projects.vue")),
     },
     {

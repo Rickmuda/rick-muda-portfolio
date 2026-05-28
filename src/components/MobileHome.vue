@@ -58,7 +58,7 @@
 
     <!-- Swipe-up affordance: opens the app drawer (also via swipe up from the bottom). -->
     <div class="drawer-trigger" @click="openDrawer">
-      <span class="drawer-trigger-pill"></span>
+      <font-awesome-icon icon="chevron-up" class="drawer-trigger-chevron" />
     </div>
 
     <!-- App drawer (slide-up): all apps + search (apps, projects, photos). -->
@@ -491,12 +491,16 @@ export default {
   cursor: pointer;
 }
 
-.drawer-trigger-pill {
-  width: 120px;
-  height: 5px;
-  border-radius: 3px;
-  background: rgba(255, 255, 255, 0.6);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+.drawer-trigger-chevron {
+  font-size: 22px;
+  color: rgba(255, 255, 255, 0.85);
+  filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.6));
+  animation: drawerHint 1.8s ease-in-out infinite;
+}
+
+@keyframes drawerHint {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 
 /* App drawer */

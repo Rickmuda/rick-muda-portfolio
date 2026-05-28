@@ -70,6 +70,7 @@ export default {
     commitDescription: { type: String, required: true },
     openNode: { type: Function, required: true },
     openExplorerAt: { type: Function, required: true },
+    easterEggApps: { type: Array, default: () => [] },
   },
   emits: ["close"],
   data() {
@@ -83,7 +84,11 @@ export default {
     },
     pins() {
       const explorer = { id: "__explorer", type: "explorer", icon: "folder-open", labelKey: "fileExplorer" };
-      return [explorer, ...getRootNodes()];
+      // Easter egg apps appear (once unlocked) so they are pinned and searchable.
+      const eggs = this.easterEggApps.map((name) => ({
+        id: name, type: "app", app: name, labelKey: "easterEgg", icon: "egg", descKey: "descApp",
+      }));
+      return [explorer, ...getRootNodes(), ...eggs];
     },
     results() {
       const q = this.query.trim().toLowerCase();

@@ -93,6 +93,8 @@ export default {
     // Optional selection target passed to the embedded folder component (search).
     selection: { type: Object, default: null },
     isMobile: { type: Boolean, default: false },
+    // Easter egg app names; surfaced at the explorer root once unlocked.
+    easterEggApps: { type: Array, default: () => [] },
   },
   emits: ["update:path"],
   data() {
@@ -107,7 +109,15 @@ export default {
   },
   computed: {
     items() {
-      return listChildren(this.path);
+      const base = listChildren(this.path);
+      // At the root, surface any unlocked easter egg apps alongside the static tree.
+      if (this.path.length === 0 && this.easterEggApps.length) {
+        const eggs = this.easterEggApps.map((name) => ({
+          id: name, type: "app", app: name, labelKey: "easterEgg", icon: "egg", descKey: "descApp",
+        }));
+        return [...base, ...eggs];
+      }
+      return base;
     },
     currentNode() {
       return resolvePath(this.path);

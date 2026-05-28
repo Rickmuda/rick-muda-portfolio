@@ -92,6 +92,7 @@
       :commitDescription="commitDescription"
       :openNode="openNode"
       :openExplorerAt="openExplorerAt"
+      :easterEggApps="easterEggApps"
       @close="closeStartMenu"
     />
   </div>

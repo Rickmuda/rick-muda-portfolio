@@ -293,6 +293,21 @@ const messages = {
     startNoResults: "No results found.",
     startRecommended: "Recommended",
     startPower: "Power",
+    // Camera (phone-only)
+    camera: "Camera",
+    cameraNotice: "Heads up: any photo you take here is sent straight to Rick.",
+    cameraRemaining: "{n} of 5 photos left",
+    cameraShutter: "Take photo",
+    cameraFlip: "Switch camera",
+    cameraRetake: "Retake",
+    cameraSend: "Send to Rick",
+    cameraSending: "Sending...",
+    cameraSent: "Sent! Thanks for the photo.",
+    cameraAnother: "Send another photo",
+    cameraFailed: "Couldn't send the photo. Please try again.",
+    cameraLimit: "You've reached the 5-photo limit. Thanks!",
+    cameraDenied: "Camera access is needed to take a photo.",
+    cameraRetry: "Try again",
   },
 
   nl: {
@@ -589,6 +604,21 @@ const messages = {
     startNoResults: "Geen resultaten gevonden.",
     startRecommended: "Aanbevolen",
     startPower: "Aan/uit",
+    // Camera (alleen telefoon)
+    camera: "Camera",
+    cameraNotice: "Let op: elke foto die je hier maakt wordt direct naar Rick gestuurd.",
+    cameraRemaining: "Nog {n} van 5 foto's",
+    cameraShutter: "Foto maken",
+    cameraFlip: "Wissel camera",
+    cameraRetake: "Opnieuw",
+    cameraSend: "Stuur naar Rick",
+    cameraSending: "Versturen...",
+    cameraSent: "Verstuurd! Bedankt voor de foto.",
+    cameraAnother: "Nog een foto sturen",
+    cameraFailed: "Kon de foto niet versturen. Probeer het opnieuw.",
+    cameraLimit: "Je hebt de limiet van 5 foto's bereikt. Bedankt!",
+    cameraDenied: "Toegang tot de camera is nodig om een foto te maken.",
+    cameraRetry: "Opnieuw proberen",
   },
 };
 
