@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 600" width="800" height="600" role="img" aria-label="Under construction">
+  <defs>
+    <pattern id="hazard" width="56" height="56" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">
+      <rect width="56" height="56" fill="#f5c518"/>
+      <rect width="28" height="56" fill="#1a1a24"/>
+    </pattern>
+  </defs>
+
+  <rect width="800" height="600" fill="#1a1a24"/>
+
+  <!-- Top & bottom hazard bands -->
+  <rect x="0" y="0" width="800" height="44" fill="url(#hazard)"/>
+  <rect x="0" y="556" width="800" height="44" fill="url(#hazard)"/>
+
+  <!-- Warning triangle -->
+  <g transform="translate(400 268)">
+    <path d="M 0 -120 L 138 120 L -138 120 Z"
+          fill="#9b20b7" stroke="#f5c518" stroke-width="10" stroke-linejoin="round"/>
+    <rect x="-16" y="-58" width="32" height="120" rx="10" fill="#ffffff"/>
+    <circle cx="0" cy="92" r="18" fill="#ffffff"/>
+  </g>
+
+  <!-- Caption -->
+  <text x="400" y="470" text-anchor="middle"
+        font-family="'Segoe UI', Arial, sans-serif" font-size="56" font-weight="800"
+        fill="#ffffff" letter-spacing="2">UNDER CONSTRUCTION</text>
+  <text x="400" y="512" text-anchor="middle"
+        font-family="'Segoe UI', Arial, sans-serif" font-size="26" font-weight="600"
+        fill="#d4a8e8" letter-spacing="6">GOEDKOOPJE</text>
+</svg>

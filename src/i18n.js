@@ -184,7 +184,9 @@ const messages = {
     qt: "Quiet Turn",
     qtDescription: "A magic the gathering game tracker for neurodivergent people to make the game more accessible.",
     lh: "LunarHome",
-    lhDescription: "A personal streaming service for the DVDs I collect.",
+    lhDescription: "A personal streaming service for the DVDs I collect. I also built an actual TV app for it.",
+    gk: "GoedKoopje",
+    gkDescription: "A website (and later an app) where you enter your grocery list to see where you can buy everything the cheapest. Netherlands only.",
     goToProject: "Go to Project",
 
     // Start menu
@@ -495,7 +497,9 @@ const messages = {
     qt: "Quiet Turn",
     qtDescription: "Een magic the gathering game tracker voor neurodivergente mensen om het spel toegankelijker te maken.",
     lh: "LunarHome",
-    lhDescription: "Een persoonlijke streaming service voor de dvd's die ik verzamel.",
+    lhDescription: "Een persoonlijke streaming service voor de dvd's die ik verzamel. Ik heb er ook een echte TV-app voor gemaakt.",
+    gk: "GoedKoopje",
+    gkDescription: "Een website (en later een app) waar je je boodschappenlijst invoert om te zien waar je alles het goedkoopst kunt kopen. Alleen Nederland.",
     goToProject: "Ga naar Project",
 
     // Start menu

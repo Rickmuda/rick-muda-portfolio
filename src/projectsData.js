@@ -118,4 +118,13 @@ export const projects = [
     disabled: true,
     status: "Private",
   },
+  {
+    titleKey: "gk",
+    descKey: "gkDescription",
+    type: "Web Project",
+    dateCreated: "2026-05-28",
+    images: [img("under-construction.svg")],
+    disabled: true,
+    status: "W.I.P",
+  },
 ];
