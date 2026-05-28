@@ -95,6 +95,10 @@
 import { unlock as unlockAchievement } from "../../achievements";
 
 export default {
+  props: {
+    // Optional { photoSrc } from the mobile search to open a photo fullscreen.
+    selection: { type: Object, default: null },
+  },
   data() {
     return {
       artGalleryImages: [
@@ -117,6 +121,7 @@ export default {
   mounted() {
     this.extractGifFirstFrames();
     window.addEventListener('keydown', this.handleKeydown);
+    this.applySelection();
   },
   beforeUnmount() {
     window.removeEventListener('keydown', this.handleKeydown);
@@ -124,6 +129,9 @@ export default {
   watch: {
     selectedImageIndex() {
       this.$nextTick(this.scrollActiveThumb);
+    },
+    selection() {
+      this.applySelection();
     },
   },
   methods: {
@@ -176,6 +184,14 @@ export default {
         this.previousImage();
       } else if (e.key === 'Escape' && this.isFullscreen) {
         this.closeFullscreen();
+      }
+    },
+    applySelection() {
+      if (!this.selection || !this.selection.photoSrc) return;
+      const idx = this.artGalleryImages.findIndex((s) => s === this.selection.photoSrc);
+      if (idx >= 0) {
+        this.selectedImageIndex = idx;
+        this.openFullscreen();
       }
     },
     openFullscreen() {

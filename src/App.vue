@@ -12,7 +12,13 @@
         :style="{ backgroundImage: backgroundCss }"
       >
         <!-- Mobile: phone-style launcher. Desktop: OS metaphor. -->
-        <MobileHome v-if="isMobile" :openApp="openApp" :apps="mobileApps" />
+        <MobileHome
+          v-if="isMobile"
+          :openApp="openApp"
+          :apps="mobileApps"
+          :openProjectSelected="openProjectSelected"
+          :openPhotoSelected="openPhotoSelected"
+        />
         <Desktop v-else :openNode="openNode" :easterEggApps="easterEggApps" />
       </div>
 
@@ -158,6 +164,10 @@ export default {
       // Optional selection target (project/photo) passed to the embedded folder view,
       // set by the start-menu search and cleared on any normal navigation.
       explorerSelect: null,
+      // Mobile-only: selection passed to the Projects / Art Gallery windows when a
+      // project/photo is tapped in the mobile search. Cleared when the window closes.
+      projectSelect: null,
+      photoSelect: null,
     };
   },
   computed: {
@@ -265,6 +275,16 @@ export default {
       this.explorerPath = [];
       this.ensureOpen("fileExplorer");
     },
+    // Mobile search: open the Projects window with a project pre-selected.
+    openProjectSelected(titleKey) {
+      this.projectSelect = { projectTitleKey: titleKey };
+      this.ensureOpen("projects");
+    },
+    // Mobile search: open the Art Gallery window showing a photo fullscreen.
+    openPhotoSelected(src) {
+      this.photoSelect = { photoSrc: src };
+      this.ensureOpen("artGallery");
+    },
     // Open the explorer at a folder with a selection target for its embedded view
     // (used by the start-menu search to jump to a project or photo).
     openExplorerAt(path, selection = null) {
@@ -283,6 +303,9 @@ export default {
       if (this.snapChooser && this.snapChooser.fromApp === appName) {
         this.snapChooser = null;
       }
+      // Clear any mobile search selection so reopening starts fresh.
+      if (appName === "projects") this.projectSelect = null;
+      if (appName === "artGallery") this.photoSelect = null;
       sounds.play("close");
     },
     setWindowRef(name, el) {
@@ -396,6 +419,13 @@ export default {
             this.explorerSelect = null; // user navigation clears any search target
           },
         };
+      }
+      // Mobile-only windows that the search can pre-select into.
+      if (windowName === "projects") {
+        return { selection: this.projectSelect };
+      }
+      if (windowName === "artGallery") {
+        return { selection: this.photoSelect };
       }
       return windowConfig[windowName]?.props || {};
     },

@@ -1,5 +1,9 @@
 <template>
-  <div class="mobile-home">
+  <div
+    class="mobile-home"
+    @touchstart.passive="onHomeTouchStart"
+    @touchend.passive="onHomeTouchEnd"
+  >
     <div class="status-bar">
       <span class="sb-time">{{ time }}</span>
       <span class="sb-icons">
@@ -52,6 +56,48 @@
       ></span>
     </div>
 
+    <!-- Swipe-up affordance: opens the app drawer (also via swipe up from the bottom). -->
+    <div class="drawer-trigger" @click="openDrawer">
+      <span class="drawer-trigger-pill"></span>
+    </div>
+
+    <!-- App drawer (slide-up): all apps + search (apps, projects, photos). -->
+    <div class="app-drawer" :class="{ open: drawerOpen }">
+      <div
+        class="drawer-top"
+        @touchstart.passive="onDrawerTouchStart"
+        @touchend.passive="onDrawerTouchEnd"
+      >
+        <span class="drawer-grabber" @click="closeDrawer"></span>
+        <div class="drawer-search">
+          <font-awesome-icon icon="magnifying-glass" class="drawer-search-icon" />
+          <input
+            v-model="query"
+            class="drawer-search-input"
+            type="text"
+            :placeholder="$t('startSearch')"
+            spellcheck="false"
+          />
+        </div>
+      </div>
+
+      <div class="drawer-grid">
+        <button
+          v-for="r in results"
+          :key="r.id"
+          class="drawer-item"
+          @click="onResult(r)"
+        >
+          <span class="drawer-item-icon">
+            <img v-if="r.kind === 'photo'" :src="r.src" :alt="r.label" class="drawer-thumb" />
+            <font-awesome-icon v-else :icon="r.icon" class="drawer-item-glyph" />
+          </span>
+          <span class="drawer-item-label">{{ r.label }}</span>
+        </button>
+        <div v-if="!results.length" class="drawer-empty">{{ $t('startNoResults') }}</div>
+      </div>
+    </div>
+
     <!-- iOS-style folder overlay (shared with the desktop) -->
     <FolderOverlay :folder="openFolderApp" @close="closeFolder" @open="openGame" />
   </div>
@@ -60,6 +106,8 @@
 <script>
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import FolderOverlay from "./FolderOverlay.vue";
+import { projects as projectsData } from "../projectsData";
+import { galleryImages } from "../galleryImages";
 
 const APPS_PER_PAGE = 6;
 
@@ -78,6 +126,14 @@ export default {
       type: Array,
       required: true,
     },
+    openProjectSelected: {
+      type: Function,
+      required: true,
+    },
+    openPhotoSelected: {
+      type: Function,
+      required: true,
+    },
   },
   data() {
     return {
@@ -88,6 +144,12 @@ export default {
       batteryCharging: false,
       battery: null,
       openFolderApp: null,
+      // App drawer
+      drawerOpen: false,
+      query: "",
+      homeTouchStartX: 0,
+      homeTouchStartY: 0,
+      drawerTouchStartY: 0,
     };
   },
   computed: {
@@ -95,6 +157,43 @@ export default {
       const out = [];
       for (let i = 0; i < this.apps.length; i += APPS_PER_PAGE) {
         out.push(this.apps.slice(i, i + APPS_PER_PAGE));
+      }
+      return out;
+    },
+    // Flat list of every app (folders expanded into their items) for the drawer.
+    allApps() {
+      const out = [];
+      for (const a of this.apps) {
+        if (a.folder && a.items) out.push(...a.items);
+        else out.push(a);
+      }
+      return out;
+    },
+    // Drawer contents: all apps when idle; apps + projects + photos when searching.
+    results() {
+      const q = this.query.trim().toLowerCase();
+      if (!q) {
+        return this.allApps.map((a) => ({
+          kind: "app", id: "a-" + a.name, label: this.$t(a.labelKey), icon: a.icon, name: a.name,
+        }));
+      }
+      const out = [];
+      for (const a of this.allApps) {
+        const label = this.$t(a.labelKey) || "";
+        if (label.toLowerCase().includes(q)) {
+          out.push({ kind: "app", id: "a-" + a.name, label, icon: a.icon, name: a.name });
+        }
+      }
+      for (const p of projectsData) {
+        const label = this.$t(p.titleKey);
+        if (label.toLowerCase().includes(q)) {
+          out.push({ kind: "project", id: "p-" + p.titleKey, label, icon: "code", titleKey: p.titleKey });
+        }
+      }
+      for (const im of galleryImages) {
+        if (im.name.toLowerCase().includes(q)) {
+          out.push({ kind: "photo", id: "img-" + im.name, label: im.name, icon: "image", src: im.src });
+        }
       }
       return out;
     },
@@ -169,6 +268,48 @@ export default {
     openGame(name) {
       this.closeFolder();
       this.openApp(name);
+    },
+    // --- App drawer ---
+    openDrawer() {
+      this.drawerOpen = true;
+    },
+    closeDrawer() {
+      this.drawerOpen = false;
+      this.query = "";
+    },
+    onResult(r) {
+      if (r.kind === "app") this.openApp(r.name);
+      else if (r.kind === "project") this.openProjectSelected(r.titleKey);
+      else if (r.kind === "photo") this.openPhotoSelected(r.src);
+      // Closing the drawer reveals the home at the page the user swiped up from.
+      this.closeDrawer();
+    },
+    onHomeTouchStart(e) {
+      const t = e.changedTouches[0];
+      this.homeTouchStartX = t.clientX;
+      this.homeTouchStartY = t.clientY;
+    },
+    onHomeTouchEnd(e) {
+      if (this.drawerOpen) return;
+      const t = e.changedTouches[0];
+      const dx = t.clientX - this.homeTouchStartX;
+      const dy = t.clientY - this.homeTouchStartY;
+      // Open on a clear upward swipe that starts in the bottom ~40% of the screen
+      // (keeps it from clashing with the konami swipe and horizontal paging).
+      if (
+        this.homeTouchStartY > window.innerHeight * 0.6 &&
+        dy < -60 &&
+        Math.abs(dy) > Math.abs(dx)
+      ) {
+        this.openDrawer();
+      }
+    },
+    onDrawerTouchStart(e) {
+      this.drawerTouchStartY = e.changedTouches[0].clientY;
+    },
+    onDrawerTouchEnd(e) {
+      const dy = e.changedTouches[0].clientY - this.drawerTouchStartY;
+      if (dy > 60) this.closeDrawer();
     },
   },
 };
@@ -320,7 +461,7 @@ export default {
   display: flex;
   justify-content: center;
   gap: 8px;
-  padding: 12px 0 24px;
+  padding: 12px 0 12px;
 }
 
 .home-dot {
@@ -338,5 +479,144 @@ export default {
   width: 24px;
   border-radius: 5px;
   background: #fff;
+}
+
+/* Swipe-up trigger pill (home indicator style) */
+.drawer-trigger {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  padding: 4px 0 14px;
+  padding-bottom: calc(14px + env(safe-area-inset-bottom, 0));
+  cursor: pointer;
+}
+
+.drawer-trigger-pill {
+  width: 120px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.6);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
+}
+
+/* App drawer */
+.app-drawer {
+  position: fixed;
+  inset: 0;
+  z-index: 100;
+  background: rgba(26, 16, 36, 0.97);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  display: flex;
+  flex-direction: column;
+  transform: translateY(100%);
+  transition: transform 0.28s ease;
+}
+
+.app-drawer.open {
+  transform: translateY(0);
+}
+
+.drawer-top {
+  flex-shrink: 0;
+  padding: 10px 18px 12px;
+  padding-top: calc(10px + env(safe-area-inset-top, 0));
+}
+
+.drawer-grabber {
+  display: block;
+  width: 44px;
+  height: 5px;
+  border-radius: 3px;
+  background: rgba(255, 255, 255, 0.4);
+  margin: 4px auto 14px;
+  cursor: pointer;
+}
+
+.drawer-search {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 20px;
+  padding: 10px 16px;
+}
+
+.drawer-search-icon {
+  color: #d4a8e8;
+}
+
+.drawer-search-input {
+  flex: 1;
+  background: transparent;
+  border: none;
+  outline: none;
+  color: #fff;
+  font-family: inherit;
+  font-size: 15px;
+}
+
+.drawer-search-input::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.drawer-grid {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 20px 8px;
+  padding: 16px 18px;
+  padding-bottom: calc(32px + env(safe-area-inset-bottom, 0));
+  align-content: start;
+}
+
+.drawer-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  background: transparent;
+  border: none;
+  color: #fff;
+  font-family: inherit;
+  cursor: pointer;
+}
+
+.drawer-item-icon {
+  width: 58px;
+  height: 58px;
+  border-radius: 14px;
+  background: #9b20b7;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #fff;
+  overflow: hidden;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.25);
+}
+
+.drawer-thumb {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.drawer-item-label {
+  font-size: 12px;
+  text-align: center;
+  line-height: 1.15;
+  word-break: break-word;
+}
+
+.drawer-empty {
+  grid-column: 1 / -1;
+  text-align: center;
+  color: #b6a6c4;
+  padding: 24px;
+  font-size: 14px;
 }
 </style>

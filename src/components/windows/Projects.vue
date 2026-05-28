@@ -190,6 +190,9 @@ export default {
       const match = this.sortedProjects.find((p) => p.titleKey === this.selection.projectTitleKey);
       if (match) {
         this.selectProject(match);
+        // Mobile layout uses its own detail state.
+        this.pmSelected = match;
+        this.pmDetailIndex = 0;
         return true;
       }
       return false;
