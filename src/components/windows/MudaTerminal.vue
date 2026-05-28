@@ -34,6 +34,7 @@
           autocomplete="off"
           autocapitalize="off"
           spellcheck="false"
+          @input="onType"
           @keydown.enter="run"
           @keydown.up.prevent="recall(-1)"
           @keydown.down.prevent="recall(1)"
@@ -46,6 +47,8 @@
 <script>
 // A fake retro terminal that surfaces the user's company, MudaDigitaal. Commands print
 // company info; `open` launches the real site. All output text comes from i18n (EN/NL).
+import { sounds } from "../../sounds";
+
 const WEBSITE = "https://mudadigitaal.nl";
 const EMAIL = "rickmudadigitaal@gmail.com";
 
@@ -67,6 +70,9 @@ export default {
   methods: {
     focusInput() {
       this.$nextTick(() => this.$refs.input && this.$refs.input.focus());
+    },
+    onType() {
+      sounds.play("type");
     },
     scrollToBottom() {
       this.$nextTick(() => {

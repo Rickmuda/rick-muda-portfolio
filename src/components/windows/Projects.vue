@@ -31,6 +31,7 @@
         <span>{{ project.status || 'Published' }}</span>
         <span v-if="!selectedProject">{{ project.dateCreated }}</span>
       </button>
+      <div v-if="!sortedProjects.length" class="details-empty">{{ $t('emptyFolder') }}</div>
     </div>
 
     <div class="explorer-pane preview-pane" v-if="selectedProject">
@@ -121,10 +122,19 @@
 </template>
 
 <script>
+import { projects as projectsData } from "../../projectsData";
+
 export default {
+  props: {
+    // 'active' = live projects, 'recycle' = scrapped / back-burner projects.
+    variant: { type: String, default: 'active' },
+    // Optional { projectTitleKey } set by the start-menu search to pre-select a project.
+    selection: { type: Object, default: null },
+  },
   data() {
     return {
       projects: [],
+      recycleProjects: [],
       selectedProject: null,
       currentImageIndex: 0,
       carouselInterval: null,
@@ -141,9 +151,10 @@ export default {
   computed: {
     sortedProjects() {
       const typeOrder = { 'Web Project': 0, 'Portfolio': 1, 'Video Project': 2, 'Game': 3 };
-      const statusOrder = { 'Published': 0, 'W.I.P': 1, 'Outdated': 2, 'Private': 3 };
-      
-      return [...this.projects].sort((a, b) => {
+      const statusOrder = { 'Published': 0, 'W.I.P': 1, 'Outdated': 2, 'Private': 3, 'Scrapped': 4 };
+      const source = this.variant === 'recycle' ? this.recycleProjects : this.projects;
+
+      return [...source].sort((a, b) => {
         let comparison = 0;
         
         switch (this.sortBy) {
@@ -167,7 +178,22 @@ export default {
       });
     }
   },
+  watch: {
+    selection() {
+      this.applySelection();
+    },
+  },
   methods: {
+    // Select a specific project when the start-menu search points us at one.
+    applySelection() {
+      if (!this.selection || !this.selection.projectTitleKey) return false;
+      const match = this.sortedProjects.find((p) => p.titleKey === this.selection.projectTitleKey);
+      if (match) {
+        this.selectProject(match);
+        return true;
+      }
+      return false;
+    },
     selectProject(project) {
       // Clear any existing interval before switching projects
       clearInterval(this.carouselInterval);
@@ -273,160 +299,24 @@ export default {
       this.pmIsSwiping = false;
     },
     initializeProjects() {
-      this.projects = [
-        {
-          title: this.$t('uwp'),
-          type: 'Web Project',
-          dateCreated: '2024-06-04',
-          images: [
-            new URL('@/assets/img/projects/weather1.webp', import.meta.url).href,
-            new URL('@/assets/img/projects/weather2.webp', import.meta.url).href,
-            new URL('@/assets/img/projects/weather3.webp', import.meta.url).href
-          ],
-          description: this.$t('uwpDescription'),
-          link: "https://weather.rickmuda.nl",
-          repository: "https://github.com/rickmuda/unnamed-weather-app"
-        },
-        {
-          title: this.$t('aw'),
-          type: 'Web Project',
-          dateCreated: '2022-09-20',
-          images: [
-            new URL('@/assets/img/projects/annoying1.webp', import.meta.url).href,
-            new URL('@/assets/img/projects/annoying2.webp', import.meta.url).href,
-            new URL('@/assets/img/projects/annoying3.webp', import.meta.url).href
-          ],
-          description: this.$t('awDescription'),
-          link: "https://annoying.rickmuda.nl",
-          repository: "https://github.com/rickmuda/annoying-webpage"
-        },
-        {
-          title: this.$t('wam'),
-          type: 'Game',
-          dateCreated: '2022-11-10',
-          images: [
-            new URL('@/assets/img/projects/whack1.webp', import.meta.url).href,
-            new URL('@/assets/img/projects/whack2.webp', import.meta.url).href,
-            new URL('@/assets/img/projects/whack3.webp', import.meta.url).href
-          ],
-          description: this.$t('wamDescription'),
-          link: "https://whackamom.rickmuda.nl",
-          repository: "https://github.com/rickmuda/whack-a-mom"
-        },
-        {
-          title: this.$t('gl'),
-          type: 'Web Project',
-          dateCreated: '2023-01-08',
-          images: [
-            new URL('@/assets/img/projects/gym-list.webp', import.meta.url).href
-          ],
-          description: this.$t('glDescription'),
-          link: "https://gymlist.rickmuda.nl",
-          repository: "https://github.com/rickmuda/gym-list",
-          status: 'Outdated'
-        },
-        {
-          title: this.$t('op'),
-          type: 'Web Project',
-          dateCreated: '2022-08-12',
-          images: [
-            new URL('@/assets/img/projects/one-pager.webp', import.meta.url).href
-          ],
-          description: this.$t('opDescription'),
-          link: "https://onepager.rickmuda.nl",
-          repository: "https://github.com/rickmuda/one-pager",
-          status: 'Outdated'
-        },
-        {
-          title: this.$t('sp'),
-          type: 'Video Project',
-          dateCreated: '2023-11-27',
-          images: [
-            new URL('@/assets/img/projects/snackbar-podcast.webp', import.meta.url).href
-          ],
-          description: this.$t('spDescription'),
-          link: "https://www.youtube.com/watch?v=-JeNEwwF-Ms"
-        },
-        {
-          title: this.$t('us'),
-          type: 'Game',
-          dateCreated: '2024-06-07',
-          images: [
-            new URL('@/assets/img/projects/undertale-sudoku.webp', import.meta.url).href
-          ],
-          description: this.$t('usDescription'),
-          link: "https://sudoku.rickmuda.nl",
-          repository: "https://github.com/rickmuda/undertale-sudoku",
-          status: 'Outdated'
-        },
-        {
-          title: this.$t('lvt'),
-          type: 'Web Project',
-          dateCreated: '2023-07-30',
-          images: [
-            new URL('@/assets/img/projects/longvideotheater.webp', import.meta.url).href
-          ],
-          description: this.$t('lvtDescription'),
-          link: "https://lvt.rickmuda.nl",
-          disabled: true,
-          status: 'W.I.P'
-        },
-        {
-          title: this.$t('dnm'),
-          type: 'Web Project',
-          dateCreated: '2025-04-12',
-          images: [
-            new URL('@/assets/img/projects/dungeon and music.webp', import.meta.url).href
-          ],
-          description: this.$t('dnmDescription'),
-          link: "https://dnm.rickmuda.nl",
-          repository: "https://github.com/rickmuda/dungeons-and-music"
-        },
-        {
-          title: this.$t('syp'),
-          type: 'Portfolio',
-          dateCreated: '2023-10-18',
-          images: [
-            new URL('@/assets/img/projects/portfolio1.webp', import.meta.url).href,
-            new URL('@/assets/img/projects/portfolio2.webp', import.meta.url).href,
-            new URL('@/assets/img/projects/portfolio3.webp', import.meta.url).href
-          ],
-          description: this.$t('sypDescription'),
-          link: "https://second.rickmuda.nl",
-          repository: "https://github.com/rickmuda/second-year-portfolio",
-          status: 'Outdated'
-        },
-        {
-          title: this.$t('qt'),
-          type: 'Web Project',
-          dateCreated: '2026-02-23',
-          images: [
-            new URL('@/assets/img/projects/quiet1.webp', import.meta.url).href,
-            new URL('@/assets/img/projects/quiet2.webp', import.meta.url).href,
-            new URL('@/assets/img/projects/quiet3.webp', import.meta.url).href
-          ],
-          description: this.$t('qtDescription'),
-          link: "https://quietturn.rickmuda.nl/"
-        },
-        {
-          title: this.$t('lh'),
-          type: 'Web Project',
-          dateCreated: '2026-04-28',
-          images: [
-            new URL('@/assets/img/projects/Lunar1.webp', import.meta.url).href,
-            new URL('@/assets/img/projects/Lunar2.webp', import.meta.url).href,
-            new URL('@/assets/img/projects/Lunar3.webp', import.meta.url).href
-          ],
-          description: this.$t('lhDescription'),
-          disabled: true,
-          status: 'Private'
-        },
-      ];
+      // Project data lives in src/projectsData.js (shared with the Project photos
+      // gallery). Translate the i18n keys into display fields here.
+      this.projects = projectsData.map((p) => ({
+        ...p,
+        title: this.$t(p.titleKey),
+        description: this.$t(p.descKey),
+      }));
+
+      // Scrapped / back-burner projects shown in the Recycle Bin (variant='recycle').
+      // Empty for now - add scrapped work here when there is some.
+      this.recycleProjects = [];
     }
   },
   created() {
     this.initializeProjects();
-    this.selectedProject = this.projects[0] || null;
+    if (!this.applySelection()) {
+      this.selectedProject = this.sortedProjects[0] || null;
+    }
   },
   beforeUnmount() {
     clearInterval(this.carouselInterval);
@@ -521,6 +411,13 @@ export default {
 
 .name {
   font-weight: 600;
+}
+
+.details-empty {
+  padding: 24px 12px;
+  text-align: center;
+  color: #8a7a95;
+  font-size: 14px;
 }
 
 .preview-pane {

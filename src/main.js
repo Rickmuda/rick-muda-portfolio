@@ -47,6 +47,20 @@ import {
   faTrash,
   faFillDrip,
   faTrophy,
+  faFolderOpen,
+  faFileLines,
+  faCircleInfo,
+  faArrowLeft,
+  faArrowRight,
+  faArrowUp,
+  faHouse,
+  faTrashCan,
+  faImages,
+  faMagnifyingGlass,
+  faPowerOff,
+  faCode,
+  faGamepad,
+  faPhotoFilm,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faTwitter,
@@ -96,7 +110,21 @@ library.add(
   faRotateLeft,
   faTrash,
   faFillDrip,
-  faTrophy
+  faTrophy,
+  faFolderOpen,
+  faFileLines,
+  faCircleInfo,
+  faArrowLeft,
+  faArrowRight,
+  faArrowUp,
+  faHouse,
+  faTrashCan,
+  faImages,
+  faMagnifyingGlass,
+  faPowerOff,
+  faCode,
+  faGamepad,
+  faPhotoFilm
 );
 library.add(faTwitter, faInstagram, faLinkedin, faGithub, faYoutube, faTiktok, faSpotify, faSteam);
 

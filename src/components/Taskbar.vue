@@ -1,12 +1,20 @@
 <template>
   <div class="taskbar">
-    <!-- Left Box -->
-    <div class="taskbar-left-box" @mouseover="openStartMenu" @mouseleave="closeStartMenu">
-      <img src="/src/assets/img/pfp.webp" alt="Profile Picture" class="taskbar-image" />
-    </div>
+    <!-- Left spacer balances the centered icon group against the clock on the right. -->
+    <div class="taskbar-spacer"></div>
 
-    <!-- Icons -->
+    <!-- Start button + the apps that live on the desktop, centered as one group. -->
     <div class="taskbar-icons">
+      <!-- Start button (styled like the app icons) -->
+      <div class="taskbar-icon" :class="{ 'app-open': startMenuOpen }" @click.stop="toggleStartMenu" title="Start">
+        <img src="/src/assets/img/pfp.webp" alt="Start" class="start-img" />
+      </div>
+
+      <!-- File Explorer -->
+      <div class="taskbar-icon" :class="iconState('fileExplorer')" @click="openExplorerRoot" @mouseenter="onIconEnter('fileExplorer', $event)" @mouseleave="onIconLeave" title="File Explorer">
+        <font-awesome-icon icon="folder-open" />
+        <span v-if="openWindows.includes('fileExplorer')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['fileExplorer'] }"></span>
+      </div>
 
       <!-- About me -->
       <div class="taskbar-icon" :class="iconState('aboutMe')" @click="openApp('aboutMe')" @mouseenter="onIconEnter('aboutMe', $event)" @mouseleave="onIconLeave">
@@ -14,41 +22,10 @@
         <span v-if="openWindows.includes('aboutMe')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['aboutMe'] }"></span>
       </div>
 
-      <!-- Projects -->
-      <div class="taskbar-icon" :class="iconState('projects')" @click="openApp('projects')" @mouseenter="onIconEnter('projects', $event)" @mouseleave="onIconLeave">
-        <font-awesome-icon icon="folder" />
-        <span v-if="openWindows.includes('projects')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['projects'] }"></span>
-      </div>
-
-      <!-- Art Gallery -->
-      <div class="taskbar-icon" :class="iconState('artGallery')" @click="openApp('artGallery')" @mouseenter="onIconEnter('artGallery', $event)" @mouseleave="onIconLeave">
-        <font-awesome-icon icon="palette" />
-        <span v-if="openWindows.includes('artGallery')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['artGallery'] }"></span>
-      </div>
-
       <!-- Contact -->
       <div class="taskbar-icon" :class="iconState('contact')" @click="openApp('contact')" @mouseenter="onIconEnter('contact', $event)" @mouseleave="onIconLeave">
         <font-awesome-icon icon="envelope" />
         <span v-if="openWindows.includes('contact')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['contact'] }"></span>
-      </div>
-
-      <!-- Downloads -->
-      <div class="taskbar-icon" :class="iconState('downloads')" @click="openApp('downloads')" @mouseenter="onIconEnter('downloads', $event)" @mouseleave="onIconLeave">
-        <font-awesome-icon icon="download" />
-        <span v-if="openWindows.includes('downloads')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['downloads'] }"></span>
-      </div>
-
-
-      <!-- Minigames folder -->
-      <div class="taskbar-icon" :class="iconState('minigames')" @click="openApp('minigames')" @mouseenter="onIconEnter('minigames', $event)" @mouseleave="onIconLeave">
-        <font-awesome-icon icon="folder" />
-        <span v-if="openWindows.includes('minigames')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['minigames'] }"></span>
-      </div>
-
-      <!-- Vinyl Collection -->
-      <div class="taskbar-icon" :class="iconState('vinylCollection')" @click="openApp('vinylCollection')" @mouseenter="onIconEnter('vinylCollection', $event)" @mouseleave="onIconLeave">
-        <font-awesome-icon icon="compact-disc" />
-        <span v-if="openWindows.includes('vinylCollection')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['vinylCollection'] }"></span>
       </div>
 
       <!-- Skill Tree -->
@@ -81,7 +58,6 @@
         <span v-if="openWindows.includes('settings')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['settings'] }"></span>
       </div>
 
-
       <!-- Easter Egg Icon -->
       <div v-for="app in easterEggApps" :key="app" class="taskbar-icon" :class="iconState(app)" @click="openApp(app)" @mouseenter="onIconEnter(app, $event)" @mouseleave="onIconLeave" title="Easter Egg">
         <font-awesome-icon icon="egg" />
@@ -101,11 +77,12 @@
       </div>
     </Teleport>
 
-    <!-- Right Box -->
+    <!-- Right Box: clock -->
     <div class="taskbar-right">
-      <div class="taskbar-item">{{ currentTime }}</div>
-      <div class="taskbar-item">{{ currentDate }}</div>
-
+      <div class="taskbar-clock">
+        <div class="taskbar-item">{{ currentTime }}</div>
+        <div class="taskbar-item">{{ currentDate }}</div>
+      </div>
     </div>
 
     <!-- Start Menu -->
@@ -113,8 +90,9 @@
       v-if="startMenuOpen"
       :commitSummary="commitSummary"
       :commitDescription="commitDescription"
-      @mouseover="keepStartMenuOpen"
-      @mouseleave="closeStartMenu"
+      :openNode="openNode"
+      :openExplorerAt="openExplorerAt"
+      @close="closeStartMenu"
     />
   </div>
 </template>
@@ -126,6 +104,18 @@ import StartMenu from "./StartMenu.vue";
 export default {
   props: {
     openApp: {
+      type: Function,
+      required: true,
+    },
+    openExplorerRoot: {
+      type: Function,
+      required: true,
+    },
+    openNode: {
+      type: Function,
+      required: true,
+    },
+    openExplorerAt: {
       type: Function,
       required: true,
     },
@@ -163,23 +153,28 @@ export default {
       currentDate: new Date().toLocaleDateString(),
       currentTime: new Date().toLocaleTimeString(),
       startMenuOpen: false,
-      closeTimer: null,
       previewFor: null,
       previewLeft: 0,
       previewBottom: 0,
     };
   },
   methods: {
-    openStartMenu() {
-      clearTimeout(this.closeTimer);
+    toggleStartMenu() {
+      if (this.startMenuOpen) {
+        this.closeStartMenu();
+        return;
+      }
       this.startMenuOpen = true;
+      // Defer so this very click doesn't immediately trigger the outside-click close.
+      this.$nextTick(() => document.addEventListener("click", this.onDocClick));
     },
     closeStartMenu() {
-      this.closeTimer = setTimeout(() => { this.startMenuOpen = false; }, 100);
+      this.startMenuOpen = false;
+      document.removeEventListener("click", this.onDocClick);
     },
-    keepStartMenuOpen() {
-      clearTimeout(this.closeTimer);
-      this.startMenuOpen = true;
+    onDocClick() {
+      // Any click that reaches the document (i.e. outside the menu) closes it.
+      this.closeStartMenu();
     },
     updateTime() {
       this.currentTime = new Date().toLocaleTimeString();
@@ -212,7 +207,9 @@ export default {
   mounted() {
     setInterval(this.updateTime, 1000); // Update time every second
   },
-  watch: {},
+  beforeUnmount() {
+    document.removeEventListener("click", this.onDocClick);
+  },
   components: {
     FontAwesomeIcon,
     StartMenu,
@@ -246,6 +243,34 @@ export default {
 
 .app-minimized {
   background: rgba(255, 255, 255, 0.05);
+}
+
+/* Center the start button + app icons as one group (middle grid column). */
+.taskbar-icons {
+  justify-content: center;
+}
+
+/* Clock sits at the far right (right grid column). */
+.taskbar-right {
+  justify-self: end;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  gap: 12px;
+}
+
+.taskbar-clock {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+/* Start button: same look as the app icons, with the profile photo as its glyph. */
+.start-img {
+  width: 26px;
+  height: 26px;
+  object-fit: cover;
+  border-radius: 50%;
 }
 </style>
 

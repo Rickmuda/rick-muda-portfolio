@@ -1,9 +1,12 @@
 import { defineAsyncComponent } from "vue";
-import { minigames } from "./minigames";
+import { minigamesFolder } from "./minigames";
 
 // Each window is code-split into its own chunk. The loader is held in a map so
 // we can both lazy-render through defineAsyncComponent AND warm-preload every
 // chunk during idle time after the main app paints.
+// Note: projects/downloads/artGallery remain here because the MOBILE launcher
+// (appList + openApp) still opens them as windows. On desktop they are instead
+// embedded as browsable folders inside the File Explorer (see src/filesystem.js).
 const windowLoaders = {
   aboutMe:         () => import("./components/windows/AboutMe.vue"),
   projects:        () => import("./components/windows/Projects.vue"),
@@ -15,13 +18,13 @@ const windowLoaders = {
   skillTree:       () => import("./components/windows/SkillTree.vue"),
   downloads:       () => import("./components/windows/Downloads.vue"),
   settings:        () => import("./components/windows/Settings.vue"),
-  minigames:       () => import("./components/windows/MinigamesFolder.vue"),
   flappyRick:      () => import("./components/games/FlappyRick.vue"),
   minesweeper:     () => import("./components/games/Minesweeper.vue"),
   tetris:          () => import("./components/games/Tetris.vue"),
   mudaDigitaal:    () => import("./components/windows/MudaTerminal.vue"),
   paint:           () => import("./components/windows/Paint.vue"),
   achievements:    () => import("./components/windows/Achievements.vue"),
+  fileExplorer:    () => import("./components/windows/FileExplorer.vue"),
 };
 
 const lazy = (loader) => defineAsyncComponent(loader);
@@ -37,13 +40,13 @@ export const windowConfig = {
   skillTree:       { component: lazy(windowLoaders.skillTree),       title: "skillTree",      defaultWidth: 1100, defaultHeight: 750, defaultX: 150, defaultY: 40 },
   downloads:       { component: lazy(windowLoaders.downloads),       title: "downloads",      defaultWidth: 1000, defaultHeight: 720, defaultX: 260, defaultY: 50 },
   settings:        { component: lazy(windowLoaders.settings),        title: "settings",       defaultWidth: 700,  defaultHeight: 600, defaultX: 300, defaultY: 150 },
-  minigames:       { component: lazy(windowLoaders.minigames),       title: "minigames",      defaultWidth: 720,  defaultHeight: 520, defaultX: 320, defaultY: 90 },
   flappyRick:      { component: lazy(windowLoaders.flappyRick),      title: "flappyRick",     defaultWidth: 480,  defaultHeight: 720, defaultX: 360, defaultY: 40 },
   minesweeper:     { component: lazy(windowLoaders.minesweeper),     title: "minesweeper",    defaultWidth: 460,  defaultHeight: 560, defaultX: 340, defaultY: 60 },
   tetris:          { component: lazy(windowLoaders.tetris),          title: "tetris",         defaultWidth: 460,  defaultHeight: 720, defaultX: 320, defaultY: 30 },
   mudaDigitaal:    { component: lazy(windowLoaders.mudaDigitaal),    title: "mudaDigitaal",   defaultWidth: 760,  defaultHeight: 520, defaultX: 240, defaultY: 80 },
   paint:           { component: lazy(windowLoaders.paint),           title: "paint",          defaultWidth: 760,  defaultHeight: 560, defaultX: 280, defaultY: 80 },
   achievements:    { component: lazy(windowLoaders.achievements),    title: "achievements",   defaultWidth: 800,  defaultHeight: 600, defaultX: 320, defaultY: 80 },
+  fileExplorer:    { component: lazy(windowLoaders.fileExplorer),    title: "fileExplorer",   defaultWidth: 1240, defaultHeight: 720, defaultX: 180, defaultY: 50 },
 };
 
 // Warm the dynamic-import cache for every window during browser idle time so
@@ -73,7 +76,7 @@ export const appList = [
   { name: "artGallery",      icon: "palette",      labelKey: "artGallery" },
   { name: "contact",         icon: "envelope",     labelKey: "contact" },
   { name: "downloads",       icon: "download",     labelKey: "downloads" },
-  { name: "minigames",       icon: "folder",       labelKey: "minigames", folder: true, items: minigames },
+  { ...minigamesFolder, folder: true },
   { name: "vinylCollection", icon: "compact-disc", labelKey: "vinylCollection" },
   { name: "skillTree",       icon: "sitemap",      labelKey: "skillTree" },
   { name: "mudaDigitaal",    icon: "terminal",     labelKey: "mudaDigitaal" },

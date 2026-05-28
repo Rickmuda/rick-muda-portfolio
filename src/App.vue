@@ -13,13 +13,16 @@
       >
         <!-- Mobile: phone-style launcher. Desktop: OS metaphor. -->
         <MobileHome v-if="isMobile" :openApp="openApp" :apps="mobileApps" />
-        <Desktop v-else :openApp="openApp" :easterEggApps="easterEggApps" />
+        <Desktop v-else :openNode="openNode" :easterEggApps="easterEggApps" />
       </div>
 
       <!-- Taskbar: desktop only -->
       <Taskbar
         v-if="!isMobile"
         :openApp="openApp"
+        :openExplorerRoot="openExplorerRoot"
+        :openNode="openNode"
+        :openExplorerAt="openExplorerAt"
         :commitSummary="commitSummary"
         :commitDescription="commitDescription"
         :easterEggApps="easterEggApps"
@@ -150,6 +153,11 @@ export default {
       windowRefs: {},
       // { fromApp, side } while the snap-fill overlay is visible, null otherwise.
       snapChooser: null,
+      // File Explorer is single-instance; explorerPath is the folder it currently shows.
+      explorerPath: [],
+      // Optional selection target (project/photo) passed to the embedded folder view,
+      // set by the start-menu search and cleared on any normal navigation.
+      explorerSelect: null,
     };
   },
   computed: {
@@ -209,12 +217,63 @@ export default {
 
       unlockAchievement("first-boot");
       this.openedAppsEver.add(appName);
-      // Count unique non-easter-egg apps the user has opened.
-      const trackable = new Set(Object.keys(windowConfig).filter((k) => k !== "oldVideo"));
+      // Count unique openable app windows the user has opened. Excluded: the easter
+      // egg, the File Explorer chrome, and projects/downloads/artGallery (on desktop
+      // these are embedded folders in the Explorer, not standalone windows).
+      const NON_APP = new Set(["oldVideo", "fileExplorer", "projects", "downloads", "artGallery"]);
+      const trackable = new Set(
+        Object.keys(windowConfig).filter((k) => !NON_APP.has(k))
+      );
       const opened = [...this.openedAppsEver].filter((a) => trackable.has(a));
       if (opened.length >= trackable.size) {
         unlockAchievement("opened-all-windows");
       }
+    },
+    // Open a window without the toggle-minimize behavior of openApp. Used when
+    // navigating the (single-instance) file explorer / viewer so a second open
+    // request never minimizes the window the user is looking at.
+    ensureOpen(appName) {
+      if (!this.openWindows.includes(appName)) {
+        this.openWindows.push(appName);
+        this.windowZIndices[appName] = this.zIndexCounter++;
+        sounds.play("open");
+        unlockAchievement("first-boot");
+        return;
+      }
+      if (this.minimizedWindows[appName]) {
+        this.minimizedWindows = { ...this.minimizedWindows, [appName]: false };
+      }
+      this.bringWindowToFront(appName);
+    },
+    // Dispatch a VFS node: the explorer icon opens the explorer at root, apps launch
+    // their window, folders open in the explorer (at root level - the explorer
+    // navigates deeper itself).
+    openNode(node) {
+      if (!node) return;
+      if (node.type === "explorer") {
+        this.openExplorerRoot();
+      } else if (node.type === "folder") {
+        this.explorerSelect = null;
+        this.explorerPath = [node.id];
+        this.ensureOpen("fileExplorer");
+      } else if (node.type === "app") {
+        this.openApp(node.app);
+      }
+    },
+    openExplorerRoot() {
+      this.explorerSelect = null;
+      this.explorerPath = [];
+      this.ensureOpen("fileExplorer");
+    },
+    // Open the explorer at a folder with a selection target for its embedded view
+    // (used by the start-menu search to jump to a project or photo).
+    openExplorerAt(path, selection = null) {
+      const samePath =
+        path.length === this.explorerPath.length &&
+        path.every((id, i) => id === this.explorerPath[i]);
+      if (!samePath) this.explorerPath = path;
+      this.explorerSelect = selection;
+      this.ensureOpen("fileExplorer");
     },
     closeApp(appName) {
       this.openWindows = this.openWindows.filter(window => window !== appName);
@@ -327,8 +386,16 @@ export default {
           "onUpdate:currentLanguage": (value) => (this.currentLanguage = value),
         };
       }
-      if (windowName === "minigames") {
-        return { openApp: this.openApp };
+      if (windowName === "fileExplorer") {
+        return {
+          path: this.explorerPath,
+          openNode: this.openNode,
+          selection: this.explorerSelect,
+          "onUpdate:path": (value) => {
+            this.explorerPath = value;
+            this.explorerSelect = null; // user navigation clears any search target
+          },
+        };
       }
       return windowConfig[windowName]?.props || {};
     },

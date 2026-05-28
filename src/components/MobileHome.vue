@@ -52,33 +52,14 @@
       ></span>
     </div>
 
-    <!-- iOS-style folder overlay -->
-    <transition name="folder-fade">
-      <div v-if="openFolderApp" class="folder-overlay" @click.self="closeFolder">
-        <div class="folder-panel">
-          <div class="folder-panel-title">{{ $t(openFolderApp.labelKey) }}</div>
-          <div class="folder-panel-grid">
-            <div
-              class="home-icon"
-              :class="{ 'is-coming-soon': item.comingSoon }"
-              v-for="item in openFolderApp.items"
-              :key="item.name"
-              @click="item.comingSoon || openGame(item.name)"
-            >
-              <div class="home-icon-image">
-                <font-awesome-icon :icon="item.icon" class="home-icon-inner" />
-              </div>
-              <div class="home-icon-text">{{ $t(item.labelKey) }}</div>
-            </div>
-          </div>
-        </div>
-      </div>
-    </transition>
+    <!-- iOS-style folder overlay (shared with the desktop) -->
+    <FolderOverlay :folder="openFolderApp" @close="closeFolder" @open="openGame" />
   </div>
 </template>
 
 <script>
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import FolderOverlay from "./FolderOverlay.vue";
 
 const APPS_PER_PAGE = 6;
 
@@ -86,6 +67,7 @@ export default {
   name: "MobileHome",
   components: {
     FontAwesomeIcon,
+    FolderOverlay,
   },
   props: {
     openApp: {
@@ -320,62 +302,6 @@ export default {
   border-radius: 6px;
   color: #fff;
   font-size: 13px;
-}
-
-/* Expanded folder overlay */
-.folder-overlay {
-  position: fixed;
-  inset: 0;
-  z-index: 100;
-  background: rgba(0, 0, 0, 0.55);
-  backdrop-filter: blur(8px);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 24px;
-}
-
-.folder-panel {
-  width: 100%;
-  max-width: 420px;
-  background: rgba(255, 255, 255, 0.08);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  border-radius: 20px;
-  padding: 20px;
-  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.5);
-}
-
-.folder-panel-title {
-  color: #fff;
-  font-weight: bold;
-  text-align: center;
-  margin-bottom: 16px;
-  font-size: 16px;
-  text-shadow: -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000,
-    1px 1px 0 #000;
-}
-
-.folder-panel-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-  justify-items: center;
-  align-items: start;
-}
-
-.home-icon.is-coming-soon {
-  opacity: 0.45;
-  cursor: not-allowed;
-}
-
-.folder-fade-enter-active,
-.folder-fade-leave-active {
-  transition: opacity 0.2s ease;
-}
-
-.folder-fade-enter-from,
-.folder-fade-leave-to {
-  opacity: 0;
 }
 
 .home-icon-text {
