@@ -47,7 +47,7 @@ export const windowConfig = {
   mudaDigitaal:    { component: lazy(windowLoaders.mudaDigitaal),    title: "mudaDigitaal",   defaultWidth: 760,  defaultHeight: 520, defaultX: 240, defaultY: 80 },
   paint:           { component: lazy(windowLoaders.paint),           title: "paint",          defaultWidth: 760,  defaultHeight: 560, defaultX: 280, defaultY: 80 },
   achievements:    { component: lazy(windowLoaders.achievements),    title: "achievements",   defaultWidth: 800,  defaultHeight: 600, defaultX: 320, defaultY: 80 },
-  fileExplorer:    { component: lazy(windowLoaders.fileExplorer),    title: "fileExplorer",   defaultWidth: 1240, defaultHeight: 720, defaultX: 180, defaultY: 50 },
+  fileExplorer:    { component: lazy(windowLoaders.fileExplorer),    title: "fileExplorer",   defaultWidth: 1240, defaultHeight: 800, defaultX: 180, defaultY: 50 },
   camera:          { component: lazy(windowLoaders.camera),         title: "camera",         defaultWidth: 480,  defaultHeight: 720, defaultX: 360, defaultY: 40 },
 };
 
