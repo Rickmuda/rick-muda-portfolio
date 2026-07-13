@@ -28,6 +28,11 @@ $DOWNLOADS = [
         'downloadName' => 'StickyReminders.apk',
         'passwordKey' => 'DOWNLOAD_STICKYREMINDERS_PASSWORD',
     ],
+    'lunarhome' => [
+        'file'        => __DIR__ . '/../protected-files/LunarHome.apk',
+        'downloadName' => 'LunarHome.apk',
+        'passwordKey' => 'DOWNLOAD_LUNARHOME_PASSWORD',
+    ],
 ];
 
 function send_json($status, $payload)

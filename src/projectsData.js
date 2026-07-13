@@ -123,7 +123,7 @@ export const projects = [
     descKey: "lhaDescription",
     type: "Mobile App",
     dateCreated: "2026-07-13",
-    images: [img("under-construction.svg")],
+    images: [img("lunarhome_icon.webp")],
     disabled: true,
     status: "W.I.P",
   },
