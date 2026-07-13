@@ -23,6 +23,11 @@ $DOWNLOADS = [
         'downloadName' => 'Portfolio-opdracht-Fotografie.zip',
         'passwordKey' => 'DOWNLOAD_PORTFOLIO_PASSWORD',
     ],
+    'stickyreminders' => [
+        'file'        => __DIR__ . '/../protected-files/StickyReminders.apk',
+        'downloadName' => 'StickyReminders.apk',
+        'passwordKey' => 'DOWNLOAD_STICKYREMINDERS_PASSWORD',
+    ],
 ];
 
 function send_json($status, $payload)

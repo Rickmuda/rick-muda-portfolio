@@ -92,6 +92,8 @@ const messages = {
     downloadError: "Something went wrong. Please try again.",
     dlPhotoTitle: "Portfolio opdracht: Fotografie",
     dlPhotoDesc: "A photography portfolio assignment I made.",
+    dlStickyTitle: "StickyReminders",
+    dlStickyDesc: "An agenda/reminder app I made to help myself stick to a schedule without forgetting things.",
 
     // About me
     aboutMeIntro: "Hey there! Welcome to my portfolio.",
@@ -187,6 +189,8 @@ const messages = {
     lhDescription: "A personal streaming service for the DVDs I collect. I also built an actual TV app for it.",
     gk: "GoedKoopje",
     gkDescription: "A website (and later an app) where you enter your grocery list to see where you can buy everything the cheapest. Netherlands only.",
+    sr: "StickyReminders",
+    srDescription: "An agenda/reminder style app I made because I struggle to stick to a schedule without being reminded often.",
     goToProject: "Go to Project",
 
     // Start menu
@@ -403,6 +407,8 @@ const messages = {
     downloadError: "Er ging iets mis. Probeer het opnieuw.",
     dlPhotoTitle: "Portfolio opdracht: Fotografie",
     dlPhotoDesc: "Een portfolio-opdracht over fotografie die ik gemaakt heb.",
+    dlStickyTitle: "StickyReminders",
+    dlStickyDesc: "Een agenda/herinnerings-app die ik heb gemaakt om mezelf te helpen me aan een planning te houden zonder dingen te vergeten.",
 
     // About me
     aboutMeIntro: "Hey daar! Welkom op mijn portfolio.",
@@ -500,6 +506,8 @@ const messages = {
     lhDescription: "Een persoonlijke streaming service voor de dvd's die ik verzamel. Ik heb er ook een echte TV-app voor gemaakt.",
     gk: "GoedKoopje",
     gkDescription: "Een website (en later een app) waar je je boodschappenlijst invoert om te zien waar je alles het goedkoopst kunt kopen. Alleen Nederland.",
+    sr: "StickyReminders",
+    srDescription: "Een agenda/herinnerings-app die ik heb gemaakt omdat ik moeite heb om me aan een planning te houden zonder vaak herinnerd te worden.",
     goToProject: "Ga naar Project",
 
     // Start menu

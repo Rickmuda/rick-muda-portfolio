@@ -127,4 +127,13 @@ export const projects = [
     disabled: true,
     status: "W.I.P",
   },
+  {
+    titleKey: "sr",
+    descKey: "srDescription",
+    type: "Mobile App",
+    dateCreated: "2026-07-13",
+    images: [img("SR1.webp"), img("SR2.webp"), img("SR3.webp")],
+    disabled: true,
+    status: "Download only",
+  },
 ];

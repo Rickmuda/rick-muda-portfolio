@@ -144,6 +144,18 @@ export default {
           mobileUnavailable: true,
           // For unprotected downloads instead use: file: { url, name }
         },
+        {
+          id: "stickyreminders",
+          titleKey: "dlStickyTitle",
+          descKey: "dlStickyDesc",
+          version: "v1.0",
+          size: "",
+          thumbnail: new URL("@/assets/img/projects/SR1.webp", import.meta.url).href,
+          protected: true,
+          available: true,
+          // An APK installs fine on mobile, unlike the other protected download.
+          mobileUnavailable: false,
+        },
       ],
       passwords: {},
       errors: {},
