@@ -123,9 +123,9 @@ export const projects = [
     descKey: "lhaDescription",
     type: "Mobile App",
     dateCreated: "2026-07-13",
-    images: [img("lunarhome_icon.webp")],
+    images: [img("lha1.webp"), img("lha2.webp"), img("lha3.webp")],
     disabled: true,
-    status: "W.I.P",
+    status: "Download only",
   },
   {
     titleKey: "gk",

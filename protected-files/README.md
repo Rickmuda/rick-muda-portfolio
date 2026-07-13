@@ -40,19 +40,16 @@ paths in `download.php` and protect the folder with an `.htaccess` containing
 Add an entry to `$DOWNLOADS` in `public/download.php` (with its own `passwordKey`)
 and a matching item in `Downloads.vue`.
 
-## Enabling the LunarHome app download (on the server)
+## LunarHome app download
 
-Wired up in the code already (`lunarhome` entry in `download.php` and `Downloads.vue`,
-password key `DOWNLOAD_LUNARHOME_PASSWORD`, password `ilydeempie`). It's set to
-`available: false` (shows "Coming soon") until the APK is actually in place. To go live:
+Released - `available: true` in `Downloads.vue`'s `lunarhome` entry. Password key
+`DOWNLOAD_LUNARHOME_PASSWORD`, password `ilydeempie`.
 
-1. **Upload the file** to `protected-files/LunarHome.apk` (outside the web root).
-2. **Set the password** on the server's `protected-files/download-secrets.php`:
-   ```php
-   'DOWNLOAD_LUNARHOME_PASSWORD' => 'ilydeempie',
-   ```
-   (already present in the local copy of this file for reference; the server has its
-   own copy that needs the same line added).
-3. In `src/components/windows/Downloads.vue` set the `lunarhome` item's
-   `available: true` and fill in its `size` (and `version` if relevant), then deploy
-   the frontend.
+Before deploying, make sure the server actually has:
+1. The file at `protected-files/LunarHome.apk` (outside the web root).
+2. `'DOWNLOAD_LUNARHOME_PASSWORD' => 'ilydeempie',` in the server's own
+   `protected-files/download-secrets.php` (already present in the local copy here for
+   reference).
+
+Without both of those in place on the server, the download card will show but the
+unlock will fail with "Something went wrong" / 503.

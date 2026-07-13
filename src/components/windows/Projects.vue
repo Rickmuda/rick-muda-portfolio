@@ -503,8 +503,10 @@ export default {
   animation: fadeIn 0.3s ease;
 }
 
+/* Kept at width/height 100% (not width: auto) so contain letterboxes
+   correctly on BOTH axes - some phone shots are landscape (device rotated),
+   not just portrait, and auto width would let those overflow uncontained. */
 .carousel-image.is-phone-shot {
-  width: auto;
   object-fit: contain;
 }
 

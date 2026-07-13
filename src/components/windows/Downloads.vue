@@ -153,9 +153,7 @@ export default {
           size: "",
           thumbnail: new URL("@/assets/img/downloads/lunarhome_icon.webp", import.meta.url).href,
           protected: true,
-          // Flip to true once the APK is uploaded to protected-files/ on the
-          // server and download-secrets.php there has the matching password.
-          available: false,
+          available: true,
           // Android APK: only installable on mobile, so it's hidden on desktop.
           desktopUnavailable: true,
         },
