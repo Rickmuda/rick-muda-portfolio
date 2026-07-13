@@ -145,4 +145,13 @@ export const projects = [
     disabled: true,
     status: "Download only",
   },
+  {
+    titleKey: "rfi",
+    descKey: "rfiDescription",
+    type: "Web Project",
+    dateCreated: "2026-07-13",
+    images: [img("under-construction.svg")],
+    disabled: true,
+    status: "W.I.P",
+  },
 ];

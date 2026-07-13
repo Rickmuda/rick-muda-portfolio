@@ -192,6 +192,8 @@ const messages = {
     gkDescription: "A website (and later an app) where you enter your grocery list to see where you can buy everything the cheapest. Netherlands only.",
     sr: "StickyReminders",
     srDescription: "An agenda/reminder style app I made because I struggle to stick to a schedule without being reminded often.",
+    rfi: "Roll for it",
+    rfiDescription: "A simple site for rolling dice (including D&D dice) and flipping coins, currently in development.",
     goToProject: "Go to Project",
 
     // Start menu
@@ -510,6 +512,8 @@ const messages = {
     gkDescription: "Een website (en later een app) waar je je boodschappenlijst invoert om te zien waar je alles het goedkoopst kunt kopen. Alleen Nederland.",
     sr: "StickyReminders",
     srDescription: "Een agenda/herinnerings-app die ik heb gemaakt omdat ik moeite heb om me aan een planning te houden zonder vaak herinnerd te worden.",
+    rfi: "Roll for it",
+    rfiDescription: "Een simpele site om dobbelstenen (inclusief D&D dobbelstenen) en munten te gooien, momenteel in ontwikkeling.",
     goToProject: "Ga naar Project",
 
     // Start menu

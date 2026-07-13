@@ -420,14 +420,19 @@ export default {
   gap: 6px;
 }
 
+/* Input above, submit button below - both centered as a group rather than
+   stretched edge-to-edge, so the button reads as a single tappable target
+   instead of a full-width bar. */
 .password-row {
   display: flex;
+  flex-direction: column;
+  align-items: center;
   gap: 8px;
 }
 
 .password-input {
-  flex: 1;
-  min-width: 0;
+  width: 80%;
+  max-width: 240px;
   padding: 10px 12px;
   border-radius: 8px;
   border: 1px solid #6a5880;
@@ -435,6 +440,7 @@ export default {
   color: #fff;
   font-family: inherit;
   font-size: 13px;
+  text-align: center;
 }
 
 .password-input::placeholder {
@@ -449,7 +455,6 @@ export default {
 
 .card-btn.icon-btn {
   width: 46px;
-  flex-shrink: 0;
   padding: 11px 0;
 }
 
@@ -597,18 +602,15 @@ export default {
     -webkit-tap-highlight-color: transparent;
   }
 
-  /* Stack the password field above the submit button so both are full-width,
-     easy-to-hit touch targets instead of a cramped inline row. */
-  .password-row {
-    flex-direction: column;
-  }
-
+  /* A slightly bigger, still-centered tap target than the desktop button. */
   .card-btn.icon-btn {
-    width: 100%;
+    width: 56px;
+    padding: 13px 0;
   }
 
   /* 16px avoids iOS Safari auto-zooming the page when the input is focused. */
   .password-input {
+    width: 85%;
     font-size: 16px;
     padding: 12px;
   }
