@@ -3,7 +3,7 @@
     <!-- Download cards -->
     <div class="downloads-grid">
       <div
-        v-for="item in downloads"
+        v-for="item in visibleDownloads"
         :key="item.id"
         class="download-card"
         :class="{ 'is-coming-soon': isComingSoon(item) }"
@@ -44,20 +44,8 @@
 
             <!-- Password-protected: reveal field on demand -->
             <template v-else-if="item.protected">
-              <!-- Not for this device: greyed-out, disabled unlock button -->
               <button
-                v-if="isDeviceUnavailable(item)"
-                class="card-btn disabled"
-                type="button"
-                disabled
-                :title="$t(isMobile ? 'desktopOnly' : 'mobileOnly')"
-              >
-                <font-awesome-icon icon="lock" />
-                {{ $t('unlock') }}
-              </button>
-
-              <button
-                v-else-if="!revealedIds[item.id]"
+                v-if="!revealedIds[item.id]"
                 class="card-btn"
                 type="button"
                 @click="reveal(item)"
@@ -139,8 +127,8 @@ export default {
           // Flip to true once the file is on the server (protected-files/) and the
           // password is set. Until then the card shows "Coming soon".
           available: true,
-          // Not meant for mobile: the unlock button is greyed out/disabled on
-          // phones (<=768px). Set false for downloads that work fine on mobile.
+          // Not meant for mobile: hidden on phones (<=768px). Set false for
+          // downloads that work fine on mobile.
           mobileUnavailable: true,
           // For unprotected downloads instead use: file: { url, name }
         },
@@ -153,8 +141,8 @@ export default {
           thumbnail: new URL("@/assets/img/projects/SR1.webp", import.meta.url).href,
           protected: true,
           available: true,
-          // It's an Android APK: only installable on mobile, so the unlock
-          // button is greyed out/disabled on desktop.
+          // It's an Android APK: only installable on mobile, so it's hidden
+          // on desktop.
           desktopUnavailable: true,
         },
       ],
@@ -186,6 +174,13 @@ export default {
   },
   beforeUnmount() {
     if (this.mq) this.mq.removeEventListener("change", this.onMqChange);
+  },
+  computed: {
+    // Only show downloads that make sense on the current device: mobile-only
+    // downloads (e.g. an APK) are hidden on desktop and vice versa.
+    visibleDownloads() {
+      return this.downloads.filter((item) => !this.isDeviceUnavailable(item));
+    },
   },
   methods: {
     isComingSoon(item) {
@@ -491,38 +486,100 @@ export default {
   background: linear-gradient(180deg, #b228d2, #7c1894);
 }
 
-/* ---- Mobile ---- */
+/* ---- Mobile ----
+   Cards switch from a vertical poster layout to a horizontal, app-store-style
+   list row: a rounded square icon on the left, title/description/meta on the
+   right, and the action button spanning the full width underneath. */
 @media (max-width: 768px) {
   .downloads-grid {
     grid-template-columns: 1fr;
-    gap: 14px;
+    gap: 12px;
+    padding: 12px;
+  }
+
+  .download-card {
+    flex-direction: row;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px 14px;
     padding: 14px;
+    border-radius: 18px;
+  }
+
+  /* Avoid a hover state getting "stuck" after a tap; use a tactile press
+     effect instead. */
+  .download-card:hover {
+    transform: none;
+    border-color: #9b20b7;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.45), 0 6px 16px rgba(0, 0, 0, 0.35);
+  }
+
+  .download-card:active {
+    transform: scale(0.98);
+    transition: transform 0.1s ease;
   }
 
   .card-thumb {
-    aspect-ratio: 16 / 9;
+    width: 68px;
+    height: 68px;
+    flex: 0 0 68px;
+    aspect-ratio: unset;
+    border-radius: 16px;
+    border: none;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.5), 0 3px 8px rgba(0, 0, 0, 0.4);
+  }
+
+  /* The diagonal desktop ribbon doesn't fit a small square icon; swap it for
+     a compact corner badge. */
+  .coming-soon-ribbon {
+    top: 4px;
+    left: 4px;
+    right: auto;
+    width: auto;
+    transform: none;
+    border-radius: 6px;
+    font-size: 9px;
+    padding: 3px 6px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   }
 
   .card-body {
-    padding: 14px;
-    gap: 7px;
+    flex: 1 1 180px;
+    min-width: 0;
+    padding: 0;
+    gap: 4px;
   }
 
   .card-title {
-    font-size: 17px;
+    font-size: 15.5px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
   }
 
   .card-desc {
-    font-size: 14px;
+    font-size: 13px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
   }
 
   .card-meta {
-    font-size: 13px;
+    font-size: 12px;
+  }
+
+  /* Full-width row underneath the icon/title row. */
+  .card-action {
+    flex: 1 0 100%;
+    margin-top: 0;
   }
 
   .card-btn {
-    padding: 13px 14px;
+    padding: 12px 14px;
     font-size: 14px;
+    border-radius: 10px;
+    -webkit-tap-highlight-color: transparent;
   }
 
   /* Stack the password field above the submit button so both are full-width,
