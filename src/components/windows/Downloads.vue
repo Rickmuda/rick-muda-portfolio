@@ -138,7 +138,7 @@ export default {
           descKey: "dlStickyDesc",
           version: "v1.0",
           size: "",
-          thumbnail: new URL("@/assets/img/projects/SR1.webp", import.meta.url).href,
+          thumbnail: new URL("@/assets/img/downloads/sticky-icon.webp", import.meta.url).href,
           protected: true,
           available: true,
           // It's an Android APK: only installable on mobile, so it's hidden
