@@ -115,8 +115,17 @@ export const projects = [
     type: "Web Project",
     dateCreated: "2026-04-28",
     images: [img("lunar1.webp"), img("lunar2.webp"), img("lunar3.webp")],
-    disabled: true,
+    link: "https://lunarhome.nl",
     status: "Private",
+  },
+  {
+    titleKey: "lha",
+    descKey: "lhaDescription",
+    type: "Mobile App",
+    dateCreated: "2026-07-13",
+    images: [img("under-construction.svg")],
+    disabled: true,
+    status: "W.I.P",
   },
   {
     titleKey: "gk",

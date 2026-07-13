@@ -497,11 +497,16 @@ export default {
     padding: 12px;
   }
 
+  /* A grid, not a wrapping flex row: the icon and the title/description/meta
+     text are explicit, independent columns, and the action button is placed
+     on its own row spanning both columns underneath. Using flex here left
+     the action row's height fighting for space inside the text column,
+     which showed up as a dead gap between the meta row and the button. */
   .download-card {
-    flex-direction: row;
-    flex-wrap: wrap;
-    align-items: center;
-    gap: 12px 14px;
+    display: grid;
+    grid-template-columns: 68px 1fr;
+    column-gap: 14px;
+    row-gap: 6px;
     padding: 14px;
     border-radius: 18px;
   }
@@ -519,10 +524,18 @@ export default {
     transition: transform 0.1s ease;
   }
 
+  /* Unwraps .card-body so its children (title/desc/meta/action) become
+     direct grid items of .download-card and can each be placed explicitly. */
+  .card-body {
+    display: contents;
+  }
+
   .card-thumb {
+    grid-column: 1;
+    grid-row: 1 / span 3;
+    align-self: center;
     width: 68px;
     height: 68px;
-    flex: 0 0 68px;
     aspect-ratio: unset;
     border-radius: 16px;
     border: none;
@@ -543,14 +556,10 @@ export default {
     box-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
   }
 
-  .card-body {
-    flex: 1 1 180px;
-    min-width: 0;
-    padding: 0;
-    gap: 4px;
-  }
-
   .card-title {
+    grid-column: 2;
+    grid-row: 1;
+    min-width: 0;
     font-size: 15.5px;
     white-space: nowrap;
     overflow: hidden;
@@ -558,6 +567,9 @@ export default {
   }
 
   .card-desc {
+    grid-column: 2;
+    grid-row: 2;
+    min-width: 0;
     font-size: 13px;
     display: -webkit-box;
     -webkit-line-clamp: 2;
@@ -566,13 +578,16 @@ export default {
   }
 
   .card-meta {
+    grid-column: 2;
+    grid-row: 3;
     font-size: 12px;
   }
 
-  /* Full-width row underneath the icon/title row. */
+  /* Full-width row underneath the icon/title block. */
   .card-action {
-    flex: 1 0 100%;
-    margin-top: 0;
+    grid-column: 1 / -1;
+    grid-row: 4;
+    margin-top: 4px;
   }
 
   .card-btn {
