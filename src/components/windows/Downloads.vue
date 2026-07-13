@@ -44,13 +44,13 @@
 
             <!-- Password-protected: reveal field on demand -->
             <template v-else-if="item.protected">
-              <!-- Not for mobile: greyed-out, disabled unlock button -->
+              <!-- Not for this device: greyed-out, disabled unlock button -->
               <button
-                v-if="isMobile && item.mobileUnavailable"
+                v-if="isDeviceUnavailable(item)"
                 class="card-btn disabled"
                 type="button"
                 disabled
-                :title="$t('desktopOnly')"
+                :title="$t(isMobile ? 'desktopOnly' : 'mobileOnly')"
               >
                 <font-awesome-icon icon="lock" />
                 {{ $t('unlock') }}
@@ -153,8 +153,9 @@ export default {
           thumbnail: new URL("@/assets/img/projects/SR1.webp", import.meta.url).href,
           protected: true,
           available: true,
-          // An APK installs fine on mobile, unlike the other protected download.
-          mobileUnavailable: false,
+          // It's an Android APK: only installable on mobile, so the unlock
+          // button is greyed out/disabled on desktop.
+          desktopUnavailable: true,
         },
       ],
       passwords: {},
@@ -189,6 +190,9 @@ export default {
   methods: {
     isComingSoon(item) {
       return item.protected ? !item.available : !item.file;
+    },
+    isDeviceUnavailable(item) {
+      return this.isMobile ? !!item.mobileUnavailable : !!item.desktopUnavailable;
     },
     metaText(item) {
       return [item.version, item.size].filter(Boolean).join(" · ");
@@ -485,5 +489,56 @@ export default {
 
 .downloads-grid::-webkit-scrollbar-thumb:hover {
   background: linear-gradient(180deg, #b228d2, #7c1894);
+}
+
+/* ---- Mobile ---- */
+@media (max-width: 768px) {
+  .downloads-grid {
+    grid-template-columns: 1fr;
+    gap: 14px;
+    padding: 14px;
+  }
+
+  .card-thumb {
+    aspect-ratio: 16 / 9;
+  }
+
+  .card-body {
+    padding: 14px;
+    gap: 7px;
+  }
+
+  .card-title {
+    font-size: 17px;
+  }
+
+  .card-desc {
+    font-size: 14px;
+  }
+
+  .card-meta {
+    font-size: 13px;
+  }
+
+  .card-btn {
+    padding: 13px 14px;
+    font-size: 14px;
+  }
+
+  /* Stack the password field above the submit button so both are full-width,
+     easy-to-hit touch targets instead of a cramped inline row. */
+  .password-row {
+    flex-direction: column;
+  }
+
+  .card-btn.icon-btn {
+    width: 100%;
+  }
+
+  /* 16px avoids iOS Safari auto-zooming the page when the input is focused. */
+  .password-input {
+    font-size: 16px;
+    padding: 12px;
+  }
 }
 </style>
