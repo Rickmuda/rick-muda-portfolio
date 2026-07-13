@@ -150,8 +150,7 @@ export const projects = [
     descKey: "rfiDescription",
     type: "Web Project",
     dateCreated: "2026-07-13",
-    images: [img("under-construction.svg")],
-    disabled: true,
-    status: "W.I.P",
+    images: [img("rollforit1.webp")],
+    link: "https://rollforit.rickmuda.nl",
   },
 ];

@@ -193,7 +193,7 @@ const messages = {
     sr: "StickyReminders",
     srDescription: "An agenda/reminder style app I made because I struggle to stick to a schedule without being reminded often.",
     rfi: "Roll for it",
-    rfiDescription: "A simple site for rolling dice (including D&D dice) and flipping coins, currently in development.",
+    rfiDescription: "A simple site for rolling dice (including D&D dice) and flipping coins.",
     goToProject: "Go to Project",
 
     // Start menu
@@ -513,7 +513,7 @@ const messages = {
     sr: "StickyReminders",
     srDescription: "Een agenda/herinnerings-app die ik heb gemaakt omdat ik moeite heb om me aan een planning te houden zonder vaak herinnerd te worden.",
     rfi: "Roll for it",
-    rfiDescription: "Een simpele site om dobbelstenen (inclusief D&D dobbelstenen) en munten te gooien, momenteel in ontwikkeling.",
+    rfiDescription: "Een simpele site om dobbelstenen (inclusief D&D dobbelstenen) en munten te gooien.",
     goToProject: "Ga naar Project",
 
     // Start menu
