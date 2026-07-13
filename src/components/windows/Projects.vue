@@ -37,8 +37,15 @@
     <div class="explorer-pane preview-pane" v-if="selectedProject">
       <!-- Image carousel container -->
       <div class="carousel-container">
-        <div class="carousel-viewport">
-          <img :src="selectedProject.images[currentImageIndex]" alt="Project Image" class="carousel-image" loading="lazy" decoding="async" />
+        <div class="carousel-viewport" :class="{ 'is-phone-shot': isPhoneShot(selectedProject) }">
+          <img
+            :src="selectedProject.images[currentImageIndex]"
+            alt="Project Image"
+            class="carousel-image"
+            :class="{ 'is-phone-shot': isPhoneShot(selectedProject) }"
+            loading="lazy"
+            decoding="async"
+          />
         </div>
         <!-- Navigation dots -->
         <div class="carousel-dots" v-if="selectedProject.images.length > 1">
@@ -92,11 +99,19 @@
       <button class="pm-back" @click="pmBack">&#8592; Back</button>
       <div
         class="pm-carousel"
+        :class="{ 'is-phone-shot': isPhoneShot(pmSelected) }"
         @touchstart.passive="pmTouchStart"
         @touchmove.passive="pmTouchMove"
         @touchend="pmTouchEnd"
       >
-        <img :src="pmSelected.images[pmDetailIndex]" :alt="pmSelected.title" class="pm-image" loading="lazy" decoding="async" />
+        <img
+          :src="pmSelected.images[pmDetailIndex]"
+          :alt="pmSelected.title"
+          class="pm-image"
+          :class="{ 'is-phone-shot': isPhoneShot(pmSelected) }"
+          loading="lazy"
+          decoding="async"
+        />
         <div class="pm-dots" v-if="pmSelected.images.length > 1">
           <button
             v-for="(_, idx) in pmSelected.images"
@@ -184,6 +199,12 @@ export default {
     },
   },
   methods: {
+    // Mobile App screenshots are tall phone captures, not wide desktop shots -
+    // cropping them with object-fit: cover chops off most of the screen, so
+    // they get a taller box and object-fit: contain instead.
+    isPhoneShot(project) {
+      return !!project && project.type === 'Mobile App';
+    },
     // Select a specific project when the start-menu search points us at one.
     applySelection() {
       if (!this.selection || !this.selection.projectTitleKey) return false;
@@ -468,11 +489,23 @@ export default {
   border-radius: 4px;
 }
 
+/* Phone screenshots are tall/portrait - a wide, short box cropped with
+   object-fit: cover cuts off most of the screen, so this box grows taller
+   and the image is fully contained (letterboxed) instead of cropped. */
+.carousel-viewport.is-phone-shot {
+  height: 420px;
+}
+
 .carousel-image {
   width: 100%;
   height: 100%;
   object-fit: cover;
   animation: fadeIn 0.3s ease;
+}
+
+.carousel-image.is-phone-shot {
+  width: auto;
+  object-fit: contain;
 }
 
 @keyframes fadeIn {
@@ -710,6 +743,17 @@ export default {
     border-radius: 6px;
     user-select: none;
     -webkit-user-drag: none;
+  }
+
+  /* Phone screenshots: taller box, contained instead of cropped (see the
+     desktop .carousel-viewport.is-phone-shot comment for why). */
+  .pm-carousel.is-phone-shot .pm-image {
+    height: 340px;
+    width: auto;
+    max-width: 100%;
+    object-fit: contain;
+    margin: 0 auto;
+    display: block;
   }
 
   .pm-dots {

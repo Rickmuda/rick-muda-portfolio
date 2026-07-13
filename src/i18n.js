@@ -93,6 +93,8 @@ const messages = {
     dlPhotoDesc: "A photography portfolio assignment I made.",
     dlStickyTitle: "StickyReminders",
     dlStickyDesc: "An agenda/reminder app I made to help myself stick to a schedule without forgetting things.",
+    dlLunarTitle: "LunarHome App",
+    dlLunarDesc: "The mobile companion app for LunarHome, my personal streaming service.",
 
     // About me
     aboutMeIntro: "Hey there! Welcome to my portfolio.",
@@ -411,6 +413,8 @@ const messages = {
     dlPhotoDesc: "Een portfolio-opdracht over fotografie die ik gemaakt heb.",
     dlStickyTitle: "StickyReminders",
     dlStickyDesc: "Een agenda/herinnerings-app die ik heb gemaakt om mezelf te helpen me aan een planning te houden zonder dingen te vergeten.",
+    dlLunarTitle: "LunarHome App",
+    dlLunarDesc: "De mobiele bijbehorende app voor LunarHome, mijn persoonlijke streaming service.",
 
     // About me
     aboutMeIntro: "Hey daar! Welkom op mijn portfolio.",

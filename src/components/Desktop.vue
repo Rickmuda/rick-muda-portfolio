@@ -96,13 +96,39 @@ export default {
     gridRows() {
       return Math.max(1, Math.floor((this.vh - TASKBAR_H - ORIGIN_Y) / CELL_H));
     },
-    // Auto-grid fallback position for every node, by index.
+    // Auto-grid fallback position for every node without a dragged/persisted
+    // position. Cells already taken by a persisted position are reserved first
+    // so a newly-added node can never default onto a cell someone dragged an
+    // icon to - that was letting icons land on top of each other at startup.
     defaultPositions() {
       const cols = this.gridCols;
+      const rows = this.gridRows;
+      const totalCells = Math.max(cols * rows, this.nodes.length);
+      const occupied = new Set();
+      for (const node of this.nodes) {
+        const stored = this.positions[node.id];
+        if (!stored) continue;
+        const { col, row } = this.cellFromPos(stored.x, stored.y);
+        occupied.add(col + "," + row);
+      }
       const map = {};
-      this.nodes.forEach((node, i) => {
-        map[node.id] = this.posFromCell(i % cols, Math.floor(i / cols));
-      });
+      let cursor = 0;
+      for (const node of this.nodes) {
+        if (this.positions[node.id]) continue;
+        let steps = 0;
+        while (steps <= totalCells) {
+          const col = cursor % cols;
+          const row = Math.floor(cursor / cols);
+          const key = col + "," + row;
+          cursor++;
+          steps++;
+          if (!occupied.has(key)) {
+            occupied.add(key);
+            map[node.id] = this.posFromCell(col, row);
+            break;
+          }
+        }
+      }
       return map;
     },
   },
