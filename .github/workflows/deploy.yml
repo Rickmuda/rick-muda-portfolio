@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: 🛠️ Installeer dependencies
         run: npm install
@@ -20,7 +20,7 @@ jobs:
         run: npm run build
 
       - name: 📤 Deploy via FTP
-        uses: samkirkland/ftp-deploy-action@v4.3.5
+        uses: samkirkland/ftp-deploy-action@4.3.6
         with:
           server: web1.ping64.net
           username: ${{ secrets.FTP_USERNAME }}
