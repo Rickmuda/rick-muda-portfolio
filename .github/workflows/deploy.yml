@@ -20,7 +20,7 @@ jobs:
         run: npm run build
 
       - name: 📤 Deploy via FTP
-        uses: samkirkland/ftp-deploy-action@4.3.6
+        uses: samkirkland/ftp-deploy-action@v4.4.0
         with:
           server: web1.ping64.net
           username: ${{ secrets.FTP_USERNAME }}
