@@ -114,7 +114,7 @@ export const projects = [
     descKey: "lhDescription",
     type: "Web Project",
     dateCreated: "2026-04-28",
-    images: [img("lunar1.webp"), img("lunar2.webp"), img("lunar3.webp")],
+    images: [img("lunar1.webp"), img("lunar2.webp"), img("lunar3.webp"), img("lunar4.webp")],
     link: "https://lunarhome.nl",
     status: "Private",
   },
