@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: 📥 Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@v4.4.0
 
       - name: 🛠️ Installeer dependencies
         run: npm install
@@ -20,10 +20,12 @@ jobs:
         run: npm run build
 
       - name: 📤 Deploy via FTP
-        uses: samkirkland/ftp-deploy-action@v4.4.0
-        with:
-          server: web1.ping64.net
-          username: ${{ secrets.FTP_USERNAME }}
-          password: ${{ secrets.FTP_PASSWORD }}
-          local-dir: dist/
-          server-dir: ${{ secrets.FTP_DEST }}
+        env:
+          FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
+          FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
+          FTP_DEST: ${{ secrets.FTP_DEST }}
+        run: |
+          sudo apt-get install -y lftp
+          lftp -u "$FTP_USERNAME","$FTP_PASSWORD" \
+            -e "set ftp:ssl-allow no; mirror --reverse --delete dist/ $FTP_DEST; bye" \
+            web1.ping64.net
