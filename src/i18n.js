@@ -95,6 +95,8 @@ const messages = {
     dlStickyDesc: "An agenda/reminder app I made to help myself stick to a schedule without forgetting things.",
     dlLunarTitle: "LunarMovies",
     dlLunarDesc: "Stream the DVDs from your LunarHome collection on mobile.",
+    dlPlaydeckTitle: "Playdeck",
+    dlPlaydeckDesc: "A clean, fully customizable game launcher for Windows that gathers your Steam, Epic Games, GOG Galaxy, Ubisoft Connect and manually installed games into one library.",
 
     // About me
     aboutMeIntro: "Hey there! Welcome to my portfolio.",
@@ -196,6 +198,8 @@ const messages = {
     srDescription: "An agenda/reminder style app I made because I struggle to stick to a schedule without being reminded often.",
     rfi: "Roll for it",
     rfiDescription: "A simple site for rolling dice (including D&D dice) and flipping coins.",
+    pd: "Playdeck",
+    pdDescription: "A clean, fully customizable game launcher for Windows that gathers everything you own — Steam, Epic Games, GOG Galaxy, Ubisoft Connect, or manually installed — into one library, with automatic detection of installed games. No store, no accounts, just launching. Available as a download.",
     goToProject: "Go to Project",
 
     // Start menu
@@ -415,6 +419,8 @@ const messages = {
     dlStickyDesc: "Een agenda/herinnerings-app die ik heb gemaakt om mezelf te helpen me aan een planning te houden zonder dingen te vergeten.",
     dlLunarTitle: "LunarMovies",
     dlLunarDesc: "Stream de dvd's uit je LunarHome collectie op mobiel.",
+    dlPlaydeckTitle: "Playdeck",
+    dlPlaydeckDesc: "Een clean, volledig aanpasbare game-launcher voor Windows die je Steam-, Epic Games-, GOG Galaxy-, Ubisoft Connect- en handmatig geïnstalleerde games in 1 bibliotheek verzamelt.",
 
     // About me
     aboutMeIntro: "Hey daar! Welkom op mijn portfolio.",
@@ -518,6 +524,8 @@ const messages = {
     srDescription: "Een agenda/herinnerings-app die ik heb gemaakt omdat ik moeite heb om me aan een planning te houden zonder vaak herinnerd te worden.",
     rfi: "Roll for it",
     rfiDescription: "Een simpele site om dobbelstenen (inclusief D&D dobbelstenen) en munten te gooien.",
+    pd: "Playdeck",
+    pdDescription: "Een clean, volledig aanpasbare game-launcher voor Windows die alles wat je bezit — Steam, Epic Games, GOG Galaxy, Ubisoft Connect of handmatig geïnstalleerd — in 1 bibliotheek verzamelt, met automatische detectie van geïnstalleerde games. Geen winkel, geen accounts, alleen opstarten. Te downloaden.",
     goToProject: "Ga naar Project",
 
     // Start menu

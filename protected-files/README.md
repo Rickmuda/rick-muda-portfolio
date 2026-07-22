@@ -53,3 +53,14 @@ Before deploying, make sure the server actually has:
 
 Without both of those in place on the server, the download card will show but the
 unlock will fail with "Something went wrong" / 503.
+
+## Playdeck app download
+
+Released - `available: true` in `Downloads.vue`'s `playdeck` entry. No password: the
+`playdeck` entry in `download.php` has no `passwordKey`, so the file is gated only by
+living outside the web root, not by a password prompt.
+
+Before deploying, make sure the server actually has the file at
+`protected-files/Playdeck Setup 1.0.0.exe` (outside the web root, exact filename
+including spaces). Without it, the download button will show but requesting it will
+fail with "Something went wrong" / 404.

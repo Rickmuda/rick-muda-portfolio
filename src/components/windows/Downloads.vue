@@ -84,6 +84,21 @@
               </transition>
             </template>
 
+            <!-- Gated: file lives outside the web root and is streamed via
+                 download.php, but no password is required -->
+            <template v-else-if="item.gated">
+              <button
+                class="card-btn"
+                type="button"
+                :disabled="loadingIds[item.id]"
+                @click="downloadGated(item)"
+              >
+                <font-awesome-icon icon="download" />
+                {{ $t('download') }}
+              </button>
+              <span v-if="errors[item.id]" class="password-error">{{ errors[item.id] }}</span>
+            </template>
+
             <!-- Direct (unprotected) download -->
             <a
               v-else
@@ -157,6 +172,21 @@ export default {
           // Android APK: only installable on mobile, so it's hidden on desktop.
           desktopUnavailable: true,
         },
+        {
+          id: "playdeck",
+          titleKey: "dlPlaydeckTitle",
+          descKey: "dlPlaydeckDesc",
+          version: "v1.0.0",
+          size: "",
+          thumbnail: new URL("@/assets/img/downloads/playdeck_icon.webp", import.meta.url).href,
+          // Lives outside the web root (protected-files/) and is streamed via
+          // public/download.php like the protected downloads, but no
+          // password is required to fetch it.
+          gated: true,
+          available: true,
+          // It's a Windows .exe: only runnable on desktop, so it's hidden on mobile.
+          mobileUnavailable: true,
+        },
       ],
       passwords: {},
       errors: {},
@@ -196,7 +226,8 @@ export default {
   },
   methods: {
     isComingSoon(item) {
-      return item.protected ? !item.available : !item.file;
+      if (item.protected || item.gated) return !item.available;
+      return !item.file;
     },
     isDeviceUnavailable(item) {
       return this.isMobile ? !!item.mobileUnavailable : !!item.desktopUnavailable;
@@ -213,6 +244,22 @@ export default {
         const input = this.inputRefs[item.id];
         if (input) input.focus();
       });
+    },
+    // Streams the browser download from a download.php response's blob body,
+    // falling back to the item id if no filename is in the response headers.
+    triggerBlobDownload(response, blob, fallbackName) {
+      const disposition = response.headers.get("Content-Disposition") || "";
+      const match = disposition.match(/filename="?([^"]+)"?/);
+      const filename = match ? match[1] : fallbackName;
+
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
     },
     async unlock(item) {
       this.errors[item.id] = "";
@@ -239,22 +286,35 @@ export default {
           return;
         }
 
-        // Stream the returned file to a browser download.
         const blob = await response.blob();
-        const disposition = response.headers.get("Content-Disposition") || "";
-        const match = disposition.match(/filename="?([^"]+)"?/);
-        const filename = match ? match[1] : item.id;
-
-        const url = URL.createObjectURL(blob);
-        const link = document.createElement("a");
-        link.href = url;
-        link.download = filename;
-        document.body.appendChild(link);
-        link.click();
-        link.remove();
-        URL.revokeObjectURL(url);
-
+        this.triggerBlobDownload(response, blob, item.id);
         this.passwords[item.id] = "";
+      } catch (error) {
+        console.error("Download error:", error);
+        this.errors[item.id] = this.$t("downloadError");
+      } finally {
+        this.loadingIds[item.id] = false;
+      }
+    },
+    // Same download.php gatekeeper as unlock(), but for entries that require
+    // no password - the file just lives outside the web root.
+    async downloadGated(item) {
+      this.errors[item.id] = "";
+      this.loadingIds[item.id] = true;
+      try {
+        const response = await fetch("/download.php", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ id: item.id }),
+        });
+
+        if (!response.ok) {
+          this.errors[item.id] = this.$t("downloadError");
+          return;
+        }
+
+        const blob = await response.blob();
+        this.triggerBlobDownload(response, blob, item.id);
       } catch (error) {
         console.error("Download error:", error);
         this.errors[item.id] = this.$t("downloadError");

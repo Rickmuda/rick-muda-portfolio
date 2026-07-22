@@ -153,4 +153,15 @@ export const projects = [
     images: [img("rollforit1.webp")],
     link: "https://rollforit.rickmuda.nl",
   },
+  {
+    titleKey: "pd",
+    descKey: "pdDescription",
+    type: "Desktop App",
+    dateCreated: "2026-07-22",
+    images: [img("playdeck1.webp"), img("playdeck2.webp"), img("playdeck3.webp")],
+    disabled: true,
+    status: "Download only",
+    // Zet hier de repo-url neer als je 'm public maakt op GitHub, bv.:
+    // repository: "https://github.com/rickmuda/playdeck",
+  },
 ];

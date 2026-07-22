@@ -33,6 +33,12 @@ $DOWNLOADS = [
         'downloadName' => 'LunarHome.apk',
         'passwordKey' => 'DOWNLOAD_LUNARHOME_PASSWORD',
     ],
+    // No passwordKey: the file still lives outside the web root (so it can't
+    // be reached by guessing a URL), but no password is required to fetch it.
+    'playdeck' => [
+        'file'        => __DIR__ . '/../protected-files/Playdeck Setup 1.0.0.exe',
+        'downloadName' => 'Playdeck Setup 1.0.0.exe',
+    ],
 ];
 
 function send_json($status, $payload)
@@ -58,23 +64,27 @@ if (!isset($DOWNLOADS[$id])) {
 }
 $entry = $DOWNLOADS[$id];
 
-// Resolve the expected password: prefer an env var, fall back to a secrets file
-// kept outside the web root.
-$expected = getenv($entry['passwordKey']);
-if ($expected === false || $expected === '') {
-    $secretsFile = __DIR__ . '/../protected-files/download-secrets.php';
-    if (is_file($secretsFile)) {
-        $secrets  = include $secretsFile;
-        $expected = isset($secrets[$entry['passwordKey']]) ? $secrets[$entry['passwordKey']] : '';
+// Entries without a passwordKey are gated only by living outside the web
+// root; no password verification is needed for them.
+if (!empty($entry['passwordKey'])) {
+    // Resolve the expected password: prefer an env var, fall back to a secrets
+    // file kept outside the web root.
+    $expected = getenv($entry['passwordKey']);
+    if ($expected === false || $expected === '') {
+        $secretsFile = __DIR__ . '/../protected-files/download-secrets.php';
+        if (is_file($secretsFile)) {
+            $secrets  = include $secretsFile;
+            $expected = isset($secrets[$entry['passwordKey']]) ? $secrets[$entry['passwordKey']] : '';
+        }
     }
-}
-if (!is_string($expected) || $expected === '') {
-    send_json(503, ['error' => 'Download not configured']);
-}
+    if (!is_string($expected) || $expected === '') {
+        send_json(503, ['error' => 'Download not configured']);
+    }
 
-// Constant-time comparison (no timing/length leak).
-if ($password === '' || !hash_equals($expected, $password)) {
-    send_json(401, ['error' => 'Invalid password']);
+    // Constant-time comparison (no timing/length leak).
+    if ($password === '' || !hash_equals($expected, $password)) {
+        send_json(401, ['error' => 'Invalid password']);
+    }
 }
 
 $file = $entry['file'];
