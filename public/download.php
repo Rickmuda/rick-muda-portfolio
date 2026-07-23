@@ -36,8 +36,8 @@ $DOWNLOADS = [
     // No passwordKey: the file still lives outside the web root (so it can't
     // be reached by guessing a URL), but no password is required to fetch it.
     'playdeck' => [
-        'file'        => __DIR__ . '/../protected-files/Playdeck Setup 1.0.0.exe',
-        'downloadName' => 'Playdeck Setup 1.0.0.exe',
+        'file'        => __DIR__ . '/../protected-files/Playdeck Setup 1.5.1.exe',
+        'downloadName' => 'Playdeck Setup 1.5.1.exe',
     ],
 ];
 
