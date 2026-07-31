@@ -46,6 +46,11 @@
       </div>
     </div>
 
+    <!-- Swipe-up affordance: opens the app drawer (also via swipe up from the bottom). -->
+    <div class="drawer-trigger" @click="openDrawer">
+      <font-awesome-icon icon="chevron-up" class="drawer-trigger-chevron" />
+    </div>
+
     <div class="home-dots" v-if="pages.length > 1">
       <span
         v-for="(p, i) in pages"
@@ -54,11 +59,6 @@
         :class="{ active: i === activePage }"
         @click="goToPage(i)"
       ></span>
-    </div>
-
-    <!-- Swipe-up affordance: opens the app drawer (also via swipe up from the bottom). -->
-    <div class="drawer-trigger" @click="openDrawer">
-      <font-awesome-icon icon="chevron-up" class="drawer-trigger-chevron" />
     </div>
 
     <!-- App drawer (slide-up): all apps + search (apps, projects, photos). -->
