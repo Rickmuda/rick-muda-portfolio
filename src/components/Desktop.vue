@@ -1,14 +1,18 @@
 <template>
-  <div class="desktop" @mousedown.self="selectedId = null" @contextmenu.prevent>
+  <div class="desktop" @mousedown.self="selectedId = null" @contextmenu.prevent="onDesktopContext">
     <div
       v-for="node in nodes"
       :key="node.id"
       class="app-icon"
       :class="{ selected: selectedId === node.id, dragging: draggingId === node.id }"
       :style="iconStyle(node)"
+      tabindex="0"
+      role="button"
       @mousedown.stop="onMouseDown(node, $event)"
       @click.stop="onClick(node)"
       @contextmenu.prevent.stop="onContext(node, $event)"
+      @keydown.enter="onClick(node)"
+      @keydown.space.prevent="onClick(node)"
     >
       <div class="app-icon-image">
         <font-awesome-icon :icon="node.icon" class="app-icon-inner" />
@@ -17,6 +21,41 @@
     </div>
 
     <InfoCard :node="infoNode" :x="infoX" :y="infoY" @close="infoNode = null" />
+
+    <!-- Right-click-on-empty-desktop menu: change wallpaper / auto-arrange icons. -->
+    <Teleport to="body">
+      <div
+        v-if="desktopMenu"
+        class="desktop-ctx-menu"
+        :style="ctxMenuStyle"
+        @mousedown.stop
+        @contextmenu.prevent.stop
+      >
+        <template v-if="!wallpaperPickerOpen">
+          <button type="button" class="ctx-item" @click="toggleWallpaperPicker">
+            <font-awesome-icon icon="palette" />
+            {{ $t('ctxChangeWallpaper') }}
+          </button>
+          <button type="button" class="ctx-item" @click="autoArrangeIcons">
+            <font-awesome-icon icon="sitemap" />
+            {{ $t('ctxAutoArrange') }}
+          </button>
+        </template>
+        <div v-else class="ctx-wallpaper-grid">
+          <button
+            v-for="wp in wallpapers"
+            :key="wp.id"
+            type="button"
+            class="ctx-wallpaper-thumb"
+            :class="{ active: getCurrentWallpaperId() === wp.id }"
+            :style="{ backgroundImage: wp.cssValue }"
+            :title="$t(wp.labelKey)"
+            :aria-label="$t(wp.labelKey)"
+            @click="pickWallpaper(wp.id)"
+          ></button>
+        </div>
+      </div>
+    </Teleport>
   </div>
 </template>
 
@@ -25,6 +64,7 @@ import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import InfoCard from "./InfoCard.vue";
 import { getDesktopNodes } from "../filesystem";
 import { getPositions, setPosition, onChange as onLayoutChange } from "../desktopLayout";
+import { wallpapers, getCurrentId as getCurrentWallpaperId, setCurrent as setWallpaper } from "../wallpapers";
 
 // Larger cells than the icons themselves so dragged icons get breathing room.
 const CELL_W = 124;
@@ -61,6 +101,10 @@ export default {
       infoNode: null,
       infoX: 0,
       infoY: 0,
+      // Right-click-on-empty-desktop menu: null when hidden, else {x, y}.
+      desktopMenu: null,
+      wallpaperPickerOpen: false,
+      wallpapers,
       // Viewport size (drives the default auto-grid; reflows on resize).
       vw: window.innerWidth,
       vh: window.innerHeight,
@@ -131,8 +175,19 @@ export default {
       }
       return map;
     },
+    // Clamped so the menu never renders partly off-screen, mirroring InfoCard's
+    // own cardStyle clamping.
+    ctxMenuStyle() {
+      if (!this.desktopMenu) return {};
+      const MENU_W = 220;
+      const MENU_H = this.wallpaperPickerOpen ? 130 : 96;
+      const left = Math.max(8, Math.min(this.desktopMenu.x, window.innerWidth - MENU_W - 8));
+      const top = Math.max(8, Math.min(this.desktopMenu.y, window.innerHeight - MENU_H - 8));
+      return { left: left + "px", top: top + "px" };
+    },
   },
   methods: {
+    getCurrentWallpaperId,
     effectivePos(node) {
       return this.positions[node.id] || this.defaultPositions[node.id] || { x: ORIGIN_X, y: ORIGIN_Y };
     },
@@ -229,10 +284,50 @@ export default {
       this.openNode(node);
     },
     onContext(node, e) {
+      this.closeDesktopMenu();
       this.selectedId = node.id;
       this.infoNode = node;
       this.infoX = e.clientX;
       this.infoY = e.clientY;
+    },
+    onDesktopContext(e) {
+      this.infoNode = null;
+      this.wallpaperPickerOpen = false;
+      this.desktopMenu = { x: e.clientX, y: e.clientY };
+    },
+    closeDesktopMenu() {
+      this.desktopMenu = null;
+      this.wallpaperPickerOpen = false;
+    },
+    toggleWallpaperPicker() {
+      this.wallpaperPickerOpen = !this.wallpaperPickerOpen;
+    },
+    pickWallpaper(id) {
+      setWallpaper(id);
+      this.closeDesktopMenu();
+    },
+    // Repacks every icon into the grid in its current order, left-to-right,
+    // top-to-bottom - reuses the same posFromCell math the default auto-grid
+    // layout already uses, just applied to every node rather than only the
+    // ones without a stored position.
+    autoArrangeIcons() {
+      const cols = this.gridCols;
+      const next = {};
+      this.nodes.forEach((node, i) => {
+        const pos = this.posFromCell(i % cols, Math.floor(i / cols));
+        next[node.id] = pos;
+        setPosition(node.id, pos);
+      });
+      this.positions = next;
+      this.closeDesktopMenu();
+    },
+    onDocMouseDownForMenu(e) {
+      // Clicks inside the menu are stopped via @mousedown.stop, so reaching
+      // here means the click landed outside - dismiss.
+      if (this.desktopMenu) this.closeDesktopMenu();
+    },
+    onKeydownForMenu(e) {
+      if (e.key === "Escape" && this.desktopMenu) this.closeDesktopMenu();
     },
     onResize() {
       this.vw = window.innerWidth;
@@ -267,11 +362,15 @@ export default {
     this.loadPositions();
     this.layoutUnsub = onLayoutChange(() => this.loadPositions());
     window.addEventListener("resize", this.onResize);
+    document.addEventListener("mousedown", this.onDocMouseDownForMenu);
+    document.addEventListener("keydown", this.onKeydownForMenu);
   },
   beforeUnmount() {
     document.removeEventListener("mousemove", this.onDocMouseMove);
     document.removeEventListener("mouseup", this.onDocMouseUp);
     window.removeEventListener("resize", this.onResize);
+    document.removeEventListener("mousedown", this.onDocMouseDownForMenu);
+    document.removeEventListener("keydown", this.onKeydownForMenu);
     if (this.layoutUnsub) this.layoutUnsub();
   },
 };
@@ -292,6 +391,12 @@ export default {
   transition: none;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .app-icon {
+    transition: none !important;
+  }
+}
+
 .app-icon.selected .app-icon-image {
   background-color: rgb(72, 14, 85);
   outline: 2px solid #c637e6;
@@ -300,5 +405,74 @@ export default {
 .app-icon.selected .app-icon-text {
   background: rgba(155, 32, 183, 0.5);
   border-radius: 4px;
+}
+</style>
+
+<!-- Non-scoped: the menu is teleported to <body>. -->
+<style>
+.desktop-ctx-menu {
+  position: fixed;
+  z-index: 1300;
+  min-width: 200px;
+  background: linear-gradient(180deg, #2a1a35, #1b1024);
+  border: 2px solid #8404a1;
+  border-radius: 10px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+  padding: 6px;
+  font-family: "PortfolioFont", sans-serif;
+}
+
+.ctx-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 10px 12px;
+  background: transparent;
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 13px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.ctx-item:hover,
+.ctx-item:focus-visible {
+  background: rgba(155, 32, 183, 0.35);
+}
+
+.ctx-wallpaper-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  padding: 6px;
+}
+
+.ctx-wallpaper-thumb {
+  height: 44px;
+  border: 2px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+  background-size: cover;
+  background-position: center;
+  cursor: pointer;
+  padding: 0;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+
+.ctx-wallpaper-thumb:hover {
+  transform: scale(1.04);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.ctx-wallpaper-thumb.active {
+  border-color: #9b20b7;
+  box-shadow: 0 0 0 2px rgba(155, 32, 183, 0.35);
+}
+
+.ctx-wallpaper-thumb:focus-visible {
+  outline: 2px solid #c637e6;
+  outline-offset: 2px;
 }
 </style>

@@ -6,6 +6,7 @@ export const minigames = [
   { name: "minesweeper", icon: "bomb", labelKey: "minesweeper" },
   { name: "tetris", icon: "shapes", labelKey: "tetris" },
   { name: "flappyRick", icon: "dove", labelKey: "flappyRick" },
+  { name: "scoreboards", icon: "ranking-star", labelKey: "scoreboards" },
 ];
 
 // Folder descriptor consumed by the desktop icon, the taskbar launcher and the

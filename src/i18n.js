@@ -35,6 +35,16 @@ const messages = {
     tetrisLines: "Lines",
     tetrisNext: "Next",
     tetrisInstructions: "Arrows or WASD. Up to rotate. Space to drop.",
+    scoreboards: "Scoreboards",
+    scoreboardYourBest: "Your best",
+    scoreboardWins: "Wins",
+    scoreboardSubmit: "Submit",
+    scoreboardNamePlaceholder: "Your name",
+    scoreboardRank: "Rank",
+    scoreboardLoading: "Loading...",
+    scoreboardEmpty: "No scores yet - be the first!",
+    scoreboardSubmitted: "Submitted! Thanks for playing.",
+    scoreboardSubmitError: "Couldn't submit your score. Try again later.",
     settings: "Settings",
     certificates: "Certificates",
     vinylCollection: "Vinyl Collection",
@@ -46,6 +56,8 @@ const messages = {
 
     // Paint app
     enableSounds: "Enable sound effects",
+    soundVolume: "Sound volume",
+    enableHaptics: "Enable vibration feedback",
     achievements: "Achievements",
     achievementUnlocked: "Achievement unlocked",
     achievementLocked: "Locked - keep exploring to unlock.",
@@ -269,6 +281,13 @@ const messages = {
     // Snap chooser
     snapChooserTitle: "Snap another window",
 
+    // Desktop context menu
+    ctxChangeWallpaper: "Change wallpaper",
+    ctxAutoArrange: "Auto-arrange icons",
+
+    // Window switcher
+    switcherTitle: "Switch window",
+
     // Easter egg
     oldVideo: "Old Video",
     easterEgg: "Easter Egg",
@@ -373,6 +392,16 @@ const messages = {
     tetrisLines: "Rijen",
     tetrisNext: "Volgende",
     tetrisInstructions: "Pijltjes of WASD. Omhoog draait. Spatie laat vallen.",
+    scoreboards: "Scoreborden",
+    scoreboardYourBest: "Jouw beste",
+    scoreboardWins: "Overwinningen",
+    scoreboardSubmit: "Versturen",
+    scoreboardNamePlaceholder: "Jouw naam",
+    scoreboardRank: "Plaats",
+    scoreboardLoading: "Laden...",
+    scoreboardEmpty: "Nog geen scores - wees de eerste!",
+    scoreboardSubmitted: "Verstuurd! Bedankt voor het spelen.",
+    scoreboardSubmitError: "Kon je score niet versturen. Probeer het later opnieuw.",
     settings: "Instellingen",
     certificates: "Certificaten",
     vinylCollection: "Vinyl Collectie",
@@ -384,6 +413,8 @@ const messages = {
 
     // Paint app
     enableSounds: "Geluidseffecten inschakelen",
+    soundVolume: "Geluidsvolume",
+    enableHaptics: "Trilfeedback inschakelen",
     achievements: "Prestaties",
     achievementUnlocked: "Prestatie behaald",
     achievementLocked: "Vergrendeld - blijf ontdekken om te ontgrendelen.",
@@ -608,6 +639,13 @@ const messages = {
 
     // Snap chooser
     snapChooserTitle: "Snap een ander venster",
+
+    // Desktop context menu
+    ctxChangeWallpaper: "Achtergrond wijzigen",
+    ctxAutoArrange: "Pictogrammen automatisch schikken",
+
+    // Window switcher
+    switcherTitle: "Wissel van venster",
 
     // Easter egg
     oldVideo: "Oude Video",

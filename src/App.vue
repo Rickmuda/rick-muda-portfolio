@@ -8,7 +8,7 @@
       <!-- Background -->
       <div
         class="background"
-        :class="{ 'dark-mode': darkMode }"
+        :class="{ 'dark-mode': darkMode, tablet: deviceTier === 'tablet' }"
         :style="{ backgroundImage: backgroundCss }"
       >
         <!-- Mobile: phone-style launcher. Desktop: OS metaphor. -->
@@ -36,6 +36,7 @@
         :openWindows="openWindows"
         :minimizedWindows="minimizedWindows"
         :windowThumbnails="windowThumbnails"
+        :openSwitcher="openSwitcher"
       />
 
       <!-- Dynamic App Windows -->
@@ -51,6 +52,9 @@
         :defaultY="windowConfig[window].defaultY"
         :zIndex="windowZIndices[window]"
         :isMobile="isMobile"
+        :isTablet="deviceTier === 'tablet'"
+        :switcherOpen="switcherOpen"
+        :appName="window"
         :data-app-name="window"
         @close="closeApp(window)"
         @minimize="minimizeApp(window)"
@@ -93,6 +97,27 @@
         </div>
       </div>
 
+      <!-- Window switcher: Ctrl+Alt+Tab, or the taskbar trigger button. -->
+      <div v-if="switcherOpen" class="window-switcher" @click.self="closeSwitcher">
+        <div class="window-switcher-inner">
+          <div class="window-switcher-title">{{ $t('switcherTitle') }}</div>
+          <div class="window-switcher-grid">
+            <button
+              v-for="(name, i) in switcherCandidates"
+              :key="name"
+              type="button"
+              class="window-switcher-card"
+              :class="{ active: i === switcherIndex }"
+              @click="confirmSwitcher(name)"
+              @mouseenter="switcherIndex = i"
+            >
+              <font-awesome-icon :icon="getAppMeta(name).icon" class="window-switcher-icon" />
+              <span class="window-switcher-label">{{ $t(getAppMeta(name).labelKey) }}</span>
+            </button>
+          </div>
+        </div>
+      </div>
+
       <!-- Boot screen (first visit per session) -->
       <BootScreen v-if="booting" @done="onBootDone" />
 
@@ -113,6 +138,9 @@ import { windowConfig, appList, preloadAllWindows } from "./windowConfig";
 import { sounds } from "./sounds";
 import { unlock as unlockAchievement } from "./achievements";
 import { getCurrent as getCurrentWallpaper, onChange as onWallpaperChange } from "./wallpapers";
+import { getOverride as getDarkModeOverride, setOverride as setDarkModeOverride } from "./darkMode";
+import { getChromeState, setChromeState } from "./windowState";
+import { getDeviceTier } from "./deviceTier";
 
 export default {
   name: 'App',
@@ -147,11 +175,15 @@ export default {
       touchListenersAdded: false,
       easterEggApps: [],
       isMobile: false,
+      deviceTier: "desktop", // "mobile" | "tablet" | "desktop" - see deviceTier.js
       booting: typeof sessionStorage !== "undefined" && sessionStorage.getItem("booted") !== "1",
       openedAppsEver: new Set(),
       windowThumbnails: {},
       wallpaper: getCurrentWallpaper(),
       wallpaperUnsubscribe: null,
+      // MediaQueryList for prefers-color-scheme, kept for cleanup. Only set when
+      // there's no stored manual override and the browser supports matchMedia.
+      darkModeMql: null,
       // Cached html2canvas module so minimize doesn't pay the dynamic-import cost.
       html2canvas: null,
       // Function-ref registry: maps appName -> AppWindow component instance so
@@ -159,6 +191,12 @@ export default {
       windowRefs: {},
       // { fromApp, side } while the snap-fill overlay is visible, null otherwise.
       snapChooser: null,
+      // Element to restore focus to when a window closes, keyed by app name -
+      // captured at the moment each window is first opened.
+      focusReturnTargets: {},
+      // Window switcher (Ctrl+Alt+Tab or the taskbar button) overlay state.
+      switcherOpen: false,
+      switcherIndex: 0,
       // File Explorer is single-instance; explorerPath is the folder it currently shows.
       explorerPath: [],
       // Optional selection target (project/photo) passed to the embedded folder view,
@@ -200,6 +238,21 @@ export default {
       if (!this.snapChooser) return [];
       return this.openWindows.filter((w) => w !== this.snapChooser.fromApp);
     },
+    // The frontmost open (non-minimized) window, by z-index - used by Escape
+    // to know which window to close, and reused later by the window switcher.
+    topWindow() {
+      const visible = this.openWindows.filter((w) => !this.minimizedWindows[w]);
+      if (!visible.length) return null;
+      return visible.reduce((top, w) =>
+        (this.windowZIndices[w] || 0) > (this.windowZIndices[top] || 0) ? w : top
+      );
+    },
+    // Open windows most-recently-used first - what the switcher cycles through.
+    switcherCandidates() {
+      return [...this.openWindows].sort(
+        (a, b) => (this.windowZIndices[b] || 0) - (this.windowZIndices[a] || 0)
+      );
+    },
     mobileApps() {
       const eggs = this.easterEggApps.map((name) => ({
         name,
@@ -207,6 +260,24 @@ export default {
         labelKey: "easterEgg",
       }));
       return [...appList, ...eggs];
+    },
+  },
+  watch: {
+    // Persist chrome (open/minimized) state on any change, rather than at each
+    // of openApp/ensureOpen/closeApp/minimizeApp individually - this also means
+    // future mutators (e.g. a window switcher reordering z-index) get
+    // persistence for free with no extra plumbing.
+    openWindows: {
+      handler() {
+        this.persistOpenState();
+      },
+      deep: true,
+    },
+    minimizedWindows: {
+      handler() {
+        this.persistOpenState();
+      },
+      deep: true,
     },
   },
   methods: {
@@ -221,6 +292,7 @@ export default {
         return;
       }
 
+      this.focusReturnTargets[appName] = document.activeElement;
       this.openWindows.push(appName);
       this.windowZIndices[appName] = this.zIndexCounter++;
       sounds.play("open");
@@ -244,6 +316,7 @@ export default {
     // request never minimizes the window the user is looking at.
     ensureOpen(appName) {
       if (!this.openWindows.includes(appName)) {
+        this.focusReturnTargets[appName] = document.activeElement;
         this.openWindows.push(appName);
         this.windowZIndices[appName] = this.zIndexCounter++;
         sounds.play("open");
@@ -306,6 +379,13 @@ export default {
       // Clear any mobile search selection so reopening starts fresh.
       if (appName === "projects") this.projectSelect = null;
       if (appName === "artGallery") this.photoSelect = null;
+      // Restore focus to whatever triggered this window's original open, if
+      // it's still in the document (it may have scrolled away/been removed).
+      const returnTarget = this.focusReturnTargets[appName];
+      delete this.focusReturnTargets[appName];
+      if (returnTarget && returnTarget.isConnected && typeof returnTarget.focus === "function") {
+        returnTarget.focus();
+      }
       sounds.play("close");
     },
     setWindowRef(name, el) {
@@ -348,6 +428,30 @@ export default {
         }
       });
       this.snapChooser = null;
+    },
+    openSwitcher() {
+      if (this.snapChooser || this.openWindows.length < 2) return;
+      this.switcherOpen = true;
+      // Land on the second-most-recent window (the "other" one), matching
+      // real Alt-Tab's default landing spot rather than the already-frontmost.
+      this.switcherIndex = 1 % this.switcherCandidates.length;
+    },
+    closeSwitcher() {
+      this.switcherOpen = false;
+    },
+    switcherStep(dir) {
+      const n = this.switcherCandidates.length;
+      if (!n) return;
+      this.switcherIndex = (this.switcherIndex + dir + n) % n;
+    },
+    confirmSwitcher(name) {
+      const target = name || this.switcherCandidates[this.switcherIndex];
+      this.closeSwitcher();
+      if (!target) return;
+      if (this.minimizedWindows[target]) {
+        this.minimizedWindows = { ...this.minimizedWindows, [target]: false };
+      }
+      this.bringWindowToFront(target);
     },
     getAppMeta(name) {
       const fromList = appList.find((a) => a.name === name);
@@ -396,8 +500,70 @@ export default {
       const currentHour = new Date().getHours();
       this.darkMode = currentHour >= 18 || currentHour < 6;
     },
+    // Precedence: a stored manual override always wins; otherwise the OS's
+    // prefers-color-scheme (kept live via a change listener); otherwise the
+    // time-of-day heuristic for browsers without matchMedia support.
+    initDarkMode() {
+      const override = getDarkModeOverride();
+      if (override !== null) {
+        this.darkMode = override;
+        return;
+      }
+      if (typeof window !== "undefined" && typeof window.matchMedia === "function") {
+        this.darkModeMql = window.matchMedia("(prefers-color-scheme: dark)");
+        this.darkMode = this.darkModeMql.matches;
+        this.darkModeMql.addEventListener("change", this.handleDarkModeMqlChange);
+        return;
+      }
+      this.setDarkModeBasedOnTime();
+      setInterval(() => this.setDarkModeBasedOnTime(), 43200000);
+    },
+    handleDarkModeMqlChange(event) {
+      // A manual Settings toggle (which persists an override) always wins
+      // over a subsequent OS-level theme change.
+      if (getDarkModeOverride() !== null) return;
+      this.darkMode = event.matches;
+    },
     bringWindowToFront(appName) {
       this.windowZIndices[appName] = this.zIndexCounter++;
+    },
+    persistOpenState() {
+      setChromeState(this.openWindows, this.minimizedWindows);
+    },
+    // Opens the app named by a PWA manifest shortcut's ?shortcut= param (see
+    // public/site.webmanifest), then strips the param via the router so it
+    // doesn't linger in the address bar or reopen the app on a later reload.
+    // Must go through $router.replace (after isReady()) rather than a raw
+    // history.replaceState: vue-router's own async initial-navigation resync
+    // runs after mount and will otherwise silently restore the original query.
+    async openShortcutFromUrl() {
+      const SHORTCUT_APPS = new Set(["contact", "projects", "newsletter"]);
+      // Must wait for the router's initial resolution before $route.query is
+      // populated at all - reading it beforehand silently sees an empty query.
+      await this.$router.isReady();
+      const shortcut = this.$route.query.shortcut;
+      if (!shortcut || !SHORTCUT_APPS.has(shortcut)) return;
+      this.ensureOpen(shortcut);
+      const query = { ...this.$route.query };
+      delete query.shortcut;
+      this.$router.replace({ path: this.$route.path, query });
+    },
+    // Restores which windows were open/minimized last session. Geometry itself
+    // is restored independently by each AppWindow (see restorePersistedGeometry
+    // in AppWindow.vue) once it mounts with the appName prop below.
+    restoreOpenState() {
+      const chrome = getChromeState();
+      const validNames = new Set(Object.keys(windowConfig));
+      const restoredOpen = chrome.open.filter((w) => validNames.has(w));
+      if (!restoredOpen.length) return;
+      this.openWindows = restoredOpen;
+      for (const w of restoredOpen) {
+        this.windowZIndices[w] = this.zIndexCounter++;
+      }
+      this.minimizedWindows = restoredOpen.reduce((acc, w) => {
+        if (chrome.minimized[w]) acc[w] = true;
+        return acc;
+      }, {});
     },
     getWindowProps(windowName) {
       if (windowName === "settings") {
@@ -405,7 +571,10 @@ export default {
           darkMode: this.darkMode,
           currentLanguage: this.currentLanguage,
           currentWallpaperId: this.wallpaperId,
-          "onUpdate:darkMode": (value) => (this.darkMode = value),
+          "onUpdate:darkMode": (value) => {
+            this.darkMode = value;
+            setDarkModeOverride(value); // manual toggle now wins over OS/time defaults
+          },
           "onUpdate:currentLanguage": (value) => (this.currentLanguage = value),
         };
       }
@@ -431,9 +600,58 @@ export default {
       return windowConfig[windowName]?.props || {};
     },
     handleKeydown(event) {
-      if (event.key === "Escape" && this.snapChooser) {
-        this.snapChooser = null;
+      // Window switcher: Ctrl+Alt+Tab opens/cycles it. A literal Alt+Tab is
+      // intercepted by the OS before the page ever sees it, and Ctrl+Tab is
+      // reserved by the browser itself for switching browser tabs - this is
+      // the safest combo that's actually deliverable to page JS.
+      if (event.ctrlKey && event.altKey && event.key === "Tab") {
+        event.preventDefault();
+        if (this.switcherOpen) this.switcherStep(event.shiftKey ? -1 : 1);
+        else this.openSwitcher();
         return;
+      }
+      if (this.switcherOpen) {
+        // Tab/arrows cycle, Enter confirms, Escape cancels - safe to
+        // preventDefault freely since the switcher owns input while open.
+        switch (event.key) {
+          case "Tab":
+            event.preventDefault();
+            this.switcherStep(event.shiftKey ? -1 : 1);
+            break;
+          case "ArrowRight":
+          case "ArrowDown":
+            event.preventDefault();
+            this.switcherStep(1);
+            break;
+          case "ArrowLeft":
+          case "ArrowUp":
+            event.preventDefault();
+            this.switcherStep(-1);
+            break;
+          case "Enter":
+            event.preventDefault();
+            this.confirmSwitcher();
+            break;
+          case "Escape":
+            this.closeSwitcher();
+            break;
+        }
+        return;
+      }
+      if (event.key === "Escape") {
+        // Priority chain: snap-chooser overlay first (existing behavior)...
+        if (this.snapChooser) {
+          this.snapChooser = null;
+          return;
+        }
+        // ...otherwise close the topmost window, unless the user is typing in
+        // a form field (don't eat Escape while filling out Contact, etc.).
+        const active = document.activeElement;
+        const isFormField = active && /^(INPUT|TEXTAREA|SELECT)$/.test(active.tagName);
+        if (!isFormField && this.topWindow) {
+          this.closeApp(this.topWindow);
+          return;
+        }
       }
       if (this.easterEggTriggered) return;
 
@@ -501,6 +719,7 @@ export default {
     },
     checkMobile() {
       this.isMobile = window.innerWidth <= 768;
+      this.deviceTier = getDeviceTier();
     },
     updateLanguage(lang) {
       this.currentLanguage = lang;
@@ -510,6 +729,8 @@ export default {
   async mounted() {
     this.checkMobile();
     window.addEventListener('resize', this.checkMobile);
+    this.restoreOpenState();
+    this.openShortcutFromUrl();
 
     // Warm all window chunks during idle time so the first click on any icon
     // opens instantly instead of triggering a network fetch.
@@ -531,11 +752,7 @@ export default {
       this.updateLanguage(savedLanguage);
     }
 
-    this.setDarkModeBasedOnTime();
-
-    setInterval(() => {
-      this.setDarkModeBasedOnTime();
-    }, 43200000);
+    this.initDarkMode();
 
     if (!this.keydownListenerAdded) {
       window.addEventListener("keydown", this.handleKeydown);
@@ -565,6 +782,10 @@ export default {
     if (this.wallpaperUnsubscribe) {
       this.wallpaperUnsubscribe();
       this.wallpaperUnsubscribe = null;
+    }
+    if (this.darkModeMql) {
+      this.darkModeMql.removeEventListener("change", this.handleDarkModeMqlChange);
+      this.darkModeMql = null;
     }
   },
 };
@@ -673,6 +894,90 @@ export default {
 @keyframes snapChooserFade {
   from { opacity: 0; }
   to   { opacity: 1; }
+}
+
+.window-switcher {
+  position: fixed;
+  inset: 0;
+  z-index: 1095;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(20, 12, 30, 0.55);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  animation: snapChooserFade 0.18s ease-out;
+}
+
+.window-switcher-inner {
+  width: min(100%, 520px);
+  margin: 24px;
+  padding: 18px;
+  background: linear-gradient(180deg, #2a1a35, #1b1024);
+  border: 2px solid #8404a1;
+  border-radius: 14px;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.55);
+}
+
+.window-switcher-title {
+  font-family: 'PortfolioFont', sans-serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: #fff;
+  margin-bottom: 14px;
+}
+
+.window-switcher-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(90px, 1fr));
+  gap: 10px;
+  max-height: 60vh;
+  overflow-y: auto;
+}
+
+.window-switcher-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 14px 8px;
+  min-height: 84px;
+  background: rgba(155, 32, 183, 0.18);
+  border: 1px solid rgba(196, 55, 230, 0.4);
+  border-radius: 10px;
+  color: #fff;
+  font-family: 'PortfolioFont', sans-serif;
+  font-size: 13px;
+  cursor: pointer;
+  transition: background 0.12s ease, transform 0.12s ease, border-color 0.12s ease;
+}
+
+.window-switcher-card:hover,
+.window-switcher-card.active {
+  background: rgba(155, 32, 183, 0.4);
+  border-color: #c637e6;
+}
+
+.window-switcher-card:focus-visible {
+  outline: 2px solid #c637e6;
+  outline-offset: 2px;
+}
+
+.window-switcher-icon {
+  font-size: 22px;
+  color: #d4a8e8;
+}
+
+.window-switcher-label {
+  text-align: center;
+  word-break: break-word;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .window-switcher {
+    animation: none !important;
+  }
 }
 </style>
 

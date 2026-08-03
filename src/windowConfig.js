@@ -27,6 +27,7 @@ const windowLoaders = {
   achievements:    () => import("./components/windows/Achievements.vue"),
   fileExplorer:    () => import("./components/windows/FileExplorer.vue"),
   camera:          () => import("./components/windows/CameraApp.vue"),
+  scoreboards:     () => import("./components/windows/Scoreboards.vue"),
 };
 
 const lazy = (loader) => defineAsyncComponent(loader);
@@ -51,6 +52,7 @@ export const windowConfig = {
   achievements:    { component: lazy(windowLoaders.achievements),    title: "achievements",   defaultWidth: 800,  defaultHeight: 600, defaultX: 320, defaultY: 80 },
   fileExplorer:    { component: lazy(windowLoaders.fileExplorer),    title: "fileExplorer",   defaultWidth: 1240, defaultHeight: 800, defaultX: 180, defaultY: 50 },
   camera:          { component: lazy(windowLoaders.camera),         title: "camera",         defaultWidth: 480,  defaultHeight: 720, defaultX: 360, defaultY: 40 },
+  scoreboards:     { component: lazy(windowLoaders.scoreboards),    title: "scoreboards",    defaultWidth: 800,  defaultHeight: 600, defaultX: 340, defaultY: 90 },
 };
 
 // Warm the dynamic-import cache for every window during browser idle time so
@@ -58,6 +60,13 @@ export const windowConfig = {
 let preloadStarted = false;
 export function preloadAllWindows() {
   if (preloadStarted) return;
+  // Skip the idle-time import burst on a constrained connection - fine on
+  // broadband, but firing every window chunk at once is wasteful for someone
+  // on a metered/slow connection (each window still lazy-loads on first open).
+  const conn = typeof navigator !== "undefined" ? navigator.connection : null;
+  if (conn && (conn.saveData || ["slow-2g", "2g"].includes(conn.effectiveType))) {
+    return;
+  }
   preloadStarted = true;
   const loaders = Object.values(windowLoaders);
   const schedule = typeof window !== "undefined" && typeof window.requestIdleCallback === "function"
@@ -73,20 +82,27 @@ export function preloadAllWindows() {
 }
 
 // Ordered app list used by the mobile launcher (and a single source of truth
-// for icon + i18n label per app).
+// for icon + i18n label per app). `pinned: true` additionally marks the subset
+// shown on the desktop taskbar (see `taskbarPinned` below) - File Explorer isn't
+// in this list (mobile has no file-explorer icon by design) so it stays a
+// separate hand-written entry in Taskbar.vue, same as Desktop.vue's synthetic
+// "__explorer" node.
 export const appList = [
   { name: "camera",          icon: "camera",       labelKey: "camera" },
-  { name: "aboutMe",         icon: "user",         labelKey: "aboutMe" },
+  { name: "aboutMe",         icon: "user",         labelKey: "aboutMe",   pinned: true },
   { name: "projects",        icon: "folder",       labelKey: "projects" },
   { name: "artGallery",      icon: "palette",      labelKey: "artGallery" },
-  { name: "contact",         icon: "envelope",     labelKey: "contact" },
+  { name: "contact",         icon: "envelope",     labelKey: "contact",   pinned: true },
   { name: "newsletter",      icon: "bell",         labelKey: "newsletter" },
   { name: "downloads",       icon: "download",     labelKey: "downloads" },
   { ...minigamesFolder, folder: true },
   { name: "vinylCollection", icon: "compact-disc", labelKey: "vinylCollection" },
-  { name: "skillTree",       icon: "sitemap",      labelKey: "skillTree" },
-  { name: "mudaDigitaal",    icon: "terminal",     labelKey: "mudaDigitaal" },
-  { name: "paint",           icon: "paintbrush",   labelKey: "paint" },
-  { name: "achievements",    icon: "trophy",       labelKey: "achievements" },
-  { name: "settings",        icon: "cog",          labelKey: "settings" },
+  { name: "skillTree",       icon: "sitemap",      labelKey: "skillTree",      pinned: true },
+  { name: "mudaDigitaal",    icon: "terminal",     labelKey: "mudaDigitaal",   pinned: true },
+  { name: "paint",           icon: "paintbrush",   labelKey: "paint",          pinned: true },
+  { name: "achievements",    icon: "trophy",       labelKey: "achievements",   pinned: true },
+  { name: "settings",        icon: "cog",          labelKey: "settings",       pinned: true },
 ];
+
+// Subset of appList pinned to the desktop taskbar, in taskbar order.
+export const taskbarPinned = appList.filter((a) => a.pinned);

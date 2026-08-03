@@ -8,21 +8,16 @@
 //   1. Create a free project at https://supabase.com.
 //   2. SQL Editor -> New query -> paste and run supabase/schema.sql.
 //   3. Project Settings -> API -> copy the Project URL and the anon/public
-//      key into the two constants below.
+//      key into src/supabaseConfig.js (shared with src/leaderboard.js).
 //   4. Deploy supabase/functions/unsubscribe (see that file's header comment)
 //      so the unsubscribe links sent in the newsletter emails work.
 //
-// Until the keys below are filled in, subscribe() is a no-op that resolves
-// { ok: false, reason: "not_configured" }.
+// Until the keys in supabaseConfig.js are filled in, subscribe() is a no-op
+// that resolves { ok: false, reason: "not_configured" }.
 
-const SUPABASE_URL = "https://cpiptviuvzwlyomfhbax.supabase.co";
-const SUPABASE_ANON_KEY = "sb_publishable_pl3VzzgiCOQrcKAHXgwDKA_GoWRunco";
+import { SUPABASE_URL, SUPABASE_ANON_KEY, keysConfigured } from "./supabaseConfig";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-
-function keysConfigured() {
-  return !SUPABASE_URL.startsWith("YOUR_") && !SUPABASE_ANON_KEY.startsWith("YOUR_");
-}
 
 // honeypot: a hidden form field that should always be empty for real users.
 // A non-empty value means a bot filled in every field, so we quietly reject.

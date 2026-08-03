@@ -14,6 +14,27 @@
       <span class="slider"></span>
     </label>
 
+    <!-- Sound Volume -->
+    <div class="volume-selection">
+      <label for="volume-range" class="label-text">{{ $t('soundVolume') }}</label>
+      <input
+        id="volume-range"
+        type="range"
+        min="0"
+        max="100"
+        step="5"
+        :value="volumePercent"
+        @input="changeVolume"
+      />
+    </div>
+
+    <!-- Haptics Toggle (mobile/touch only - no-op via navigator.vibrate elsewhere) -->
+    <label class="dark-mode-toggle">
+      <span class="label-text">{{ $t('enableHaptics') }}</span>
+      <input type="checkbox" :checked="hapticsEnabled" @change="toggleHaptics" />
+      <span class="slider"></span>
+    </label>
+
     <!-- Language Selection -->
     <div class="language-selection">
       <label for="language-select" class="label-text">{{ $t('selectLanguage') }}</label>
@@ -46,6 +67,7 @@
 
 <script>
 import { sounds } from "../../sounds";
+import { haptics } from "../../haptics";
 import { unlock as unlockAchievement } from "../../achievements";
 import { wallpapers, setCurrent as setWallpaper } from "../../wallpapers";
 
@@ -68,6 +90,8 @@ export default {
     return {
       selectedLanguage: this.currentLanguage, // Initialize with the current language
       soundsEnabled: sounds.isEnabled(),
+      volumePercent: Math.round(sounds.getVolume() * 100),
+      hapticsEnabled: haptics.isEnabled(),
       selectedWallpaper: this.currentWallpaperId,
       wallpapers,
     };
@@ -81,6 +105,15 @@ export default {
       this.soundsEnabled = !this.soundsEnabled;
       sounds.setEnabled(this.soundsEnabled);
       if (this.soundsEnabled) sounds.play("open");
+    },
+    changeVolume(event) {
+      this.volumePercent = Number(event.target.value);
+      sounds.setVolume(this.volumePercent / 100);
+    },
+    toggleHaptics() {
+      this.hapticsEnabled = !this.hapticsEnabled;
+      haptics.setEnabled(this.hapticsEnabled);
+      if (this.hapticsEnabled) haptics.vibrate(15);
     },
     changeLanguage() {
       this.$emit("update:currentLanguage", this.selectedLanguage); // Emit the selected language to App.vue
@@ -121,6 +154,7 @@ export default {
   }
 
   .dark-mode-toggle,
+  .volume-selection,
   .language-selection,
   .wallpaper-selection {
     align-self: center;
@@ -161,6 +195,7 @@ export default {
   }
 
   .dark-mode-toggle,
+  .volume-selection,
   .language-selection,
   .wallpaper-selection {
     display: flex;
@@ -204,6 +239,19 @@ export default {
     color: #fff;
     font-family: inherit;
   }
+}
+
+.volume-selection {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.volume-selection input[type="range"] {
+  flex: 1;
+  max-width: 220px;
+  accent-color: #9b20b7;
 }
 
 .wallpaper-grid {

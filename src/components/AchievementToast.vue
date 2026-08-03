@@ -12,6 +12,10 @@
         </div>
       </div>
     </Transition>
+    <!-- Permanently-mounted (not v-if-toggled) live region: some screen readers
+         only watch live regions that were already present before the content
+         inside them changes, so this can't be the same element the toast uses. -->
+    <div class="sr-only" aria-live="polite" aria-atomic="true">{{ liveMessage }}</div>
   </Teleport>
 </template>
 
@@ -25,6 +29,7 @@ export default {
     return {
       queue: [],
       current: null,
+      liveMessage: "",
       _unsubscribe: null,
       _timeout: null,
     };
@@ -43,6 +48,7 @@ export default {
     showNext() {
       if (this.current || !this.queue.length) return;
       this.current = this.queue.shift();
+      this.liveMessage = `${this.$t("achievementUnlocked")}: ${this.$t(this.current.titleKey)} — ${this.$t(this.current.descKey)}`;
       sounds.play("open");
       this._timeout = setTimeout(() => {
         this.current = null;
@@ -90,7 +96,10 @@ export default {
   font-size: 10px;
   letter-spacing: 2px;
   text-transform: uppercase;
-  color: #c637e6;
+  /* Lighter than the usual #c637e6 brand purple - at this size/weight the
+     brand shade is only ~3.7:1 against this background, below the 4.5:1 AA
+     text threshold. This shade clears it comfortably (~7.8:1). */
+  color: #e0a3f5;
   font-weight: 700;
 }
 
@@ -120,6 +129,13 @@ export default {
 .ach-pop-leave-to {
   opacity: 0;
   transform: translateY(20px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ach-pop-enter-active,
+  .ach-pop-leave-active {
+    transition: none !important;
+  }
 }
 
 @media (max-width: 768px) {

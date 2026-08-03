@@ -6,6 +6,32 @@ html, body {
   overflow: hidden; /* Prevent scrollbars */
 }
 
+/* Keyboard-focus ring: only shown for keyboard navigation (:focus-visible), not
+   mouse clicks, so mouse users don't see a ring around every clicked icon. */
+[tabindex]:focus-visible,
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible {
+  outline: 2px solid #c637e6;
+  outline-offset: 2px;
+}
+
+/* Visually-hidden but screen-reader-accessible content (e.g. live-region
+   announcements that have no useful visible presentation of their own). */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 /* Import custom font */
 @font-face {
     font-family: 'PortfolioFont';

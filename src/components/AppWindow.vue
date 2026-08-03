@@ -1,7 +1,7 @@
 <template>
   <div
     class="draggable-window"
-    :class="{ mobile: isMobile }"
+    :class="{ mobile: isMobile, tablet: isTablet }"
     :style="isMobile
       ? { zIndex: zIndex }
       : {
@@ -11,7 +11,11 @@
           width: windowState.w + 'px',
           height: windowState.h + 'px',
         }"
+    tabindex="-1"
+    role="dialog"
+    :aria-label="title"
     @mousedown="bringToFront"
+    @keydown="handleWindowKeydown"
   >
     <div class="app-window" :class="{ snapped: isSnapped || isMaximized }">
       <div class="top-bar" @mousedown="startDrag" @dblclick="onTitleBarDblClick">
@@ -67,12 +71,23 @@
 
 <script>
 import { sounds } from "../sounds";
+import { getGeometry, setGeometry } from "../windowState";
+
+// Every non-maximized snap mode applySnap() understands - halves and quarters.
+const SNAP_SIDES = new Set(["left", "right", "top-left", "top-right", "bottom-left", "bottom-right"]);
 
 export default {
   props: {
     title: {
       type: String,
       required: true,
+    },
+    // Identifies this window for geometry persistence (see windowState.js).
+    // Null for windows that don't need it (there are none currently, but this
+    // keeps the prop optional rather than required).
+    appName: {
+      type: String,
+      default: null,
     },
     defaultWidth: {
       type: Number,
@@ -98,6 +113,18 @@ export default {
       type: Boolean,
       default: false,
     },
+    // Touch tablet (coarse pointer, too wide for the phone launcher) - keeps
+    // the full desktop windowing chrome but with bigger touch targets.
+    isTablet: {
+      type: Boolean,
+      default: false,
+    },
+    // True while App.vue's window switcher overlay is open - Tab/arrow keys
+    // belong to it then, not to this window's own focus-trap/nudge handling.
+    switcherOpen: {
+      type: Boolean,
+      default: false,
+    },
   },
   components: {},
   data() {
@@ -111,6 +138,7 @@ export default {
       restoreState: null,
       isMaximized: false,
       isSnapped: false, // true when window is in a top/left/right snapped state
+      snapSide: null, // "left" | "right" | null - which side isSnapped refers to
       isDragging: false,
       dragStartX: 0,
       dragStartY: 0,
@@ -151,6 +179,20 @@ export default {
       }
       if (this.snapPreview === "right") {
         return { left: vw / 2 + "px", top: "0px", width: vw / 2 + "px", height: vh + "px" };
+      }
+      const halfW = vw / 2;
+      const halfH = vh / 2;
+      if (this.snapPreview === "top-left") {
+        return { left: "0px", top: "0px", width: halfW + "px", height: halfH + "px" };
+      }
+      if (this.snapPreview === "top-right") {
+        return { left: halfW + "px", top: "0px", width: halfW + "px", height: halfH + "px" };
+      }
+      if (this.snapPreview === "bottom-left") {
+        return { left: "0px", top: halfH + "px", width: halfW + "px", height: halfH + "px" };
+      }
+      if (this.snapPreview === "bottom-right") {
+        return { left: halfW + "px", top: halfH + "px", width: halfW + "px", height: halfH + "px" };
       }
       return {};
     },
@@ -215,14 +257,32 @@ export default {
       this.windowState.x = newX;
       this.windowState.y = newY;
 
-      // Snap zone detection (Aero-style). Cursor near top/left/right edge
-      // triggers a preview overlay that commits on mouse up.
+      // Snap zone detection (Aero-style). Cursor near top edge maximizes;
+      // near a corner (a bigger hit zone, since it's 2D) quarter-snaps; near
+      // just left/right edge halves. Corners are checked before the plain
+      // left/right edges so a drag into a corner doesn't get caught by the
+      // wider single-edge threshold first.
       const THRESHOLD = 8;
+      const CORNER_THRESHOLD = 48;
+      const vw = window.innerWidth;
+      const vh = window.innerHeight;
+      const nearTop = e.clientY <= CORNER_THRESHOLD;
+      const nearBottom = e.clientY >= vh - CORNER_THRESHOLD;
+      const nearLeft = e.clientX <= CORNER_THRESHOLD;
+      const nearRight = e.clientX >= vw - CORNER_THRESHOLD;
       if (e.clientY <= THRESHOLD) {
         this.snapPreview = "max";
+      } else if (nearLeft && nearTop) {
+        this.snapPreview = "top-left";
+      } else if (nearRight && nearTop) {
+        this.snapPreview = "top-right";
+      } else if (nearLeft && nearBottom) {
+        this.snapPreview = "bottom-left";
+      } else if (nearRight && nearBottom) {
+        this.snapPreview = "bottom-right";
       } else if (e.clientX <= THRESHOLD) {
         this.snapPreview = "left";
-      } else if (e.clientX >= window.innerWidth - THRESHOLD) {
+      } else if (e.clientX >= vw - THRESHOLD) {
         this.snapPreview = "right";
       } else {
         this.snapPreview = null;
@@ -238,6 +298,7 @@ export default {
         this.applySnap(this.snapPreview);
         this.snapPreview = null;
       }
+      this.persistGeometry();
     },
     applySnap(side, { silent = false } = {}) {
       // Save restoreState only if this is a fresh snap (not snap-to-snap).
@@ -251,18 +312,36 @@ export default {
         this.windowState = { x: 0, y: 0, w: vw, h: vh };
         this.isMaximized = true;
         this.isSnapped = false;
+        this.snapSide = null;
       } else if (side === "left") {
         this.windowState = { x: 0, y: 0, w: Math.round(vw / 2), h: vh };
         this.isMaximized = false;
         this.isSnapped = true;
+        this.snapSide = "left";
         if (!silent) this.$emit("snap", "left");
       } else if (side === "right") {
         const half = Math.round(vw / 2);
         this.windowState = { x: vw - half, y: 0, w: half, h: vh };
         this.isMaximized = false;
         this.isSnapped = true;
+        this.snapSide = "right";
         if (!silent) this.$emit("snap", "right");
+      } else if (
+        side === "top-left" || side === "top-right" ||
+        side === "bottom-left" || side === "bottom-right"
+      ) {
+        // Quarter-tiling. Deliberate scope cut: unlike left/right, these don't
+        // emit "snap" - the snap-chooser fill-overlay only understands halves.
+        const halfW = Math.round(vw / 2);
+        const halfH = Math.round(vh / 2);
+        const x = side.endsWith("right") ? vw - halfW : 0;
+        const y = side.startsWith("bottom") ? vh - halfH : 0;
+        this.windowState = { x, y, w: halfW, h: halfH };
+        this.isMaximized = false;
+        this.isSnapped = true;
+        this.snapSide = side;
       }
+      this.persistGeometry();
     },
     onTitleBarDblClick(e) {
       if (this.isMobile) return;
@@ -280,7 +359,9 @@ export default {
       }
       this.isMaximized = false;
       this.isSnapped = false;
+      this.snapSide = null;
       sounds.play("restore");
+      this.persistGeometry();
     },
     startResize(dir, e) {
       if (this.isMobile) return;
@@ -341,9 +422,117 @@ export default {
       this.resizeDir = null;
       document.removeEventListener('mousemove', this.onResize);
       document.removeEventListener('mouseup', this.stopResize);
+      this.persistGeometry();
     },
     bringToFront() {
       this.$emit("bringToFront");
+    },
+    // Single keydown entry point for this window: dispatches to the focus
+    // trap and the arrow-key move/resize handler below. Both are skipped
+    // while the window switcher is open - those keys belong to it then.
+    handleWindowKeydown(event) {
+      if (this.switcherOpen) return;
+      this.trapFocus(event);
+      this.handleArrowNudge(event);
+    },
+    // Arrow keys move the window in 10px steps (40px with Shift) when the
+    // window itself is focused (not one of its interactive descendants -
+    // that would hijack arrow keys from e.g. a focused slider). Ctrl+Arrow
+    // resizes instead of moving. Manually nudging a snapped window unsnaps
+    // it first, mirroring the drag-away-to-unsnap behavior.
+    handleArrowNudge(event) {
+      if (this.isMobile || this.isMaximized) return;
+      if (event.target !== this.$el) return;
+      if (!event.key.startsWith("Arrow")) return;
+      const STEP = event.shiftKey ? 40 : 10;
+      const MIN_W = 320;
+      const MIN_H = 240;
+      const taskbarGap = 60;
+      const state = { ...this.windowState };
+      if (event.ctrlKey) {
+        if (event.key === "ArrowRight") state.w += STEP;
+        else if (event.key === "ArrowLeft") state.w = Math.max(MIN_W, state.w - STEP);
+        else if (event.key === "ArrowDown") state.h += STEP;
+        else if (event.key === "ArrowUp") state.h = Math.max(MIN_H, state.h - STEP);
+        state.w = Math.min(state.w, window.innerWidth - state.x);
+        state.h = Math.min(state.h, window.innerHeight - taskbarGap - state.y);
+      } else {
+        if (event.key === "ArrowRight") state.x += STEP;
+        else if (event.key === "ArrowLeft") state.x -= STEP;
+        else if (event.key === "ArrowDown") state.y += STEP;
+        else if (event.key === "ArrowUp") state.y -= STEP;
+        const maxX = Math.max(0, window.innerWidth - state.w);
+        const maxY = Math.max(0, window.innerHeight - state.h - taskbarGap);
+        state.x = Math.max(0, Math.min(state.x, maxX));
+        state.y = Math.max(0, Math.min(state.y, maxY));
+      }
+      event.preventDefault();
+      this.windowState = state;
+      if (this.isSnapped) {
+        this.isSnapped = false;
+        this.snapSide = null;
+      }
+      this.persistGeometry();
+    },
+    // Basic focus trap: Tab/Shift+Tab wraps within this window's focusable
+    // descendants instead of leaking out to icons/windows behind it.
+    trapFocus(event) {
+      if (event.key !== "Tab") return;
+      const focusable = this.$el.querySelectorAll(
+        'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable.length) return;
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    },
+    // Persists current geometry/mode - called at every settle point (drag/resize
+    // end, snap, restore). No-op on mobile, where geometry is meaningless.
+    persistGeometry() {
+      if (this.isMobile || !this.appName) return;
+      setGeometry(this.appName, {
+        x: this.windowState.x,
+        y: this.windowState.y,
+        w: this.windowState.w,
+        h: this.windowState.h,
+        maximized: this.isMaximized,
+        snapSide: this.isSnapped ? this.snapSide : null,
+      });
+    },
+    // Applies persisted geometry (if any) once the window mounts. Maximized/
+    // snapped windows are restored via applySnap so their rect is recomputed
+    // for the CURRENT viewport rather than trusting stale saved pixel values;
+    // plain windows are clamped in case the screen shrank since they were saved.
+    restorePersistedGeometry() {
+      if (this.isMobile || !this.appName) return;
+      const persisted = getGeometry(this.appName);
+      if (!persisted) return;
+      if (persisted.maximized) {
+        this.applySnap("max", { silent: true });
+        return;
+      }
+      if (SNAP_SIDES.has(persisted.snapSide)) {
+        this.applySnap(persisted.snapSide, { silent: true });
+        return;
+      }
+      const MIN_W = 320;
+      const MIN_H = 240;
+      const w = Math.max(MIN_W, Math.min(persisted.w, window.innerWidth));
+      const h = Math.max(MIN_H, Math.min(persisted.h, Math.max(window.innerHeight - 60, 300)));
+      const maxX = Math.max(0, window.innerWidth - w);
+      const maxY = Math.max(0, window.innerHeight - h - 60);
+      this.windowState = {
+        x: Math.max(0, Math.min(persisted.x, maxX)),
+        y: Math.max(0, Math.min(persisted.y, maxY)),
+        w,
+        h,
+      };
     },
     handleResize() {
       // Re-fit the window to the viewport if it's currently maximized or snapped.
@@ -358,21 +547,35 @@ export default {
       }
       if (this.isSnapped) {
         const vw = window.innerWidth;
-        const half = Math.round(vw / 2);
+        const halfW = Math.round(vw / 2);
         const vh = Math.max(window.innerHeight - 60, 300);
-        // Preserve which side we're snapped to.
-        const isLeftSnap = this.windowState.x === 0;
+        const halfH = Math.round(vh / 2);
+        const isQuarter = this.snapSide && this.snapSide !== "left" && this.snapSide !== "right";
         this.windowState = {
-          x: isLeftSnap ? 0 : vw - half,
-          y: 0,
-          w: half,
-          h: vh,
+          x: this.snapSide && this.snapSide.endsWith("right") ? vw - halfW : 0,
+          y: isQuarter && this.snapSide.startsWith("bottom") ? vh - halfH : 0,
+          w: halfW,
+          h: isQuarter ? halfH : vh,
         };
+        return;
+      }
+      // Plain window: clamp back into the viewport if it now hangs off-screen -
+      // reachable once geometry can restore from a different, larger screen.
+      const maxX = Math.max(0, window.innerWidth - this.windowState.w);
+      const maxY = Math.max(0, window.innerHeight - this.windowState.h - 60);
+      const clampedX = Math.max(0, Math.min(this.windowState.x, maxX));
+      const clampedY = Math.max(0, Math.min(this.windowState.y, maxY));
+      if (clampedX !== this.windowState.x || clampedY !== this.windowState.y) {
+        this.windowState = { ...this.windowState, x: clampedX, y: clampedY };
       }
     },
   },
   mounted() {
     window.addEventListener("resize", this.handleResize);
+    this.restorePersistedGeometry();
+    // Move focus into the newly-opened window so keyboard/screen-reader users
+    // land somewhere sensible instead of focus staying on the triggering icon.
+    this.$el.focus({ preventScroll: true });
   },
   beforeUnmount() {
     window.removeEventListener("resize", this.handleResize);
@@ -457,6 +660,34 @@ export default {
   width: 16px;
   height: 16px;
   cursor: nesw-resize;
+}
+
+/* Tablet (coarse pointer): bigger touch targets for resize handles and window
+   controls - the mouse-era 8px/16px hit areas are too small to reliably tap. */
+.draggable-window.tablet .resize-n,
+.draggable-window.tablet .resize-s {
+  height: 16px;
+  top: -8px;
+}
+.draggable-window.tablet .resize-s {
+  top: auto;
+  bottom: -8px;
+}
+.draggable-window.tablet .resize-e,
+.draggable-window.tablet .resize-w {
+  width: 16px;
+}
+.draggable-window.tablet .resize-e { right: -8px; }
+.draggable-window.tablet .resize-w { left: -8px; }
+.draggable-window.tablet .resize-ne,
+.draggable-window.tablet .resize-nw,
+.draggable-window.tablet .resize-se,
+.draggable-window.tablet .resize-sw {
+  width: 28px;
+  height: 28px;
+}
+.draggable-window.tablet .window-control {
+  width: 64px;
 }
 
 .app-window {
@@ -610,5 +841,11 @@ export default {
   pointer-events: none;
   z-index: 9999;
   transition: left 0.12s ease, top 0.12s ease, width 0.12s ease, height 0.12s ease;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .snap-preview {
+    transition: none !important;
+  }
 }
 </style>

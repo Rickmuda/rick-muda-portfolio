@@ -27,7 +27,11 @@
           class="home-icon"
           v-for="app in page"
           :key="app.name"
+          tabindex="0"
+          role="button"
           @click="onIconClick(app)"
+          @keydown.enter="onIconClick(app)"
+          @keydown.space.prevent="onIconClick(app)"
         >
           <div v-if="app.folder" class="folder-preview">
             <span
@@ -47,7 +51,15 @@
     </div>
 
     <!-- Swipe-up affordance: opens the app drawer (also via swipe up from the bottom). -->
-    <div class="drawer-trigger" @click="openDrawer">
+    <div
+      class="drawer-trigger"
+      tabindex="0"
+      role="button"
+      :aria-label="$t('startSearch')"
+      @click="openDrawer"
+      @keydown.enter="openDrawer"
+      @keydown.space.prevent="openDrawer"
+    >
       <font-awesome-icon icon="chevron-up" class="drawer-trigger-chevron" />
     </div>
 
@@ -57,7 +69,13 @@
         :key="i"
         class="home-dot"
         :class="{ active: i === activePage }"
+        tabindex="0"
+        role="button"
+        :aria-label="`Page ${i + 1}`"
+        :aria-current="i === activePage"
         @click="goToPage(i)"
+        @keydown.enter="goToPage(i)"
+        @keydown.space.prevent="goToPage(i)"
       ></span>
     </div>
 
@@ -622,5 +640,38 @@ export default {
   color: #b6a6c4;
   padding: 24px;
   font-size: 14px;
+}
+
+/* Landscape phone: a short viewport can't fit 3 rows of 72px icon tiles
+   without cramming into the status bar/drawer trigger, so reflow the same
+   6-per-page grid to 3 columns x 2 rows (APPS_PER_PAGE stays 6 - no JS
+   change needed) and shrink the tiles a bit. */
+@media (max-width: 900px) and (orientation: landscape) {
+  .home-page {
+    grid-template-columns: repeat(3, 1fr);
+    grid-template-rows: repeat(2, 1fr);
+    gap: 12px;
+    padding: 8px 24px;
+  }
+
+  .home-icon-image,
+  .folder-preview {
+    width: 52px;
+    height: 52px;
+  }
+
+  .home-icon-inner {
+    font-size: 22px;
+  }
+
+  .home-icon-text {
+    font-size: 11px;
+    margin-top: 4px;
+  }
+
+  .drawer-trigger {
+    padding: 2px 0 8px;
+    padding-bottom: calc(8px + env(safe-area-inset-bottom, 0));
+  }
 }
 </style>

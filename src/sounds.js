@@ -6,12 +6,36 @@
 //   sounds.play("open");
 //   sounds.setEnabled(false);
 
+import { haptics } from "./haptics";
+
 const STORAGE_KEY = "soundEnabled";
+const VOLUME_KEY = "soundVolume";
+
+// Short vibration patterns per sound name (ms). "type" and "boot" are
+// deliberately excluded - a buzz on every terminal keystroke would be
+// intrusive, and boot only fires once per session anyway.
+const HAPTIC_PATTERNS = {
+  open: 15,
+  close: 10,
+  minimize: 10,
+  maximize: 10,
+  restore: 10,
+  error: [15, 30, 15],
+};
 
 class SoundManager {
   constructor() {
     this.enabled = localStorage.getItem(STORAGE_KEY) !== "0";
     this.ctx = null;
+    const storedVolume = parseFloat(localStorage.getItem(VOLUME_KEY));
+    this.volume = Number.isFinite(storedVolume) ? Math.max(0, Math.min(1, storedVolume)) : 1;
+  }
+  setVolume(value) {
+    this.volume = Math.max(0, Math.min(1, value));
+    localStorage.setItem(VOLUME_KEY, String(this.volume));
+  }
+  getVolume() {
+    return this.volume;
   }
   ensureCtx() {
     if (this.ctx) return this.ctx;
@@ -28,6 +52,10 @@ class SoundManager {
     return this.enabled;
   }
   play(name) {
+    // Haptics are an independent toggle from sound effects, so this fires
+    // regardless of `this.enabled` below.
+    const pattern = HAPTIC_PATTERNS[name];
+    if (pattern) haptics.vibrate(pattern);
     if (!this.enabled) return;
     const ctx = this.ensureCtx();
     if (!ctx) return;
@@ -50,7 +78,9 @@ class SoundManager {
     const g = ctx.createGain();
     osc.type = type;
     osc.frequency.value = freq;
-    g.gain.value = gain;
+    // Floored, not just multiplied: exponentialRampToValueAtTime throws if
+    // the gain ever starts at exactly 0 (e.g. volume dragged all the way down).
+    g.gain.value = Math.max(0.0001, gain * this.volume);
     osc.connect(g).connect(ctx.destination);
     osc.start();
     g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);
@@ -62,7 +92,7 @@ class SoundManager {
     osc.type = type;
     osc.frequency.value = from;
     osc.frequency.exponentialRampToValueAtTime(to, ctx.currentTime + duration);
-    g.gain.value = gain;
+    g.gain.value = Math.max(0.0001, gain * this.volume);
     osc.connect(g).connect(ctx.destination);
     osc.start();
     g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime + duration);

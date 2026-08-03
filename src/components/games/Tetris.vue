@@ -474,7 +474,10 @@ export default {
 
 .tet-tbtn:active { background: #404050; }
 
-@media (max-width: 768px) {
+/* Also matches touch tablets up to 1200px wide (not just phones) so a
+   coarse-pointer device in landscape gets the touch-friendly layout instead
+   of falling into the mouse-oriented desktop one. */
+@media (max-width: 768px), (pointer: coarse) and (max-width: 1200px) {
   .tet-play { gap: 8px; padding: 8px; }
   .tet-side { min-width: 70px; }
   .tet-preview { width: 70px; height: 70px; }

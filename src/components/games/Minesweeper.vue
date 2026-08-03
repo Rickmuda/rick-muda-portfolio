@@ -458,7 +458,10 @@ export default {
 .ms-adj-7 { color: #000000; }
 .ms-adj-8 { color: #808080; }
 
-@media (max-width: 768px) {
+/* Also matches touch tablets up to 1200px wide (not just phones) so a
+   coarse-pointer device in landscape gets the touch-friendly layout instead
+   of falling into the mouse-oriented desktop one. */
+@media (max-width: 768px), (pointer: coarse) and (max-width: 1200px) {
   .ms-window           { --ms-cell: 30px; }
   .ms-diff-medium      { --ms-cell: 22px; }
   .ms-diff-hard        { --ms-cell: 18px; }

@@ -6,60 +6,89 @@
     <!-- Start button + the apps that live on the desktop, centered as one group. -->
     <div class="taskbar-icons">
       <!-- Start button (styled like the app icons) -->
-      <div class="taskbar-icon" :class="{ 'app-open': startMenuOpen }" @click.stop="toggleStartMenu" title="Start">
+      <div
+        class="taskbar-icon"
+        :class="{ 'app-open': startMenuOpen }"
+        tabindex="0"
+        role="button"
+        :aria-pressed="startMenuOpen"
+        @click.stop="toggleStartMenu"
+        @keydown.enter="toggleStartMenu"
+        @keydown.space.prevent="toggleStartMenu"
+        title="Start"
+      >
         <img src="/src/assets/img/pfp.webp" alt="Start" class="start-img" />
       </div>
 
       <!-- File Explorer -->
-      <div class="taskbar-icon" :class="iconState('fileExplorer')" @click="openExplorerRoot" @mouseenter="onIconEnter('fileExplorer', $event)" @mouseleave="onIconLeave" title="File Explorer">
+      <div
+        class="taskbar-icon"
+        :class="iconState('fileExplorer')"
+        tabindex="0"
+        role="button"
+        :aria-pressed="openWindows.includes('fileExplorer')"
+        @click="openExplorerRoot"
+        @keydown.enter="openExplorerRoot"
+        @keydown.space.prevent="openExplorerRoot"
+        @mouseenter="onIconEnter('fileExplorer', $event)"
+        @mouseleave="onIconLeave"
+        title="File Explorer"
+      >
         <font-awesome-icon icon="folder-open" />
         <span v-if="openWindows.includes('fileExplorer')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['fileExplorer'] }"></span>
       </div>
 
-      <!-- About me -->
-      <div class="taskbar-icon" :class="iconState('aboutMe')" @click="openApp('aboutMe')" @mouseenter="onIconEnter('aboutMe', $event)" @mouseleave="onIconLeave">
-        <font-awesome-icon icon="user" />
-        <span v-if="openWindows.includes('aboutMe')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['aboutMe'] }"></span>
+      <!-- Pinned apps: single source of truth is taskbarPinned (windowConfig.js),
+           the same list the mobile launcher's appList is filtered from. -->
+      <div
+        v-for="item in taskbarPinned"
+        :key="item.name"
+        class="taskbar-icon"
+        :class="iconState(item.name)"
+        :title="$t(item.labelKey)"
+        tabindex="0"
+        role="button"
+        :aria-pressed="openWindows.includes(item.name)"
+        @click="openApp(item.name)"
+        @keydown.enter="openApp(item.name)"
+        @keydown.space.prevent="openApp(item.name)"
+        @mouseenter="onIconEnter(item.name, $event)"
+        @mouseleave="onIconLeave"
+      >
+        <font-awesome-icon :icon="item.icon" />
+        <span v-if="openWindows.includes(item.name)" class="taskbar-indicator" :class="{ minimized: minimizedWindows[item.name] }"></span>
       </div>
 
-      <!-- Contact -->
-      <div class="taskbar-icon" :class="iconState('contact')" @click="openApp('contact')" @mouseenter="onIconEnter('contact', $event)" @mouseleave="onIconLeave">
-        <font-awesome-icon icon="envelope" />
-        <span v-if="openWindows.includes('contact')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['contact'] }"></span>
-      </div>
-
-      <!-- Skill Tree -->
-      <div class="taskbar-icon" :class="iconState('skillTree')" @click="openApp('skillTree')" @mouseenter="onIconEnter('skillTree', $event)" @mouseleave="onIconLeave">
-        <font-awesome-icon icon="sitemap" />
-        <span v-if="openWindows.includes('skillTree')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['skillTree'] }"></span>
-      </div>
-
-      <!-- MudaDigitaal terminal -->
-      <div class="taskbar-icon" :class="iconState('mudaDigitaal')" @click="openApp('mudaDigitaal')" @mouseenter="onIconEnter('mudaDigitaal', $event)" @mouseleave="onIconLeave">
-        <font-awesome-icon icon="terminal" />
-        <span v-if="openWindows.includes('mudaDigitaal')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['mudaDigitaal'] }"></span>
-      </div>
-
-      <!-- Paint -->
-      <div class="taskbar-icon" :class="iconState('paint')" @click="openApp('paint')" @mouseenter="onIconEnter('paint', $event)" @mouseleave="onIconLeave">
-        <font-awesome-icon icon="paintbrush" />
-        <span v-if="openWindows.includes('paint')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['paint'] }"></span>
-      </div>
-
-      <!-- Achievements -->
-      <div class="taskbar-icon" :class="iconState('achievements')" @click="openApp('achievements')" @mouseenter="onIconEnter('achievements', $event)" @mouseleave="onIconLeave">
-        <font-awesome-icon icon="trophy" />
-        <span v-if="openWindows.includes('achievements')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['achievements'] }"></span>
-      </div>
-
-      <!-- Settings -->
-      <div class="taskbar-icon" :class="iconState('settings')" @click="openApp('settings')" @mouseenter="onIconEnter('settings', $event)" @mouseleave="onIconLeave">
-        <font-awesome-icon icon="cog" />
-        <span v-if="openWindows.includes('settings')" class="taskbar-indicator" :class="{ minimized: minimizedWindows['settings'] }"></span>
+      <!-- Window switcher trigger (also reachable via Ctrl+Alt+Tab). -->
+      <div
+        class="taskbar-icon"
+        tabindex="0"
+        role="button"
+        :aria-label="$t('switcherTitle')"
+        @click="openSwitcher"
+        @keydown.enter="openSwitcher"
+        @keydown.space.prevent="openSwitcher"
+        :title="$t('switcherTitle')"
+      >
+        <font-awesome-icon icon="window-restore" />
       </div>
 
       <!-- Easter Egg Icon -->
-      <div v-for="app in easterEggApps" :key="app" class="taskbar-icon" :class="iconState(app)" @click="openApp(app)" @mouseenter="onIconEnter(app, $event)" @mouseleave="onIconLeave" title="Easter Egg">
+      <div
+        v-for="app in easterEggApps"
+        :key="app"
+        class="taskbar-icon"
+        :class="iconState(app)"
+        tabindex="0"
+        role="button"
+        :aria-pressed="openWindows.includes(app)"
+        @click="openApp(app)"
+        @keydown.enter="openApp(app)"
+        @keydown.space.prevent="openApp(app)"
+        @mouseenter="onIconEnter(app, $event)"
+        @mouseleave="onIconLeave"
+        title="Easter Egg"
+      >
         <font-awesome-icon icon="egg" />
         <span v-if="openWindows.includes(app)" class="taskbar-indicator" :class="{ minimized: minimizedWindows[app] }"></span>
       </div>
@@ -101,6 +130,7 @@
 <script>
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import StartMenu from "./StartMenu.vue";
+import { taskbarPinned } from "../windowConfig";
 
 export default {
   props: {
@@ -148,6 +178,10 @@ export default {
       type: Object,
       default: () => ({}),
     },
+    openSwitcher: {
+      type: Function,
+      required: true,
+    },
   },
   data() {
     return {
@@ -157,6 +191,7 @@ export default {
       previewFor: null,
       previewLeft: 0,
       previewBottom: 0,
+      taskbarPinned,
     };
   },
   methods: {

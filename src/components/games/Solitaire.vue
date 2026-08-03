@@ -2,6 +2,7 @@
   <div class="solitaire-window">
     <div class="solitaire-header">
       <h2>Solitaire</h2>
+      <span class="sol-timer"><font-awesome-icon icon="clock" /> {{ timer }}s</span>
       <div class="header-actions">
         <button @click="newGame">New Game</button>
       </div>
@@ -18,6 +19,7 @@
           @click="selectWaste"
           @dragstart="onDragStart($event, 'waste')"
           @dragend="onDragEnd"
+          @pointerdown="onPointerDown($event, 'waste')"
         >
           {{ cardLabel(waste[waste.length - 1]) }}
         </div>
@@ -35,6 +37,7 @@
           :key="suit"
           class="foundation"
           :class="{ 'foundation-filled': foundations[suit].length, red: foundations[suit].length && foundations[suit][foundations[suit].length-1].color === 'red' }"
+          :data-suit="suit"
           @click="moveToFoundation(suit)"
           @dragover.prevent
           @drop="onDropFoundation($event, suit)"
@@ -50,6 +53,7 @@
         v-for="(pile, pileIndex) in tableau"
         :key="pileIndex"
         class="tableau-pile"
+        :data-pile-index="pileIndex"
         @click="moveToTableau(pileIndex)"
         @dragover.prevent
         @drop="onDropTableau($event, pileIndex)"
@@ -68,6 +72,7 @@
           @click.stop="onTableauCardTap(pileIndex, cardIndex)"
           @dragstart="card.faceUp && onDragStart($event, 'tableau', pileIndex, cardIndex)"
           @dragend="onDragEnd"
+          @pointerdown="card.faceUp && onPointerDown($event, 'tableau', pileIndex, cardIndex)"
         >
           <span v-if="card.faceUp">{{ cardLabel(card) }}</span>
         </div>
@@ -75,12 +80,29 @@
     </div>
 
     <p v-if="isWon" class="win-message">You won 🎉</p>
+
+    <!-- Touch-drag ghost: follows the finger while dragging past the threshold.
+         Mouse users never see this - onPointerDown bails out for pointerType 'mouse'
+         so the native HTML5 drag image is used there instead. -->
+    <Teleport to="body">
+      <div
+        v-if="ghostCard"
+        class="solitaire-ghost"
+        :class="{ red: ghostCard.color === 'red' }"
+        :style="{ left: ghostX + 'px', top: ghostY + 'px' }"
+      >
+        {{ cardLabel(ghostCard) }}
+      </div>
+    </Teleport>
   </div>
 </template>
 
 <script>
 import { unlock as unlockAchievement } from "../../achievements";
 const SUITS = ["hearts", "diamonds", "clubs", "spades"];
+// Same drag-threshold idiom Desktop.vue uses for icon dragging: below this,
+// a touch/pen press is treated as a tap and falls through to the click path.
+const DRAG_THRESHOLD = 5;
 
 export default {
   data() {
@@ -97,6 +119,19 @@ export default {
       tableau: [[], [], [], [], [], [], []],
       selected: null,
       dragging: null,
+      // Touch/pen pointer-drag tracking (mouse keeps using native HTML5 DnD -
+      // see onPointerDown). Null when no pointer is currently down.
+      pointerDrag: null,
+      // Card shown in the floating ghost chip while a touch drag is in progress.
+      ghostCard: null,
+      ghostX: 0,
+      ghostY: 0,
+      // Elapsed-time tracking, same idiom as Minesweeper's timer/timerHandle.
+      timer: 0,
+      timerHandle: null,
+      // Swallows the trailing synthetic click that follows a touch drag's
+      // pointerup, so the drop doesn't also re-trigger the tap-to-move path.
+      justDragged: false,
     };
   },
   computed: {
@@ -106,11 +141,17 @@ export default {
   },
   watch: {
     isWon(value) {
-      if (value) unlockAchievement("solitaire-won");
+      if (!value) return;
+      unlockAchievement("solitaire-won");
+      this.stopTimer();
+      this.saveWin(this.timer);
     },
   },
   created() {
     this.newGame();
+  },
+  beforeUnmount() {
+    this.stopTimer();
   },
   methods: {
     newGame() {
@@ -121,6 +162,9 @@ export default {
       this.tableau = [[], [], [], [], [], [], []];
       this.waste = [];
       this.selected = null;
+      this.stopTimer();
+      this.timer = 0;
+      this.startTimer();
 
       let cardIndex = 0;
       for (let i = 0; i < 7; i++) {
@@ -167,6 +211,7 @@ export default {
       this.selected = null;
     },
     selectWaste() {
+      if (this.justDragged) return;
       if (this.waste.length) {
         this.selected = { type: "waste" };
       }
@@ -177,6 +222,7 @@ export default {
       this.selected = { type: "tableau", pileIndex, cardIndex };
     },
     onTableauCardTap(pileIndex, cardIndex) {
+      if (this.justDragged) return;
       const isOwnSelection =
         this.selected?.type === "tableau" && this.selected.pileIndex === pileIndex;
       if (this.selected && !isOwnSelection) {
@@ -192,6 +238,7 @@ export default {
       );
     },
     moveToFoundation(suit) {
+      if (this.justDragged) return;
       if (!this.selected) return;
       const card = this.getSelectedCard();
       if (!card || card.suit !== suit) return;
@@ -208,6 +255,7 @@ export default {
       this.selected = null;
     },
     moveToTableau(targetPileIndex) {
+      if (this.justDragged) return;
       if (!this.selected) return;
 
       const targetPile = this.tableau[targetPileIndex];
@@ -264,6 +312,45 @@ export default {
       const symbols = { hearts: "♥", diamonds: "♦", clubs: "♣", spades: "♠" };
       return symbols[suit];
     },
+    startTimer() {
+      this.stopTimer();
+      const start = Date.now();
+      this.timerHandle = setInterval(() => {
+        this.timer = Math.floor((Date.now() - start) / 1000);
+      }, 1000);
+    },
+    stopTimer() {
+      if (this.timerHandle) {
+        clearInterval(this.timerHandle);
+        this.timerHandle = null;
+      }
+    },
+    loadWins() {
+      try {
+        return parseInt(localStorage.getItem("solitaire-wins") || "0", 10);
+      } catch (_) {
+        return 0;
+      }
+    },
+    loadBestTime() {
+      try {
+        const v = localStorage.getItem("solitaire-best-time");
+        return v === null ? null : parseInt(v, 10);
+      } catch (_) {
+        return null;
+      }
+    },
+    // Called once, right when a game is won: bumps the win counter and keeps
+    // the lower of the previous best time vs this run's time.
+    saveWin(elapsedSeconds) {
+      try {
+        localStorage.setItem("solitaire-wins", String(this.loadWins() + 1));
+        const prevBest = this.loadBestTime();
+        if (prevBest === null || elapsedSeconds < prevBest) {
+          localStorage.setItem("solitaire-best-time", String(elapsedSeconds));
+        }
+      } catch (_) {}
+    },
     onDragStart(event, type, pileIndex = null, cardIndex = null) {
       this.dragging = { type, pileIndex, cardIndex };
       this.selected = { type, pileIndex, cardIndex };
@@ -272,9 +359,12 @@ export default {
     onDragEnd() {
       this.dragging = null;
     },
-    onDropTableau(event, targetPileIndex) {
+    // Shared validated-move logic used by the mouse HTML5 drop handlers below
+    // and by the touch pointer-drag path (onPointerUp) - one implementation
+    // of the move rules for all three input paths (mouse drag, touch drag, tap).
+    commitDropToTableau(targetPileIndex) {
       if (!this.dragging) return;
-      
+
       const targetPile = this.tableau[targetPileIndex];
       const movingCard = this.getDraggingCard();
       if (!movingCard || !this.canPlaceOnTableau(movingCard, targetPile)) return;
@@ -289,9 +379,8 @@ export default {
       }
 
       this.selected = null;
-      this.dragging = null;
     },
-    onDropFoundation(event, suit) {
+    commitDropToFoundation(suit) {
       if (!this.dragging) return;
 
       const card = this.getDraggingCard();
@@ -308,6 +397,13 @@ export default {
       }
 
       this.selected = null;
+    },
+    onDropTableau(event, targetPileIndex) {
+      this.commitDropToTableau(targetPileIndex);
+      this.dragging = null;
+    },
+    onDropFoundation(event, suit) {
+      this.commitDropToFoundation(suit);
       this.dragging = null;
     },
     getDraggingCard() {
@@ -318,6 +414,69 @@ export default {
       const pile = this.tableau[this.dragging.pileIndex];
       return pile[this.dragging.cardIndex] || null;
     },
+    // --- Touch/pen drag (mouse uses the native HTML5 DnD handlers above) ---
+    onPointerDown(event, type, pileIndex = null, cardIndex = null) {
+      if (event.pointerType === "mouse") return; // mouse keeps native HTML5 DnD
+      if (!event.isPrimary) return; // ignore secondary touches (multi-touch)
+      this.pointerDrag = {
+        type,
+        pileIndex,
+        cardIndex,
+        pointerId: event.pointerId,
+        startX: event.clientX,
+        startY: event.clientY,
+        moved: false,
+      };
+      document.addEventListener("pointermove", this.onPointerMove);
+      document.addEventListener("pointerup", this.onPointerUp);
+    },
+    onPointerMove(event) {
+      if (!this.pointerDrag || event.pointerId !== this.pointerDrag.pointerId) return;
+      const dx = event.clientX - this.pointerDrag.startX;
+      const dy = event.clientY - this.pointerDrag.startY;
+      if (!this.pointerDrag.moved) {
+        if (Math.hypot(dx, dy) < DRAG_THRESHOLD) return;
+        // Crossed the threshold - commit to a drag, mirroring onDragStart's state
+        // so the existing `.selected` highlight and move-validation logic apply.
+        this.pointerDrag.moved = true;
+        const { type, pileIndex, cardIndex } = this.pointerDrag;
+        this.dragging = { type, pileIndex, cardIndex };
+        this.selected = { type, pileIndex, cardIndex };
+        this.ghostCard = this.getDraggingCard();
+      }
+      this.ghostX = event.clientX;
+      this.ghostY = event.clientY;
+      event.preventDefault();
+    },
+    onPointerUp(event) {
+      document.removeEventListener("pointermove", this.onPointerMove);
+      document.removeEventListener("pointerup", this.onPointerUp);
+      if (!this.pointerDrag || event.pointerId !== this.pointerDrag.pointerId) {
+        this.pointerDrag = null;
+        return;
+      }
+      if (this.pointerDrag.moved) {
+        const target = document.elementFromPoint(event.clientX, event.clientY);
+        const tableauEl = target && target.closest(".tableau-pile");
+        const foundationEl = target && target.closest(".foundation");
+        if (tableauEl && tableauEl.dataset.pileIndex !== undefined) {
+          this.commitDropToTableau(Number(tableauEl.dataset.pileIndex));
+        } else if (foundationEl && foundationEl.dataset.suit) {
+          this.commitDropToFoundation(foundationEl.dataset.suit);
+        }
+        this.dragging = null;
+        this.ghostCard = null;
+        // Swallow the click that touch synthesizes right after pointerup, so
+        // the drop doesn't also trigger the tap-to-move path a second time.
+        this.justDragged = true;
+        setTimeout(() => { this.justDragged = false; }, 0);
+      }
+      this.pointerDrag = null;
+    },
+  },
+  beforeUnmount() {
+    document.removeEventListener("pointermove", this.onPointerMove);
+    document.removeEventListener("pointerup", this.onPointerUp);
   },
 };
 </script>
@@ -343,6 +502,11 @@ export default {
 .header-actions {
   display: flex;
   gap: 8px;
+}
+
+.sol-timer {
+  opacity: 0.85;
+  font-size: 13px;
 }
 
 .header-actions button {
@@ -552,7 +716,10 @@ export default {
 }
 
 /* Mobile: fit all 7 tableau columns on screen, tap-to-move (no horizontal scroll) */
-@media (max-width: 768px) {
+/* Also matches touch tablets up to 1200px wide (not just phones) so a
+   coarse-pointer device in landscape gets the touch-friendly layout instead
+   of falling into the mouse-oriented desktop one. */
+@media (max-width: 768px), (pointer: coarse) and (max-width: 1200px) {
   .solitaire-window {
     gap: 6px;
     padding: 6px;
@@ -587,6 +754,7 @@ export default {
     height: 60px;
     font-size: 14px;
     border-radius: 4px;
+    touch-action: none;
   }
 
   .foundations {
@@ -625,10 +793,49 @@ export default {
     padding: 2px 3px;
     font-size: 12px;
     border-radius: 3px;
+    touch-action: none;
   }
 
   .tableau-pile .card:first-child {
     margin-top: 0;
+  }
+}
+</style>
+
+<!-- Non-scoped: the drag ghost is teleported to <body>. -->
+<style>
+.solitaire-ghost {
+  position: fixed;
+  z-index: 99999;
+  width: 92px;
+  height: 70px;
+  transform: translate(-50%, -50%) scale(1.06);
+  background: #f7f7f7;
+  color: #111;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: inherit;
+  font-weight: bold;
+  font-size: 20px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.45);
+  pointer-events: none;
+}
+
+.solitaire-ghost.red {
+  color: #b10000;
+}
+
+/* Also matches touch tablets up to 1200px wide (not just phones) so a
+   coarse-pointer device in landscape gets the touch-friendly layout instead
+   of falling into the mouse-oriented desktop one. */
+@media (max-width: 768px), (pointer: coarse) and (max-width: 1200px) {
+  .solitaire-ghost {
+    width: 46px;
+    height: 60px;
+    font-size: 14px;
+    border-radius: 4px;
   }
 }
 </style>

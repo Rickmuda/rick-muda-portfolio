@@ -182,7 +182,9 @@ export default {
 }
 
 .muda-prompt {
-  color: #c637e6;
+  /* #c637e6 (the usual brand purple) is only ~4.2:1 against this background
+     at 14px, just under the 4.5:1 AA text threshold - this shade clears it. */
+  color: #e0a3f5;
   font-weight: 700;
 }
 
@@ -200,11 +202,11 @@ export default {
   color: #e6e0ea;
   font-family: inherit;
   font-size: inherit;
-  caret-color: #c637e6;
+  caret-color: #e0a3f5;
 }
 
 .muda-log a {
-  color: #c637e6;
+  color: #e0a3f5;
   text-decoration: underline;
 }
 

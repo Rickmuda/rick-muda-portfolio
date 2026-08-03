@@ -10,5 +10,11 @@
   ],
   "theme_color": "#9b20b7",
   "background_color": "#1a1a24",
-  "display": "standalone"
+  "display": "standalone",
+  "orientation": "any",
+  "shortcuts": [
+    { "name": "Contact", "url": "/?shortcut=contact" },
+    { "name": "Projects", "url": "/?shortcut=projects" },
+    { "name": "Newsletter", "url": "/?shortcut=newsletter" }
+  ]
 }
