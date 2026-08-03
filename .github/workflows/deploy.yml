@@ -24,10 +24,11 @@ jobs:
           FTP_USERNAME: ${{ secrets.FTP_USERNAME }}
           FTP_PASSWORD: ${{ secrets.FTP_PASSWORD }}
           FTP_DEST: ${{ secrets.FTP_DEST }}
+        timeout-minutes: 20
         run: |
           sudo apt-get install -y lftp
           lftp -u "$FTP_USERNAME","$FTP_PASSWORD" \
-            -e "set ftp:ssl-allow no; mirror --reverse --delete dist/ $FTP_DEST; bye" \
+            -e "set ftp:ssl-allow no; set net:timeout 30; set net:max-retries 3; set net:reconnect-interval-base 5; mirror --reverse --delete --verbose --parallel=4 dist/ $FTP_DEST; bye" \
             web1.ping64.net
 
       - name: 📧 Notify newsletter subscribers
