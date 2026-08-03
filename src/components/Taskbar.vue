@@ -59,20 +59,6 @@
         <span v-if="openWindows.includes(item.name)" class="taskbar-indicator" :class="{ minimized: minimizedWindows[item.name] }"></span>
       </div>
 
-      <!-- Window switcher trigger (also reachable via Ctrl+Alt+Tab). -->
-      <div
-        class="taskbar-icon"
-        tabindex="0"
-        role="button"
-        :aria-label="$t('switcherTitle')"
-        @click="openSwitcher"
-        @keydown.enter="openSwitcher"
-        @keydown.space.prevent="openSwitcher"
-        :title="$t('switcherTitle')"
-      >
-        <font-awesome-icon icon="window-restore" />
-      </div>
-
       <!-- Easter Egg Icon -->
       <div
         v-for="app in easterEggApps"
@@ -177,10 +163,6 @@ export default {
     windowThumbnails: {
       type: Object,
       default: () => ({}),
-    },
-    openSwitcher: {
-      type: Function,
-      required: true,
     },
   },
   data() {

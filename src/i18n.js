@@ -285,9 +285,6 @@ const messages = {
     ctxChangeWallpaper: "Change wallpaper",
     ctxAutoArrange: "Auto-arrange icons",
 
-    // Window switcher
-    switcherTitle: "Switch window",
-
     // Easter egg
     oldVideo: "Old Video",
     easterEgg: "Easter Egg",
@@ -643,9 +640,6 @@ const messages = {
     // Desktop context menu
     ctxChangeWallpaper: "Achtergrond wijzigen",
     ctxAutoArrange: "Pictogrammen automatisch schikken",
-
-    // Window switcher
-    switcherTitle: "Wissel van venster",
 
     // Easter egg
     oldVideo: "Oude Video",

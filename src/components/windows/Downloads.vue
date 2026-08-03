@@ -176,7 +176,7 @@ export default {
           id: "playdeck",
         titleKey: "dlPlaydeckTitle",
           descKey: "dlPlaydeckDesc",
-          version: "v1.6.2",
+          version: "v2.0.0",
           size: "",
           thumbnail: new URL("@/assets/img/downloads/playdeck_icon.webp", import.meta.url).href,
           // Lives outside the web root (protected-files/) and is streamed via

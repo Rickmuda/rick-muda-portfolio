@@ -119,12 +119,6 @@ export default {
       type: Boolean,
       default: false,
     },
-    // True while App.vue's window switcher overlay is open - Tab/arrow keys
-    // belong to it then, not to this window's own focus-trap/nudge handling.
-    switcherOpen: {
-      type: Boolean,
-      default: false,
-    },
   },
   components: {},
   data() {
@@ -428,10 +422,8 @@ export default {
       this.$emit("bringToFront");
     },
     // Single keydown entry point for this window: dispatches to the focus
-    // trap and the arrow-key move/resize handler below. Both are skipped
-    // while the window switcher is open - those keys belong to it then.
+    // trap and the arrow-key move/resize handler below.
     handleWindowKeydown(event) {
-      if (this.switcherOpen) return;
       this.trapFocus(event);
       this.handleArrowNudge(event);
     },
