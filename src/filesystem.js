@@ -50,24 +50,36 @@ export const vfsRoot = {
   icon: "house",
   descKey: "descDesktop",
   children: [
-    // Apps (the curated ones are flagged desktop:true and also appear on the bureaublad).
-    { id: "aboutMe",      type: "app", app: "aboutMe",      labelKey: "aboutMe",      icon: "user",       descKey: "descAboutMe",      desktop: true },
-    { id: "contact",      type: "app", app: "contact",      labelKey: "contact",      icon: "envelope",   descKey: "descContact",      desktop: true },
-    { id: "newsletter",   type: "app", app: "newsletter",   labelKey: "newsletter",   icon: "bell",       descKey: "descNewsletter",   desktop: true },
-    { id: "mudaDigitaal", type: "app", app: "mudaDigitaal", labelKey: "mudaDigitaal", icon: "terminal",   descKey: "descTerminal",     desktop: true },
-    { id: "skillTree",    type: "app", app: "skillTree",    labelKey: "skillTree",    icon: "sitemap",    descKey: "descSkillTree",    desktop: true },
-    { id: "paint",        type: "app", app: "paint",        labelKey: "paint",        icon: "paintbrush", descKey: "descPaint",        desktop: true },
-    { id: "achievements", type: "app", app: "achievements", labelKey: "achievements", icon: "trophy",     descKey: "descAchievements", desktop: true },
-    { id: "settings",     type: "app", app: "settings",     labelKey: "settings",     icon: "cog",        descKey: "descSettings",     desktop: true },
-
-    // Single launcher for the vinyl player (keeps its existing window behavior).
-    { id: "vinylCollection", type: "app", app: "vinylCollection", labelKey: "vinylCollection", icon: "compact-disc", descKey: "descVinyl" },
-
     // Browsable folders (embedded views in the Explorer main pane).
     {
       id: "projects", type: "folder", labelKey: "projects", icon: "code", descKey: "descProjects", desktop: true,
       component: lazy(() => import("./components/windows/Projects.vue")),
     },
+
+    // Plain icon-grid folder grouping the individual apps that used to sit
+    // flat at the Explorer root. Each still carries desktop:true, so they
+    // still appear as their own desktop/mobile icons (see the recursive walk
+    // in getDesktopNodes() below) - this folder only tidies up File Explorer.
+    {
+      id: "applications", type: "folder", labelKey: "applications", icon: "table-cells-large", descKey: "descApplications",
+      children: [
+        { id: "aboutMe",      type: "app", app: "aboutMe",      labelKey: "aboutMe",      icon: "user",       descKey: "descAboutMe",      desktop: true },
+        { id: "contact",      type: "app", app: "contact",      labelKey: "contact",      icon: "envelope",   descKey: "descContact",      desktop: true },
+        { id: "newsletter",   type: "app", app: "newsletter",   labelKey: "newsletter",   icon: "bell",       descKey: "descNewsletter",   desktop: true },
+        { id: "skillTree",    type: "app", app: "skillTree",    labelKey: "skillTree",    icon: "sitemap",    descKey: "descSkillTree",    desktop: true },
+        { id: "paint",        type: "app", app: "paint",        labelKey: "paint",        icon: "paintbrush", descKey: "descPaint",        desktop: true },
+        { id: "mudaDigitaal", type: "app", app: "mudaDigitaal", labelKey: "mudaDigitaal", icon: "terminal",   descKey: "descTerminal",     desktop: true },
+        { id: "achievements", type: "app", app: "achievements", labelKey: "achievements", icon: "trophy",     descKey: "descAchievements", desktop: true },
+        { id: "settings",     type: "app", app: "settings",     labelKey: "settings",     icon: "cog",        descKey: "descSettings",     desktop: true },
+      ],
+    },
+
+    // Plain icon-grid folder (also pinned to the desktop).
+    { id: "minigames", type: "folder", labelKey: "minigames", icon: "gamepad", descKey: "descMinigames", desktop: true, children: gameNodes },
+
+    // Single launcher for the vinyl player (keeps its existing window behavior).
+    { id: "vinylCollection", type: "app", app: "vinylCollection", labelKey: "vinylCollection", icon: "compact-disc", descKey: "descVinyl" },
+
     {
       id: "pictures", type: "folder", labelKey: "fsPictures", icon: "images", descKey: "descPictures",
       children: [
@@ -88,9 +100,6 @@ export const vfsRoot = {
       component: lazy(() => import("./components/windows/Downloads.vue")),
     },
 
-    // Plain icon-grid folder (also pinned to the desktop).
-    { id: "minigames", type: "folder", labelKey: "minigames", icon: "gamepad", descKey: "descMinigames", desktop: true, children: gameNodes },
-
     // Recycle bin: scrapped / back-burner projects, shown with the projects detail view.
     {
       id: "recycleBin", type: "folder", labelKey: "recycleBin", icon: "trash-can", descKey: "descRecycleBin", desktop: true,
@@ -105,9 +114,20 @@ export function getRootNodes() {
   return vfsRoot.children;
 }
 
-// Curated subset shown as desktop icons.
+// Curated subset shown as desktop icons - walks the whole tree (not just the
+// top level) so desktop:true nodes nested inside a folder (e.g. the apps
+// grouped under "applications" for File Explorer) still surface here, in
+// tree order.
+function collectDesktopNodes(node, acc) {
+  for (const child of node.children || []) {
+    if (child.desktop) acc.push(child);
+    collectDesktopNodes(child, acc);
+  }
+  return acc;
+}
+
 export function getDesktopNodes() {
-  return vfsRoot.children.filter((n) => n.desktop);
+  return collectDesktopNodes(vfsRoot, []);
 }
 
 // Walk from the root following an array of ids; return the node or null.

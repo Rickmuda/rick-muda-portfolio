@@ -88,20 +88,22 @@ export function preloadAllWindows() {
 // separate hand-written entry in Taskbar.vue, same as Desktop.vue's synthetic
 // "__explorer" node.
 export const appList = [
-  { name: "camera",          icon: "camera",       labelKey: "camera" },
-  { name: "aboutMe",         icon: "user",         labelKey: "aboutMe",   pinned: true },
+  // Content first, then identity/getting-in-touch, then the utility apps
+  // (pinned subset), then fun extras, with Downloads last.
   { name: "projects",        icon: "folder",       labelKey: "projects" },
   { name: "artGallery",      icon: "palette",      labelKey: "artGallery" },
+  { name: "aboutMe",         icon: "user",         labelKey: "aboutMe",   pinned: true },
   { name: "contact",         icon: "envelope",     labelKey: "contact",   pinned: true },
   { name: "newsletter",      icon: "bell",         labelKey: "newsletter" },
-  { name: "downloads",       icon: "download",     labelKey: "downloads" },
-  { ...minigamesFolder, folder: true },
-  { name: "vinylCollection", icon: "compact-disc", labelKey: "vinylCollection" },
   { name: "skillTree",       icon: "sitemap",      labelKey: "skillTree",      pinned: true },
-  { name: "mudaDigitaal",    icon: "terminal",     labelKey: "mudaDigitaal",   pinned: true },
   { name: "paint",           icon: "paintbrush",   labelKey: "paint",          pinned: true },
+  { name: "mudaDigitaal",    icon: "terminal",     labelKey: "mudaDigitaal",   pinned: true },
   { name: "achievements",    icon: "trophy",       labelKey: "achievements",   pinned: true },
   { name: "settings",        icon: "cog",          labelKey: "settings",       pinned: true },
+  { ...minigamesFolder, folder: true },
+  { name: "vinylCollection", icon: "compact-disc", labelKey: "vinylCollection" },
+  { name: "camera",          icon: "camera",       labelKey: "camera" },
+  { name: "downloads",       icon: "download",     labelKey: "downloads" },
 ];
 
 // Subset of appList pinned to the desktop taskbar, in taskbar order.

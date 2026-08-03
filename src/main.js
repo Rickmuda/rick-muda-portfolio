@@ -66,6 +66,7 @@ import {
   faChevronUp,
   faBell,
   faRankingStar,
+  faTableCellsLarge,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faTwitter,
@@ -134,7 +135,8 @@ library.add(
   faCameraRotate,
   faChevronUp,
   faBell,
-  faRankingStar
+  faRankingStar,
+  faTableCellsLarge
 );
 library.add(faTwitter, faInstagram, faLinkedin, faGithub, faYoutube, faTiktok, faSpotify, faSteam);
 
