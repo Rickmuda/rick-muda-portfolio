@@ -162,6 +162,7 @@ export default {
   mounted() {
     this.bestScore = this.loadBest();
     window.addEventListener("keydown", this.handleKey);
+    this.newGame();
   },
   beforeUnmount() {
     window.removeEventListener("keydown", this.handleKey);

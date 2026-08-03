@@ -9,6 +9,7 @@
 // Minesweeper, Solitaire).
 
 import { SUPABASE_URL, SUPABASE_ANON_KEY, keysConfigured } from "./supabaseConfig";
+import { containsProfanity } from "./profanityFilter";
 
 const MAX_NAME_LENGTH = 20;
 
@@ -21,6 +22,9 @@ export async function submitScore({ game, variant = null, metric, playerName, va
   const trimmedName = (playerName || "").trim();
   if (!trimmedName || trimmedName.length > MAX_NAME_LENGTH) {
     return { ok: false, reason: "invalid_name" };
+  }
+  if (containsProfanity(trimmedName)) {
+    return { ok: false, reason: "profanity" };
   }
   const numericValue = Math.round(Number(value));
   if (!Number.isFinite(numericValue)) return { ok: false, reason: "invalid_value" };

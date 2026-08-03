@@ -183,6 +183,8 @@ export default {
         this.nameInput = "";
         this.submitMessage = { type: "success", text: this.$t("scoreboardSubmitted") };
         this.loadScores();
+      } else if (result.reason === "profanity") {
+        this.submitMessage = { type: "error", text: this.$t("scoreboardNameRejected") };
       } else {
         this.submitMessage = { type: "error", text: this.$t("scoreboardSubmitError") };
       }
