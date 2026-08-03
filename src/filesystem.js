@@ -53,6 +53,7 @@ export const vfsRoot = {
     // Apps (the curated ones are flagged desktop:true and also appear on the bureaublad).
     { id: "aboutMe",      type: "app", app: "aboutMe",      labelKey: "aboutMe",      icon: "user",       descKey: "descAboutMe",      desktop: true },
     { id: "contact",      type: "app", app: "contact",      labelKey: "contact",      icon: "envelope",   descKey: "descContact",      desktop: true },
+    { id: "newsletter",   type: "app", app: "newsletter",   labelKey: "newsletter",   icon: "bell",       descKey: "descNewsletter",   desktop: true },
     { id: "mudaDigitaal", type: "app", app: "mudaDigitaal", labelKey: "mudaDigitaal", icon: "terminal",   descKey: "descTerminal",     desktop: true },
     { id: "skillTree",    type: "app", app: "skillTree",    labelKey: "skillTree",    icon: "sitemap",    descKey: "descSkillTree",    desktop: true },
     { id: "paint",        type: "app", app: "paint",        labelKey: "paint",        icon: "paintbrush", descKey: "descPaint",        desktop: true },

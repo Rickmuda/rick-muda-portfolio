@@ -221,6 +221,20 @@ const messages = {
     messageFailed: "Failed to send message. Please try again.",
     errorOccurred: "An error occurred. Please try again.",
 
+    // Newsletter
+    newsletter: "Newsletter",
+    descNewsletter: "Get an email when this site is updated.",
+    newsletterIntro: "One weird trick gets every future update sent STRAIGHT to your inbox. Sign up FREE below!",
+    newsletterSubscribe: "Subscribe",
+    newsletterSubscribing: "Subscribing...",
+    newsletterSuccess: "You're subscribed! Keep an eye on your inbox.",
+    newsletterAlready: "That email is already subscribed.",
+    newsletterInvalid: "Please enter a valid email address.",
+    newsletterPopupBadge: "🚨 Don't close this window 🚨",
+    newsletterPopupHeadline: "STOP!!! Don't miss the next update!",
+    newsletterPopupCounter: "You are visitor number:",
+    newsletterPopupDisclaimer: "100% free. No spam, we promise (mostly).",
+
     // Mini game
     clickTheRick: "Click the Rick",
     score: "Score",
@@ -546,6 +560,20 @@ const messages = {
     messageSent: "Bericht succesvol verzonden!",
     messageFailed: "Bericht verzenden mislukt. Probeer het opnieuw.",
     errorOccurred: "Er is een fout opgetreden. Probeer het opnieuw.",
+
+    // Newsletter
+    newsletter: "Nieuwsbrief",
+    descNewsletter: "Krijg een e-mail wanneer deze site wordt bijgewerkt.",
+    newsletterIntro: "Met dit ene simpele trucje krijg je voortaan elke update rechtstreeks in je inbox. Meld je nu GRATIS aan!",
+    newsletterSubscribe: "Abonneren",
+    newsletterSubscribing: "Bezig met abonneren...",
+    newsletterSuccess: "Je bent geabonneerd! Houd je inbox in de gaten.",
+    newsletterAlready: "Dat e-mailadres is al geabonneerd.",
+    newsletterInvalid: "Voer een geldig e-mailadres in.",
+    newsletterPopupBadge: "🚨 Sluit dit venster niet 🚨",
+    newsletterPopupHeadline: "STOP!!! Mis de volgende update niet!",
+    newsletterPopupCounter: "Jij bent bezoeker nummer:",
+    newsletterPopupDisclaimer: "100% gratis. Geen spam, beloofd (meestal).",
 
     // Mini game
     clickTheRick: "Klik de Rick",

@@ -174,7 +174,7 @@ export default {
         },
         {
           id: "playdeck",
-          titleKey: "dlPlaydeckTitle",
+        titleKey: "dlPlaydeckTitle",
           descKey: "dlPlaydeckDesc",
           version: "v1.6.2",
           size: "",

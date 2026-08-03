@@ -29,3 +29,12 @@ jobs:
           lftp -u "$FTP_USERNAME","$FTP_PASSWORD" \
             -e "set ftp:ssl-allow no; mirror --reverse --delete dist/ $FTP_DEST; bye" \
             web1.ping64.net
+
+      - name: 📧 Notify newsletter subscribers
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          GMAIL_USER: ${{ secrets.GMAIL_USER }}
+          GMAIL_APP_PASSWORD: ${{ secrets.GMAIL_APP_PASSWORD }}
+          UPDATE_MESSAGE: ${{ github.event.head_commit.message }}
+        run: node scripts/send-newsletter.mjs
