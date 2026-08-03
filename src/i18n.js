@@ -96,7 +96,7 @@ const messages = {
     dlLunarTitle: "LunarMovies",
     dlLunarDesc: "Stream the DVDs from your LunarHome collection on mobile.",
     dlPlaydeckTitle: "Playdeck",
-    dlPlaydeckDesc: "A clean, fully customizable game launcher for Windows that gathers your Steam, Epic Games, GOG Galaxy, Ubisoft Connect and manually installed games into one library.",
+    dlPlaydeckDesc: "A Windows game launcher with a Steam Big Picture-style interface, auto-detecting your library across Steam, Epic Games, GOG Galaxy, Ubisoft Connect, Battle.net, EA app, itch.io, Xbox/Game Pass and more.",
 
     // About me
     aboutMeIntro: "Hey there! Welcome to my portfolio.",
@@ -199,7 +199,7 @@ const messages = {
     rfi: "Roll for it",
     rfiDescription: "A simple site for rolling dice (including D&D dice) and flipping coins.",
     pd: "Playdeck",
-    pdDescription: "A clean, fully customizable game launcher for Windows that gathers everything you own — Steam, Epic Games, GOG Galaxy, Ubisoft Connect, or manually installed — into one library, with automatic detection of installed games. No store, no accounts, just launching. Available as a download.",
+    pdDescription: "A Windows game launcher built with Electron and kept as dependency-free as possible, with a Steam Big Picture-style interface. Auto-detects your library across Steam, Epic Games, GOG Galaxy, Ubisoft Connect, Battle.net, EA app, itch.io, Xbox/Game Pass, Minecraft and Roblox, pulls in real Steam achievements, tracks playtime, and is fully playable with a controller. Available as a download.",
     goToProject: "Go to Project",
 
     // Start menu
@@ -420,7 +420,7 @@ const messages = {
     dlLunarTitle: "LunarMovies",
     dlLunarDesc: "Stream de dvd's uit je LunarHome collectie op mobiel.",
     dlPlaydeckTitle: "Playdeck",
-    dlPlaydeckDesc: "Een clean, volledig aanpasbare game-launcher voor Windows die je Steam-, Epic Games-, GOG Galaxy-, Ubisoft Connect- en handmatig geïnstalleerde games in 1 bibliotheek verzamelt.",
+    dlPlaydeckDesc: "Een game-launcher voor Windows met een Steam Big Picture-achtige interface, die automatisch je bibliotheek detecteert op Steam, Epic Games, GOG Galaxy, Ubisoft Connect, Battle.net, EA app, itch.io, Xbox/Game Pass en meer.",
 
     // About me
     aboutMeIntro: "Hey daar! Welkom op mijn portfolio.",
@@ -525,7 +525,7 @@ const messages = {
     rfi: "Roll for it",
     rfiDescription: "Een simpele site om dobbelstenen (inclusief D&D dobbelstenen) en munten te gooien.",
     pd: "Playdeck",
-    pdDescription: "Een clean, volledig aanpasbare game-launcher voor Windows die alles wat je bezit — Steam, Epic Games, GOG Galaxy, Ubisoft Connect of handmatig geïnstalleerd — in 1 bibliotheek verzamelt, met automatische detectie van geïnstalleerde games. Geen winkel, geen accounts, alleen opstarten. Te downloaden.",
+    pdDescription: "Een game-launcher voor Windows, gebouwd met Electron en zo min mogelijk dependencies, met een Steam Big Picture-achtige interface. Detecteert automatisch je bibliotheek van Steam, Epic Games, GOG Galaxy, Ubisoft Connect, Battle.net, EA app, itch.io, Xbox/Game Pass, Minecraft en Roblox, haalt echte Steam-achievements binnen, houdt je speeltijd bij en is volledig met een controller te bedienen. Te downloaden.",
     goToProject: "Ga naar Project",
 
     // Start menu
