@@ -112,6 +112,7 @@ import AppWindow from "./components/AppWindow.vue";
 import BootScreen from "./components/BootScreen.vue";
 import AchievementToast from "./components/AchievementToast.vue";
 import { windowConfig, appList, preloadAllWindows } from "./windowConfig";
+import { findNodePath } from "./filesystem";
 import { sounds } from "./sounds";
 import { unlock as unlockAchievement } from "./achievements";
 import { getCurrent as getCurrentWallpaper, onChange as onWallpaperChange } from "./wallpapers";
@@ -304,7 +305,7 @@ export default {
         this.openExplorerRoot();
       } else if (node.type === "folder") {
         this.explorerSelect = null;
-        this.explorerPath = [node.id];
+        this.explorerPath = findNodePath(node.id) || [node.id];
         this.ensureOpen("fileExplorer");
       } else if (node.type === "app") {
         this.openApp(node.app);

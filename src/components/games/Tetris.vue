@@ -1,5 +1,5 @@
 <template>
-  <div class="tet-window">
+  <div class="tet-window" ref="root" tabindex="-1">
     <div class="tet-header">
       <div class="tet-stats">
         <span><b>{{ $t('tetrisScore') }}:</b> {{ score }}</span>
@@ -163,6 +163,16 @@ export default {
     this.bestScore = this.loadBest();
     window.addEventListener("keydown", this.handleKey);
     this.newGame();
+    // AppWindow focuses its own root on mount (for keyboard/screen-reader
+    // users) AFTER this component's mounted() runs, which would otherwise
+    // leave focus on the window root - arrow keys would then both move the
+    // piece (this component's global listener) AND nudge the window
+    // (AppWindow's own arrow-key move, which only triggers when the window
+    // root itself is focused). Reclaim focus once mounting settles so the
+    // window root is no longer the focus target.
+    this.$nextTick(() => {
+      if (this.$refs.root) this.$refs.root.focus({ preventScroll: true });
+    });
   },
   beforeUnmount() {
     window.removeEventListener("keydown", this.handleKey);

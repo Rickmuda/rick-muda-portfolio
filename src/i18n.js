@@ -286,6 +286,9 @@ const messages = {
     // Desktop context menu
     ctxChangeWallpaper: "Change wallpaper",
     ctxAutoArrange: "Auto-arrange icons",
+    ctxResetDesktop: "Reset desktop icons",
+    ctxAddToDesktop: "Add to Desktop",
+    ctxRemoveFromDesktop: "Remove from Desktop",
 
     // Easter egg
     oldVideo: "Old Video",
@@ -645,6 +648,9 @@ const messages = {
     // Desktop context menu
     ctxChangeWallpaper: "Achtergrond wijzigen",
     ctxAutoArrange: "Pictogrammen automatisch schikken",
+    ctxResetDesktop: "Bureaublad-pictogrammen resetten",
+    ctxAddToDesktop: "Toevoegen aan bureaublad",
+    ctxRemoveFromDesktop: "Verwijderen van bureaublad",
 
     // Easter egg
     oldVideo: "Oude Video",

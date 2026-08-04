@@ -5,6 +5,7 @@
     <transition name="info-fade">
       <div
         v-if="node"
+        ref="card"
         class="info-card"
         :style="cardStyle"
         @mousedown.stop
@@ -17,6 +18,18 @@
           <span class="info-card-title">{{ node.name || $t(node.labelKey) }}</span>
         </div>
         <div class="info-card-desc">{{ $t(node.descKey) }}</div>
+        <div class="info-card-actions" v-if="actions.length">
+          <button
+            v-for="a in actions"
+            :key="a.key"
+            type="button"
+            class="info-card-action"
+            @click="runAction(a)"
+          >
+            <font-awesome-icon :icon="a.icon" />
+            {{ a.label }}
+          </button>
+        </div>
       </div>
     </transition>
   </Teleport>
@@ -26,7 +39,8 @@
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 
 const CARD_W = 240;
-const CARD_H = 150;
+// Fallback used only before the card has rendered once (ref not measured yet).
+const CARD_H_FALLBACK = 150;
 
 export default {
   name: "InfoCard",
@@ -36,24 +50,44 @@ export default {
     node: { type: Object, default: null },
     x: { type: Number, default: 0 },
     y: { type: Number, default: 0 },
+    // Optional action buttons: { key, icon, label, onClick }[]
+    actions: { type: Array, default: () => [] },
   },
   emits: ["close"],
+  data() {
+    return { cardH: CARD_H_FALLBACK };
+  },
   computed: {
     cardStyle() {
       const vw = window.innerWidth;
       const vh = window.innerHeight;
       const left = Math.max(8, Math.min(this.x, vw - CARD_W - 8));
-      const top = Math.max(8, Math.min(this.y, vh - CARD_H - 8));
+      const top = Math.max(8, Math.min(this.y, vh - this.cardH - 8));
       return { left: left + "px", top: top + "px", width: CARD_W + "px" };
     },
   },
   watch: {
     node(val) {
-      if (val) this.addListeners();
-      else this.removeListeners();
+      if (val) {
+        this.addListeners();
+        this.$nextTick(this.measure);
+      } else {
+        this.removeListeners();
+      }
+    },
+    actions() {
+      this.$nextTick(this.measure);
     },
   },
   methods: {
+    measure() {
+      const el = this.$refs.card;
+      if (el) this.cardH = el.offsetHeight;
+    },
+    runAction(a) {
+      a.onClick();
+      this.$emit("close");
+    },
     addListeners() {
       document.addEventListener("mousedown", this.onDocMouseDown);
       document.addEventListener("keydown", this.onKeydown);
@@ -120,6 +154,36 @@ export default {
   font-size: 13px;
   line-height: 1.4;
   color: #e6d3f0;
+}
+
+.info-card-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.info-card-action {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 10px;
+  background: rgba(155, 32, 183, 0.25);
+  border: 1px solid rgba(155, 32, 183, 0.5);
+  border-radius: 6px;
+  color: #fff;
+  font-family: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+  transition: background 0.12s ease;
+}
+
+.info-card-action:hover,
+.info-card-action:focus-visible {
+  background: rgba(155, 32, 183, 0.45);
 }
 
 .info-fade-enter-active,

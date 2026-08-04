@@ -20,7 +20,7 @@
       <div class="app-icon-text">{{ node.name || $t(node.labelKey) }}</div>
     </div>
 
-    <InfoCard :node="infoNode" :x="infoX" :y="infoY" @close="infoNode = null" />
+    <InfoCard :node="infoNode" :x="infoX" :y="infoY" :actions="infoActions" @close="infoNode = null" />
 
     <!-- Right-click-on-empty-desktop menu: change wallpaper / auto-arrange icons. -->
     <Teleport to="body">
@@ -39,6 +39,10 @@
           <button type="button" class="ctx-item" @click="autoArrangeIcons">
             <font-awesome-icon icon="sitemap" />
             {{ $t('ctxAutoArrange') }}
+          </button>
+          <button type="button" class="ctx-item" @click="resetDesktopIcons">
+            <font-awesome-icon icon="trash-can" />
+            {{ $t('ctxResetDesktop') }}
           </button>
         </template>
         <div v-else class="ctx-wallpaper-grid">
@@ -62,9 +66,10 @@
 <script>
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import InfoCard from "./InfoCard.vue";
-import { getDesktopNodes } from "../filesystem";
+import { getDesktopNodes, identityOf, findNodeByIdentity } from "../filesystem";
 import { getPositions, setPosition, onChange as onLayoutChange } from "../desktopLayout";
 import { wallpapers, getCurrentId as getCurrentWallpaperId, setCurrent as setWallpaper } from "../wallpapers";
+import { getState as getDesktopIconsState, toggleDesktop, resetDesktop, onChange as onDesktopIconsChange } from "../desktopIcons";
 
 // Larger cells than the icons themselves so dragged icons get breathing room.
 const CELL_W = 124;
@@ -101,6 +106,7 @@ export default {
       infoNode: null,
       infoX: 0,
       infoY: 0,
+      infoActions: [],
       // Right-click-on-empty-desktop menu: null when hidden, else {x, y}.
       desktopMenu: null,
       wallpaperPickerOpen: false,
@@ -109,6 +115,9 @@ export default {
       vw: window.innerWidth,
       vh: window.innerHeight,
       layoutUnsub: null,
+      // User-customized desktop icon set (removed defaults / added extras).
+      desktopIconsState: getDesktopIconsState(),
+      desktopIconsUnsub: null,
     };
   },
   computed: {
@@ -120,6 +129,9 @@ export default {
         icon: "folder-open",
         descKey: "descFileExplorer",
       };
+      const removedSet = new Set(this.desktopIconsState.removed);
+      const defaultIcons = getDesktopNodes().filter((n) => !removedSet.has(identityOf(n)));
+      const addedNodes = this.desktopIconsState.added.map((id) => findNodeByIdentity(id)).filter(Boolean);
       const eggs = this.easterEggApps.map((name) => ({
         id: name,
         type: "app",
@@ -128,7 +140,7 @@ export default {
         icon: "egg",
         descKey: "descApp",
       }));
-      return [explorer, ...getDesktopNodes(), ...eggs];
+      return [explorer, ...defaultIcons, ...addedNodes, ...eggs];
     },
     // Grid dimensions that fit the current viewport (drives both the default
     // layout and drag snapping, so everything aligns to one grid).
@@ -289,6 +301,22 @@ export default {
       this.infoNode = node;
       this.infoX = e.clientX;
       this.infoY = e.clientY;
+      this.infoActions = this.actionsFor(node);
+    },
+    // The permanent File Explorer icon and session-only easter eggs aren't
+    // part of the customizable desktop set - no toggle action for those.
+    actionsFor(node) {
+      if (node.type === "explorer" || node.labelKey === "easterEgg") return [];
+      return [{
+        key: "remove",
+        icon: "trash-can",
+        label: this.$t("ctxRemoveFromDesktop"),
+        onClick: () => toggleDesktop(identityOf(node)),
+      }];
+    },
+    resetDesktopIcons() {
+      resetDesktop();
+      this.closeDesktopMenu();
     },
     onDesktopContext(e) {
       this.infoNode = null;
@@ -361,6 +389,7 @@ export default {
   mounted() {
     this.loadPositions();
     this.layoutUnsub = onLayoutChange(() => this.loadPositions());
+    this.desktopIconsUnsub = onDesktopIconsChange((s) => { this.desktopIconsState = s; });
     window.addEventListener("resize", this.onResize);
     document.addEventListener("mousedown", this.onDocMouseDownForMenu);
     document.addEventListener("keydown", this.onKeydownForMenu);
@@ -372,6 +401,7 @@ export default {
     document.removeEventListener("mousedown", this.onDocMouseDownForMenu);
     document.removeEventListener("keydown", this.onKeydownForMenu);
     if (this.layoutUnsub) this.layoutUnsub();
+    if (this.desktopIconsUnsub) this.desktopIconsUnsub();
   },
 };
 </script>

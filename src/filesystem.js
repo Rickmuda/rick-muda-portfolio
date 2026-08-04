@@ -74,6 +74,21 @@ export const vfsRoot = {
       ],
     },
 
+    // Same 8 apps as above, also surfaced flat at the Explorer root so
+    // "Desktop" mirrors what visitors actually see on the desktop (not just
+    // inside "Applications"). Distinct ids (Desktop-suffixed) keep them from
+    // colliding with the "applications" copies, which are the ones that carry
+    // desktop:true and drive the real desktop/mobile icons - these flat copies
+    // deliberately don't, so an app doesn't end up with two desktop icons.
+    { id: "aboutMeDesktop",      type: "app", app: "aboutMe",      labelKey: "aboutMe",      icon: "user",       descKey: "descAboutMe" },
+    { id: "contactDesktop",      type: "app", app: "contact",      labelKey: "contact",      icon: "envelope",   descKey: "descContact" },
+    { id: "newsletterDesktop",   type: "app", app: "newsletter",   labelKey: "newsletter",   icon: "bell",       descKey: "descNewsletter" },
+    { id: "skillTreeDesktop",    type: "app", app: "skillTree",    labelKey: "skillTree",    icon: "sitemap",    descKey: "descSkillTree" },
+    { id: "paintDesktop",        type: "app", app: "paint",        labelKey: "paint",        icon: "paintbrush", descKey: "descPaint" },
+    { id: "mudaDigitaalDesktop", type: "app", app: "mudaDigitaal", labelKey: "mudaDigitaal", icon: "terminal",   descKey: "descTerminal" },
+    { id: "achievementsDesktop", type: "app", app: "achievements", labelKey: "achievements", icon: "trophy",     descKey: "descAchievements" },
+    { id: "settingsDesktop",     type: "app", app: "settings",     labelKey: "settings",     icon: "cog",        descKey: "descSettings" },
+
     // Plain icon-grid folder (also pinned to the desktop).
     { id: "minigames", type: "folder", labelKey: "minigames", icon: "gamepad", descKey: "descMinigames", desktop: true, children: gameNodes },
 
@@ -152,6 +167,49 @@ export function findNodeById(id, node = vfsRoot) {
   if (node.children) {
     for (const child of node.children) {
       const found = findNodeById(id, child);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+// Stable identity for a node, used by the desktop-icon customization feature
+// (src/desktopIcons.js) to dedupe the intentional flat/nested duplicate app
+// nodes (e.g. "aboutMe" vs "aboutMeDesktop" both identify as "aboutMe") -
+// apps are identified by which window they open, folders by their own id.
+export function identityOf(node) {
+  return node.type === "app" ? node.app : node.id;
+}
+
+// Identities of the curated default desktop set - single source of truth so
+// desktopIcons.js and every component agree on what counts as "default"
+// without each recomputing (and potentially drifting from) their own copy.
+export function getDefaultDesktopIdentities() {
+  return new Set(getDesktopNodes().map(identityOf));
+}
+
+// First node (tree order) whose identityOf() matches. Used to resolve a
+// user-added desktop identity back into a renderable node.
+export function findNodeByIdentity(identity, nodes = vfsRoot.children) {
+  for (const node of nodes) {
+    if (identityOf(node) === identity) return node;
+    if (node.children) {
+      const found = findNodeByIdentity(identity, node.children);
+      if (found) return found;
+    }
+  }
+  return null;
+}
+
+// Ids-path from root to the node with the given id, matching resolvePath()'s
+// convention (relative to vfsRoot.children, never includes the synthetic
+// "root" id). Unlike a flat [id] lookup, this works for nodes at any depth.
+export function findNodePath(id, nodes = vfsRoot.children, trail = []) {
+  for (const node of nodes) {
+    const nextTrail = [...trail, node.id];
+    if (node.id === id) return nextTrail;
+    if (node.children) {
+      const found = findNodePath(id, node.children, nextTrail);
       if (found) return found;
     }
   }

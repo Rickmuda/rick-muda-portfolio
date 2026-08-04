@@ -73,14 +73,15 @@
       </div>
     </div>
 
-    <InfoCard :node="infoNode" :x="infoX" :y="infoY" @close="infoNode = null" />
+    <InfoCard :node="infoNode" :x="infoX" :y="infoY" :actions="infoActions" @close="infoNode = null" />
   </div>
 </template>
 
 <script>
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import InfoCard from "../InfoCard.vue";
-import { vfsRoot, resolvePath, listChildren } from "../../filesystem";
+import { vfsRoot, resolvePath, listChildren, identityOf, getDefaultDesktopIdentities } from "../../filesystem";
+import { getState as getDesktopIconsState, toggleDesktop, onChange as onDesktopIconsChange } from "../../desktopIcons";
 
 export default {
   name: "FileExplorer",
@@ -105,6 +106,12 @@ export default {
       infoNode: null,
       infoX: 0,
       infoY: 0,
+      infoActions: [],
+      // User-customized desktop icon set - kept in sync so "Add/Remove
+      // Desktop" labels reflect toggles made from either this window or the
+      // real Desktop while both are open at once.
+      desktopIconsState: getDesktopIconsState(),
+      desktopIconsUnsub: null,
     };
   },
   computed: {
@@ -209,7 +216,36 @@ export default {
       this.infoNode = node;
       this.infoX = e.clientX;
       this.infoY = e.clientY;
+      this.infoActions = this.actionsFor(node);
     },
+    // Easter eggs (surfaced at the root once unlocked) aren't part of the VFS
+    // and aren't customizable - no toggle action for those. Everything else
+    // (any app or folder, at any depth) can be pinned to / unpinned from the
+    // desktop, reading the LOCAL reactive desktopIconsState mirror (not the
+    // module's own state) so this reflects toggles made from Desktop.vue too.
+    actionsFor(node) {
+      if (node.labelKey === "easterEgg") return [];
+      const identity = identityOf(node);
+      const onDesktop = this.isOnDesktop(identity);
+      return [{
+        key: "toggle-desktop",
+        icon: onDesktop ? "trash-can" : "plus",
+        label: this.$t(onDesktop ? "ctxRemoveFromDesktop" : "ctxAddToDesktop"),
+        onClick: () => toggleDesktop(identity),
+      }];
+    },
+    isOnDesktop(identity) {
+      const defaults = getDefaultDesktopIdentities();
+      return defaults.has(identity)
+        ? !this.desktopIconsState.removed.includes(identity)
+        : this.desktopIconsState.added.includes(identity);
+    },
+  },
+  mounted() {
+    this.desktopIconsUnsub = onDesktopIconsChange((s) => { this.desktopIconsState = s; });
+  },
+  beforeUnmount() {
+    if (this.desktopIconsUnsub) this.desktopIconsUnsub();
   },
 };
 </script>
