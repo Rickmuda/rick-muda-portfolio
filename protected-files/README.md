@@ -61,6 +61,6 @@ Released - `available: true` in `Downloads.vue`'s `playdeck` entry. No password:
 living outside the web root, not by a password prompt.
 
 Before deploying, make sure the server actually has the file at
-`protected-files/Playdeck Setup 2.0.0.exe` (outside the web root, exact filename
+`protected-files/Playdeck Setup 2.0.1.exe` (outside the web root, exact filename
 including spaces). Without it, the download button will show but requesting it will
 fail with "Something went wrong" / 404.
