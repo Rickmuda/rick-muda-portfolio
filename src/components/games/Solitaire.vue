@@ -1,9 +1,10 @@
 <template>
-  <div class="solitaire-window">
+  <div class="solitaire-window" :class="{ 'auto-playing': autoFinishing }">
     <div class="solitaire-header">
       <h2>Solitaire</h2>
       <span class="sol-timer"><font-awesome-icon icon="clock" /> {{ timer }}s</span>
       <div class="header-actions">
+        <button v-if="canAutoFinish" @click="autoFinish" :disabled="autoFinishing">Auto Finish</button>
         <button @click="newGame">New Game</button>
       </div>
     </div>
@@ -79,7 +80,17 @@
       </div>
     </div>
 
-    <p v-if="isWon" class="win-message">You won 🎉</p>
+    <div v-if="isWon" class="sol-win-overlay">
+      <p class="win-message">You won 🎉</p>
+      <ScoreSubmitPrompt
+        v-if="isNewBest"
+        class="sol-submit"
+        game="solitaire"
+        metric="time_seconds"
+        :value="timer"
+      />
+      <button class="sol-overlay-newgame" @click="newGame">New Game</button>
+    </div>
 
     <!-- Touch-drag ghost: follows the finger while dragging past the threshold.
          Mouse users never see this - onPointerDown bails out for pointerType 'mouse'
@@ -99,15 +110,18 @@
 
 <script>
 import { unlock as unlockAchievement } from "../../achievements";
+import ScoreSubmitPrompt from "../ScoreSubmitPrompt.vue";
 const SUITS = ["hearts", "diamonds", "clubs", "spades"];
 // Same drag-threshold idiom Desktop.vue uses for icon dragging: below this,
 // a touch/pen press is treated as a tap and falls through to the click path.
 const DRAG_THRESHOLD = 5;
 
 export default {
+  components: { ScoreSubmitPrompt },
   data() {
     return {
       suits: SUITS,
+      isNewBest: false,
       stock: [],
       waste: [],
       foundations: {
@@ -132,11 +146,20 @@ export default {
       // Swallows the trailing synthetic click that follows a touch drag's
       // pointerup, so the drop doesn't also re-trigger the tap-to-move path.
       justDragged: false,
+      autoFinishing: false,
+      autoFinishHandle: null,
     };
   },
   computed: {
     isWon() {
       return SUITS.every((suit) => this.foundations[suit].length === 13);
+    },
+    // Classic "Auto Finish" rule: once no tableau card is still face-down,
+    // the rest of the game is always winnable by repeatedly sending any
+    // playable top card to its foundation - no more digging/decisions
+    // needed, so we can just play it out automatically.
+    canAutoFinish() {
+      return !this.isWon && this.tableau.every((pile) => pile.every((card) => card.faceUp));
     },
   },
   watch: {
@@ -152,9 +175,15 @@ export default {
   },
   beforeUnmount() {
     this.stopTimer();
+    if (this.autoFinishHandle) clearTimeout(this.autoFinishHandle);
   },
   methods: {
     newGame() {
+      if (this.autoFinishHandle) {
+        clearTimeout(this.autoFinishHandle);
+        this.autoFinishHandle = null;
+      }
+      this.autoFinishing = false;
       const deck = this.createDeck();
       this.shuffle(deck);
 
@@ -162,6 +191,7 @@ export default {
       this.tableau = [[], [], [], [], [], [], []];
       this.waste = [];
       this.selected = null;
+      this.isNewBest = false;
       this.stopTimer();
       this.timer = 0;
       this.startTimer();
@@ -175,6 +205,63 @@ export default {
         }
       }
       this.stock = deck.slice(cardIndex);
+    },
+    // Plays out the rest of the game automatically. Only offered once
+    // canAutoFinish is true (no face-down tableau cards left), which
+    // guarantees every remaining card can eventually reach a foundation -
+    // so this loop can't get stuck as long as that precondition held.
+    autoFinish() {
+      if (this.autoFinishing || !this.canAutoFinish) return;
+      this.autoFinishing = true;
+      this.selected = null;
+      // Counts draws since the last successful foundation move. If it ever
+      // exceeds a full lap of the stock+waste pile, no amount of further
+      // drawing can help - bail out instead of spinning forever. Should be
+      // unreachable given canAutoFinish's precondition; cheap insurance
+      // against an edge case in that guarantee.
+      let stalledDraws = 0;
+
+      const step = () => {
+        if (this.isWon) {
+          this.autoFinishing = false;
+          this.autoFinishHandle = null;
+          return;
+        }
+
+        let moved = false;
+        for (const pile of this.tableau) {
+          if (!pile.length) continue;
+          const card = pile[pile.length - 1];
+          if (this.canPlaceOnFoundation(card, card.suit)) {
+            this.foundations[card.suit].push(pile.pop());
+            moved = true;
+            break;
+          }
+        }
+        if (!moved && this.waste.length) {
+          const card = this.waste[this.waste.length - 1];
+          if (this.canPlaceOnFoundation(card, card.suit)) {
+            this.foundations[card.suit].push(this.waste.pop());
+            moved = true;
+          }
+        }
+
+        if (moved) {
+          stalledDraws = 0;
+        } else {
+          const cycleSize = this.stock.length + this.waste.length;
+          this.drawStock();
+          stalledDraws += 1;
+          if (stalledDraws > cycleSize) {
+            this.autoFinishing = false;
+            this.autoFinishHandle = null;
+            return;
+          }
+        }
+
+        this.autoFinishHandle = setTimeout(step, 35);
+      };
+      step();
     },
     createDeck() {
       const values = ["A", "2", "3", "4", "5", "6", "7", "8", "9", "10", "J", "Q", "K"];
@@ -346,7 +433,8 @@ export default {
       try {
         localStorage.setItem("solitaire-wins", String(this.loadWins() + 1));
         const prevBest = this.loadBestTime();
-        if (prevBest === null || elapsedSeconds < prevBest) {
+        this.isNewBest = prevBest === null || elapsedSeconds < prevBest;
+        if (this.isNewBest) {
           localStorage.setItem("solitaire-best-time", String(elapsedSeconds));
         }
       } catch (_) {}
@@ -483,6 +571,7 @@ export default {
 
 <style scoped>
 .solitaire-window {
+  position: relative;
   height: 100%;
   display: flex;
   flex-direction: column;
@@ -702,6 +791,38 @@ export default {
   text-align: center;
   font-size: 18px;
   font-weight: bold;
+}
+
+.auto-playing .top-row,
+.auto-playing .tableau-row {
+  pointer-events: none;
+}
+
+.sol-win-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  background: rgba(0, 0, 0, 0.55);
+}
+
+.sol-overlay-newgame {
+  background: #9b20b7;
+  border: 1px solid #4f115d;
+  color: #fff;
+  border-radius: 6px;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-family: inherit;
+  font-size: 14px;
+}
+
+.sol-overlay-newgame:hover {
+  background: #c637e6;
 }
 
 @media (max-width: 1000px) {

@@ -16,6 +16,7 @@
       <div v-else-if="state === 'over'" class="flappy-overlay">
         <p class="flappy-title">{{ $t('flappyGameOver') }}</p>
         <p class="flappy-hint">{{ $t('flappyScore') }}: {{ score }} · {{ $t('flappyBest') }}: {{ best }}</p>
+        <ScoreSubmitPrompt v-if="isNewBest" game="flappyRick" metric="score" :value="score" />
         <button type="button" @click.stop="start">{{ $t('flappyRestart') }}</button>
       </div>
     </div>
@@ -29,6 +30,7 @@
 import birdSrc from "../../assets/img/self-image-1.webp";
 import bgSrc from "../../assets/img/imggallery/room.webp";
 import { unlock as unlockAchievement } from "../../achievements";
+import ScoreSubmitPrompt from "../ScoreSubmitPrompt.vue";
 
 const GRAVITY = 0.35;
 const FLAP = -7;
@@ -41,12 +43,14 @@ const BG_SPEED = 1.0; // background scrolls slower than pipes for a parallax fee
 
 export default {
   name: "FlappyRick",
+  components: { ScoreSubmitPrompt },
   data() {
     return {
       state: "ready", // ready | playing | over
       awaitingFirstFlap: false, // bird hovers in place until the first flap
       score: 0,
       best: Number(localStorage.getItem("flappyRickBest") || 0),
+      isNewBest: false,
       W: 400, // current canvas size, set from the container on mount/resize
       H: 600,
       bird: { x: 112, y: 300, vy: 0 },
@@ -100,6 +104,7 @@ export default {
     },
     start() {
       this.score = 0;
+      this.isNewBest = false;
       this.bird = { x: this.W * 0.28, y: this.H / 2, vy: 0 };
       this.pipes = [];
       this.spawnPipe(this.W + 80);
@@ -115,6 +120,9 @@ export default {
       this.pipes.push({ x, gapTop, scored: false });
     },
     onKey(e) {
+      // Ignore while typing (e.g. the name field in the new-high-score
+      // prompt) so a space in a name doesn't flap/restart the game.
+      if (e.target && (e.target.tagName === "INPUT" || e.target.tagName === "TEXTAREA")) return;
       if (e.code === "Space" || e.code === "ArrowUp") {
         e.preventDefault();
         this.onPress();
@@ -195,7 +203,8 @@ export default {
     },
     gameOver() {
       this.state = "over";
-      if (this.score > this.best) {
+      this.isNewBest = this.score > this.best;
+      if (this.isNewBest) {
         this.best = this.score;
         localStorage.setItem("flappyRickBest", String(this.best));
       }

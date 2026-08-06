@@ -73,6 +73,8 @@
 <script>
 import { fetchTopScores, submitScore } from "../../leaderboard";
 
+const NAME_KEY = "scoreboardPlayerName";
+
 // One entry per Games-folder game. `metric` says how `value` ranks:
 // "score" = higher is better, "time_seconds" = lower is better. `hasVariant`
 // marks Minesweeper, the only game with a difficulty split.
@@ -89,6 +91,14 @@ const MINESWEEPER_DIFFICULTIES = ["easy", "medium", "hard"];
 // to expose this, the keys already existed except Solitaire's, added
 // alongside this window). Returns null when nothing's been played yet, so the
 // submit form only ever appears once there's a real value to submit.
+function readSavedName() {
+  try {
+    return localStorage.getItem(NAME_KEY) || "";
+  } catch (_) {
+    return "";
+  }
+}
+
 function readLocalBest(game, difficulty) {
   const KEYS = {
     minesweeper: `minesweeper-best-${difficulty}`,
@@ -114,7 +124,7 @@ export default {
       activeDifficulty: "easy",
       scores: [],
       loading: false,
-      nameInput: "",
+      nameInput: readSavedName(),
       honeypot: "",
       submitting: false,
       submitMessage: null, // { type: 'success'|'error', text }
@@ -180,7 +190,9 @@ export default {
       });
       this.submitting = false;
       if (result.ok) {
-        this.nameInput = "";
+        try {
+          localStorage.setItem(NAME_KEY, this.nameInput.trim());
+        } catch (_) {}
         this.submitMessage = { type: "success", text: this.$t("scoreboardSubmitted") };
         this.loadScores();
       } else if (result.reason === "profanity") {

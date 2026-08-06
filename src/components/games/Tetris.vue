@@ -23,6 +23,7 @@
           <div class="tet-banner">{{ $t('tetrisGameOver') }}</div>
           <div class="tet-banner sub">{{ $t('tetrisScore') }}: {{ score }}</div>
           <div class="tet-banner sub" v-if="bestScore">{{ $t('flappyBest') }}: {{ bestScore }}</div>
+          <ScoreSubmitPrompt v-if="isNewBest" game="tetris" metric="score" :value="score" />
           <button class="tet-btn" @click="newGame">{{ $t('tetrisStart') }}</button>
         </div>
       </div>
@@ -54,6 +55,7 @@
 <script>
 import { sounds } from "../../sounds";
 import { unlock as unlockAchievement } from "../../achievements";
+import ScoreSubmitPrompt from "../ScoreSubmitPrompt.vue";
 
 const COLS = 10;
 const ROWS = 20;
@@ -106,6 +108,7 @@ function randomPiece() {
 
 export default {
   name: "Tetris",
+  components: { ScoreSubmitPrompt },
   data() {
     return {
       board: makeBoard(),
@@ -116,6 +119,7 @@ export default {
       level: 1,
       gameOver: true,
       bestScore: 0,
+      isNewBest: false,
       dropHandle: null,
       lastTick: 0,
       achievementFired: false,
@@ -185,6 +189,7 @@ export default {
       this.lines = 0;
       this.level = 1;
       this.gameOver = false;
+      this.isNewBest = false;
       this.achievementFired = false;
       this.nextPiece = randomPiece();
       this.spawn();
@@ -303,7 +308,8 @@ export default {
       this.gameOver = true;
       this.stopDrop();
       sounds.play("error");
-      if (this.score > this.bestScore) {
+      this.isNewBest = this.score > this.bestScore;
+      if (this.isNewBest) {
         this.bestScore = this.score;
         this.saveBest(this.score);
       }

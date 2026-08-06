@@ -25,6 +25,14 @@
         {{ $t('mineBest') }}: {{ bestTime }}s
       </span>
     </div>
+    <ScoreSubmitPrompt
+      v-if="endState === 'win' && isNewBest"
+      class="ms-submit"
+      game="minesweeper"
+      :variant="difficulty"
+      metric="time_seconds"
+      :value="timer"
+    />
 
     <div class="ms-board-wrap">
       <div
@@ -59,6 +67,7 @@
 <script>
 import { sounds } from "../../sounds";
 import { unlock as unlockAchievement } from "../../achievements";
+import ScoreSubmitPrompt from "../ScoreSubmitPrompt.vue";
 
 const DIFFICULTY = {
   easy:   { cols: 9,  rows: 9,  mines: 10 },
@@ -71,6 +80,7 @@ const TOUCH_MOVE_TOLERANCE = 10;
 
 export default {
   name: "Minesweeper",
+  components: { ScoreSubmitPrompt },
   data() {
     return {
       difficulty: "easy",
@@ -85,6 +95,7 @@ export default {
       timer: 0,
       timerHandle: null,
       bestTime: null,
+      isNewBest: false,
       touch: { startX: 0, startY: 0, longPressTimer: null, longPressFired: false },
     };
   },
@@ -127,6 +138,7 @@ export default {
       this.minesPlaced = false;
       this.endState = null;
       this.timer = 0;
+      this.isNewBest = false;
       this.bestTime = this.loadBestTime();
       this.stopTimer();
     },
@@ -258,7 +270,8 @@ export default {
     saveBestTime() {
       try {
         const prev = this.loadBestTime();
-        if (prev === null || this.timer < prev) {
+        this.isNewBest = prev === null || this.timer < prev;
+        if (this.isNewBest) {
           localStorage.setItem(this.bestKey(), String(this.timer));
           this.bestTime = this.timer;
         }
@@ -388,6 +401,10 @@ export default {
 .ms-banner.lose { background: #6b2e2e; }
 
 .ms-best { opacity: 0.85; font-size: 12px; }
+
+.ms-submit {
+  margin: 8px 12px 0;
+}
 
 .ms-board-wrap {
   flex: 1;
