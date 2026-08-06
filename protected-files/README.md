@@ -15,6 +15,8 @@ script expects its protected files one level *above* that web root:
 
 ```
 <web root>/download.php                          <- shipped automatically via dist/
+<web root>/version.php                            <- shipped automatically via dist/
+<web root>/downloads-config.php                    <- shipped automatically via dist/
 <one level above web root>/protected-files/
     portfolio-fotografie.zip                      <- upload manually
     download-secrets.php                          <- upload manually
@@ -37,8 +39,9 @@ paths in `download.php` and protect the folder with an `.htaccess` containing
 `Require all denied` (Apache 2.4) so it can't be downloaded directly.
 
 ## Adding more downloads
-Add an entry to `$DOWNLOADS` in `public/download.php` (with its own `passwordKey`)
-and a matching item in `Downloads.vue`.
+Add an entry to `$DOWNLOADS` in `public/downloads-config.php` (with its own
+`passwordKey`, or a `pattern`/`versionRegex` pair for a filename-versioned download
+like Playdeck) and a matching item in `Downloads.vue`.
 
 ## LunarHome app download
 
@@ -57,10 +60,23 @@ unlock will fail with "Something went wrong" / 503.
 ## Playdeck app download
 
 Released - `available: true` in `Downloads.vue`'s `playdeck` entry. No password: the
-`playdeck` entry in `download.php` has no `passwordKey`, so the file is gated only by
-living outside the web root, not by a password prompt.
+`playdeck` entry in `downloads-config.php` has no `passwordKey`, so the file is gated
+only by living outside the web root, not by a password prompt.
 
-Before deploying, make sure the server actually has the file at
-`protected-files/Playdeck Setup 2.0.1.exe` (outside the web root, exact filename
-including spaces). Without it, the download button will show but requesting it will
-fail with "Something went wrong" / 404.
+**The version shown on the site is read automatically from the uploaded filename** -
+no code change or redeploy needed for a new release. To ship a new version:
+
+1. Upload the new build to `protected-files/Playdeck Setup <version>.exe` (outside the
+   web root, exact naming - e.g. `Playdeck Setup 2.1.0.exe`). Old versions may be left
+   in place or deleted; whichever file has the highest version number wins.
+2. That's it. `Downloads.vue` calls `GET /version.php?id=playdeck` on load, which
+   scans `protected-files/` for files matching `Playdeck Setup *.exe`, picks the
+   highest version via `version_compare()`, and returns its version + file size. The
+   download button (`POST /download.php`) resolves the same file.
+
+Without a matching file present, the download card will show but requesting it will
+fail with "Something went wrong" / 404, and the version/size will stay blank.
+
+The matching/version-resolution logic lives in `downloads-config.php` (shipped in
+`dist/`, alongside `download.php` and `version.php`) so it's shared between the
+download and version-lookup endpoints.

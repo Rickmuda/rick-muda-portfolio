@@ -176,8 +176,12 @@ export default {
           id: "playdeck",
         titleKey: "dlPlaydeckTitle",
           descKey: "dlPlaydeckDesc",
-          version: "v2.0.1",
+          // Populated at runtime from /version.php, which reads the version
+          // straight out of the uploaded filename (see autoVersion below) -
+          // no hardcoding, no redeploy needed when a new build is uploaded.
+          version: "",
           size: "",
+          autoVersion: true,
           thumbnail: new URL("@/assets/img/downloads/playdeck_icon.webp", import.meta.url).href,
           // Lives outside the web root (protected-files/) and is streamed via
           // public/download.php like the protected downloads, but no
@@ -213,6 +217,10 @@ export default {
       this.isMobile = e.matches;
     };
     this.mq.addEventListener("change", this.onMqChange);
+
+    this.downloads.forEach((item) => {
+      if (item.autoVersion) this.fetchVersion(item);
+    });
   },
   beforeUnmount() {
     if (this.mq) this.mq.removeEventListener("change", this.onMqChange);
@@ -234,6 +242,31 @@ export default {
     },
     metaText(item) {
       return [item.version, item.size].filter(Boolean).join(" · ");
+    },
+    formatBytes(bytes) {
+      if (!bytes) return "";
+      const units = ["B", "KB", "MB", "GB"];
+      let value = bytes;
+      let unitIndex = 0;
+      while (value >= 1024 && unitIndex < units.length - 1) {
+        value /= 1024;
+        unitIndex++;
+      }
+      return `${value.toFixed(unitIndex === 0 ? 0 : 1)} ${units[unitIndex]}`;
+    },
+    // Reads the current version/size for items whose version lives in the
+    // uploaded filename (see downloads-config.php on the server) instead of
+    // being hardcoded here.
+    async fetchVersion(item) {
+      try {
+        const response = await fetch(`/version.php?id=${encodeURIComponent(item.id)}`);
+        if (!response.ok) return;
+        const data = await response.json();
+        if (data.version) item.version = `v${data.version}`;
+        if (data.size) item.size = this.formatBytes(data.size);
+      } catch (error) {
+        console.error("Version lookup error:", error);
+      }
     },
     setInputRef(id, el) {
       if (el) this.inputRefs[id] = el;

@@ -333,6 +333,9 @@ export default {
   height: 30px;
   border-radius: 50%;
   object-fit: cover;
+  /* Pulled toward the top: the source photo is a tall portrait, so a
+     centered crop lands on the sweater instead of the face. */
+  object-position: 50% 12%;
   border: 1px solid rgba(255, 255, 255, 0.3);
 }
 

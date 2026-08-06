@@ -283,12 +283,20 @@ export default {
   align-items: flex-end;
 }
 
-/* Start button: same look as the app icons, with the profile photo as its glyph. */
+/* Start button: same look as the app icons, with the profile photo as its glyph.
+   object-position is pulled toward the top since the source photo is a tall
+   portrait - a centered crop lands on the sweater instead of the face. */
 .start-img {
   width: 26px;
   height: 26px;
   object-fit: cover;
+  object-position: 50% 12%;
   border-radius: 50%;
+  transition: transform 0.15s ease;
+}
+
+.taskbar-icon:hover .start-img {
+  transform: scale(1.06);
 }
 </style>
 

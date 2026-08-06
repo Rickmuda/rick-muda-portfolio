@@ -64,8 +64,12 @@ const transporter = nodemailer.createTransport({
 // This repo's commits ARE its version numbers (see vite.config.js, which
 // injects `git log -1 --pretty=%s` as __COMMIT_SUMMARY__ and shows it in the
 // Start Menu as "Current version"). So the triggering commit message doubles
-// as the version to show subscribers here.
-const version = UPDATE_MESSAGE.split("\n")[0].trim().slice(0, 200) || "latest";
+// as the version to show subscribers here. Same split as vite.config.js's
+// %s/%b: first line is the version, the rest (minus the blank separator
+// line) is the description shown alongside it.
+const [firstLine, ...restLines] = UPDATE_MESSAGE.split("\n");
+const version = firstLine.trim().slice(0, 200) || "latest";
+const description = restLines.join("\n").trim();
 
 const escapeHtml = (s) =>
   s.replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -80,7 +84,7 @@ for (const { email, unsubscribe_token } of subscribers) {
   const text = `Hey,
 
 Just pushed an update to my portfolio (v${version}). Figured you'd want to know since you signed up for this.
-
+${description ? `\n${description}\n` : ""}
 ${SITE_URL}
 
 Rick
@@ -95,9 +99,10 @@ Unsubscribe: ${unsubscribeUrl}`;
   <p style="font-size: 16px; line-height: 1.6; margin: 0 0 20px;">
     Just pushed an update to my portfolio. Figured you'd want to know since you signed up for this.
   </p>
-  <div style="display: inline-block; background: #9b20b7; color: #ffffff; font-weight: 700; font-size: 14px; padding: 8px 16px; border-radius: 6px; margin: 0 0 24px;">
+  <div style="display: inline-block; background: #9b20b7; color: #ffffff; font-weight: 700; font-size: 14px; padding: 8px 16px; border-radius: 6px; margin: 0 0 20px;">
     Version ${escapeHtml(version)}
   </div>
+  ${description ? `<p style="font-size: 15px; line-height: 1.6; margin: 0 0 24px; color: #333333; white-space: pre-line;">${escapeHtml(description)}</p>` : ""}
   <p style="margin: 0 0 28px;">
     <a href="${SITE_URL}" style="display: inline-block; background: #1a1a24; color: #ffffff; text-decoration: none; font-weight: 700; padding: 12px 22px; border-radius: 6px;">Check it out</a>
   </p>

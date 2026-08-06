@@ -8,38 +8,19 @@
  *
  * Deploy layout (shared hosting):
  *   <webroot>/download.php                         <- this file (shipped in dist/)
+ *   <webroot>/downloads-config.php                  <- shared registry (shipped in dist/)
  *   <one level above webroot>/protected-files/
  *       portfolio-fotografie.zip                   <- the file (upload manually)
  *       download-secrets.php                       <- passwords (upload manually)
  *
  * download-secrets.php must return an array, e.g.:
  *   <?php return ['DOWNLOAD_PORTFOLIO_PASSWORD' => 'your-strong-password']; ?>
+ *
+ * The registry of downloads (and the version-resolution helpers used by
+ * version.php too) lives in downloads-config.php.
  */
 
-// Registry of protected downloads. Add more entries as needed.
-$DOWNLOADS = [
-    'portfolio-fotografie' => [
-        'file'        => __DIR__ . '/../protected-files/portfolio-fotografie.zip',
-        'downloadName' => 'Portfolio-opdracht-Fotografie.zip',
-        'passwordKey' => 'DOWNLOAD_PORTFOLIO_PASSWORD',
-    ],
-    'stickyreminders' => [
-        'file'        => __DIR__ . '/../protected-files/StickyReminders.apk',
-        'downloadName' => 'StickyReminders.apk',
-        'passwordKey' => 'DOWNLOAD_STICKYREMINDERS_PASSWORD',
-    ],
-    'lunarhome' => [
-        'file'        => __DIR__ . '/../protected-files/LunarHome.apk',
-        'downloadName' => 'LunarHome.apk',
-        'passwordKey' => 'DOWNLOAD_LUNARHOME_PASSWORD',
-    ],
-    // No passwordKey: the file still lives outside the web root (so it can't
-    // be reached by guessing a URL), but no password is required to fetch it.
-    'playdeck' => [
-        'file'        => __DIR__ . '/../protected-files/Playdeck Setup 2.0.1.exe',
-        'downloadName' => 'Playdeck Setup 2.0.1.exe',
-    ],
-];
+require __DIR__ . '/downloads-config.php';
 
 function send_json($status, $payload)
 {
@@ -87,15 +68,15 @@ if (!empty($entry['passwordKey'])) {
     }
 }
 
-$file = $entry['file'];
-if (!is_file($file)) {
+$resolved = resolve_download_entry($entry);
+if ($resolved === null) {
     send_json(404, ['error' => 'File not available']);
 }
 
 // Stream the file as an attachment.
 header('Content-Type: application/octet-stream');
-header('Content-Disposition: attachment; filename="' . $entry['downloadName'] . '"');
-header('Content-Length: ' . filesize($file));
+header('Content-Disposition: attachment; filename="' . $resolved['downloadName'] . '"');
+header('Content-Length: ' . filesize($resolved['file']));
 header('Cache-Control: no-store');
-readfile($file);
+readfile($resolved['file']);
 exit;
