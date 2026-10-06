@@ -124,8 +124,7 @@
 <script>
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import FolderOverlay from "./FolderOverlay.vue";
-import { projects as projectsData } from "../projectsData";
-import { galleryImages } from "../galleryImages";
+import { visibleProjects, visibleArt, projectTitle } from "../contentStore";
 
 const APPS_PER_PAGE = 6;
 
@@ -202,13 +201,13 @@ export default {
           out.push({ kind: "app", id: "a-" + a.name, label, icon: a.icon, name: a.name });
         }
       }
-      for (const p of projectsData) {
-        const label = this.$t(p.titleKey);
+      for (const p of visibleProjects()) {
+        const label = projectTitle(p);
         if (label.toLowerCase().includes(q)) {
           out.push({ kind: "project", id: "p-" + p.titleKey, label, icon: "code", titleKey: p.titleKey });
         }
       }
-      for (const im of galleryImages) {
+      for (const im of visibleArt()) {
         if (im.name.toLowerCase().includes(q)) {
           out.push({ kind: "photo", id: "img-" + im.name, label: im.name, icon: "image", src: im.src });
         }

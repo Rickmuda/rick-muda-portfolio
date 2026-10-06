@@ -125,6 +125,11 @@ export default {
         case "clear":
           this.history = [];
           break;
+        // Not listed in `help`: opens the admin panel (login required there).
+        case "admin":
+          this.print([this.$t("mudaOpeningAdmin")]);
+          window.dispatchEvent(new CustomEvent("open-app", { detail: "admin" }));
+          break;
         default:
           this.print([this.$t("mudaUnknown", { cmd })], "error");
       }

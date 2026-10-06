@@ -4,6 +4,7 @@ import { createApp } from "vue";
 import App from "./App.vue";
 import i18n from "./i18n";
 import router from "./router";
+import { loadContent } from "./contentStore";
 
 // Import FontAwesome
 import { library } from "@fortawesome/fontawesome-svg-core";
@@ -68,6 +69,13 @@ import {
   faRankingStar,
   faTableCellsLarge,
   faPlus,
+  faEye,
+  faEyeSlash,
+  faPen,
+  faGripVertical,
+  faUpload,
+  faRightFromBracket,
+  faFloppyDisk,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faTwitter,
@@ -138,7 +146,14 @@ library.add(
   faBell,
   faRankingStar,
   faTableCellsLarge,
-  faPlus
+  faPlus,
+  faEye,
+  faEyeSlash,
+  faPen,
+  faGripVertical,
+  faUpload,
+  faRightFromBracket,
+  faFloppyDisk
 );
 library.add(faTwitter, faInstagram, faLinkedin, faGithub, faYoutube, faTiktok, faSpotify, faSteam);
 
@@ -151,3 +166,7 @@ app.use(router);
 app.component("font-awesome-icon", FontAwesomeIcon);
 
 app.mount("#app");
+
+// Swap in projects/photos/texts saved from the admin panel (falls back to the
+// bundled defaults if there are none or the API is unreachable).
+loadContent();

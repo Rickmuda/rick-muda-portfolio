@@ -1,10 +1,11 @@
-// Single source of truth for the portfolio projects. Consumed by:
-//   - Projects.vue (the detailed Projects folder, translates titleKey/descKey)
-//   - PicturesGallery.vue (the "Project photos" gallery, flattens images)
+// Default portfolio projects, bundled with the site. Components never import
+// this directly: they read src/contentStore.js, which uses these defaults until
+// the admin panel has saved its own version on the server.
 //
-// Titles/descriptions are i18n keys; the consuming component translates them.
+// Titles/descriptions are i18n keys; images are "bundled:" references that the
+// store resolves to real asset URLs (so they can also be stored as JSON).
 
-const img = (file) => new URL(`./assets/img/projects/${file}`, import.meta.url).href;
+const img = (file) => `bundled:projects/${file}`;
 
 export const projects = [
   {

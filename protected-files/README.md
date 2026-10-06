@@ -1,5 +1,8 @@
 # Protected download files
 
+> Also holds the admin panel's secrets and saved content - see
+> [Admin panel](#admin-panel) at the bottom.
+
 Files for the password-protected download window are served **only** by
 `public/download.php` (deployed to `www.rickmuda.nl/download.php`). They are never
 served statically and are excluded from git (see `.gitignore`), so they cannot leak
@@ -80,3 +83,56 @@ fail with "Something went wrong" / 404, and the version/size will stay blank.
 The matching/version-resolution logic lives in `downloads-config.php` (shipped in
 `dist/`, alongside `download.php` and `version.php`) so it's shared between the
 download and version-lookup endpoints.
+
+## Admin panel
+
+Open the **MudaDigitaal** terminal on the site and type `admin`. That opens the admin
+panel (it is not listed in `help`, the start menu or search). From there you can
+manage projects, project photos, the Art gallery, all texts (EN + NL) and remove
+scoreboard entries.
+
+It is backed by PHP endpoints in `public/api/` (shipped via `dist/` like
+`download.php`) and stores everything on the server:
+
+```
+<web root>/api/*.php                         <- shipped automatically via dist/
+<web root>/uploads/projects|art/             <- uploaded photos (created on first upload)
+<one level above web root>/protected-files/
+    admin-secrets.php                        <- upload manually (see below)
+    cms/content.json                         <- written by the admin panel
+    cms/backups/                             <- last 10 versions of content.json
+    cms/login-attempts.json                  <- login rate limiting
+```
+
+`uploads/` is excluded from the deploy mirror in `.github/workflows/deploy.yml`, so
+uploaded photos survive deploys. Until the first save, the site keeps using the
+defaults in `src/projectsData.js`, `src/galleryImages.js` and `src/i18n.js`.
+
+### One-time setup on the server
+
+1. Make a password hash (locally, with PHP installed):
+   ```
+   php -r "echo password_hash('your-strong-password', PASSWORD_DEFAULT);"
+   ```
+2. Upload `protected-files/admin-secrets.php` (outside the web root, next to
+   `download-secrets.php`):
+   ```php
+   <?php
+   return [
+       'ADMIN_PASSWORD_HASH' => '$2y$10$...the hash from step 1...',
+       // Only needed for scoreboard moderation (Supabase -> Project settings -> API keys):
+       'SUPABASE_SERVICE_ROLE_KEY' => '...',
+   ];
+   ```
+   Use single quotes around the hash (it contains `$`).
+3. Make sure PHP can write to `protected-files/cms/` and `<web root>/uploads/`
+   (both are created automatically if the parent folder is writable).
+
+### Notes
+- Five wrong passwords from the same IP lock the login for 15 minutes.
+- A session lasts at most 8 hours.
+- Deleting a photo (or a project/art item with uploaded photos) removes the file from
+  `uploads/` when you save. Restoring an older backup from `cms/backups/` will
+  therefore not bring those files back.
+- The admin panel only works on the live site (or `php -S` on a built `dist/`), not on
+  `npm run dev`, which has no PHP. The site itself still works there with the defaults.

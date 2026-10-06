@@ -268,9 +268,9 @@ export default {
       unlockAchievement("first-boot");
       this.openedAppsEver.add(appName);
       // Count unique openable app windows the user has opened. Excluded: the easter
-      // egg, the File Explorer chrome, and projects/downloads/artGallery (on desktop
+      // egg, the hidden admin panel, the File Explorer chrome, and projects/downloads/artGallery (on desktop
       // these are embedded folders in the Explorer, not standalone windows).
-      const NON_APP = new Set(["oldVideo", "fileExplorer", "projects", "downloads", "artGallery"]);
+      const NON_APP = new Set(["oldVideo", "fileExplorer", "projects", "downloads", "artGallery", "admin"]);
       const trackable = new Set(
         Object.keys(windowConfig).filter((k) => !NON_APP.has(k))
       );
@@ -400,6 +400,7 @@ export default {
     getAppMeta(name) {
       const fromList = appList.find((a) => a.name === name);
       if (fromList) return fromList;
+      if (name === "admin") return { name, icon: "lock", labelKey: "admin" };
       if (this.easterEggApps.includes(name)) {
         return { name, icon: "egg", labelKey: "easterEgg" };
       }
@@ -627,6 +628,10 @@ export default {
       this.isMobile = window.innerWidth <= 768;
       this.deviceTier = getDeviceTier();
     },
+    handleOpenAppEvent(event) {
+      const name = event.detail;
+      if (windowConfig[name]) this.ensureOpen(name);
+    },
     updateLanguage(lang) {
       this.currentLanguage = lang;
       this.$i18n.locale = lang;
@@ -673,9 +678,13 @@ export default {
     this.wallpaperUnsubscribe = onWallpaperChange((wp) => {
       this.wallpaper = wp;
     });
+
+    // Lets a window open another one (the terminal's `admin` command).
+    window.addEventListener("open-app", this.handleOpenAppEvent);
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.checkMobile);
+    window.removeEventListener("open-app", this.handleOpenAppEvent);
     if (this.keydownListenerAdded) {
       window.removeEventListener("keydown", this.handleKeydown);
       this.keydownListenerAdded = false;

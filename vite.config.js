@@ -24,8 +24,23 @@ export default defineConfig({
         // the service-worker precache stays lean and installs reliably.
         globIgnores: ["**/portfoliovideo.*", "**/*.mov", "**/*.mp4"],
         maximumFileSizeToCacheInBytes: 5_000_000,
+        // The admin API and uploaded photos live only on the server, never in
+        // the SPA: don't answer those URLs with the cached index.html.
+        navigateFallbackDenylist: [/^\/api\//, /^\/uploads\//],
         // Runtime-cache videos on demand so they still work offline once watched.
         runtimeCaching: [
+          {
+            // Admin-panel uploads get a unique filename, so a cached copy never goes stale.
+            urlPattern: ({ url }) => url.pathname.startsWith("/uploads/"),
+            handler: "CacheFirst",
+            options: {
+              cacheName: "uploads",
+              expiration: {
+                maxEntries: 200,
+                maxAgeSeconds: 60 * 60 * 24 * 30,
+              },
+            },
+          },
           {
             urlPattern: /\.(?:mp4|webm|mov)$/i,
             handler: "CacheFirst",

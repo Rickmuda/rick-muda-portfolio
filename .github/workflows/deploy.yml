@@ -27,8 +27,10 @@ jobs:
         timeout-minutes: 20
         run: |
           sudo apt-get install -y lftp
+          # uploads/ only exists on the server (photos from the admin panel),
+          # so keep --delete away from it or every deploy would wipe them.
           lftp -u "$FTP_USERNAME","$FTP_PASSWORD" \
-            -e "set ftp:ssl-allow no; set net:timeout 30; set net:max-retries 3; set net:reconnect-interval-base 5; mirror --reverse --delete --verbose --parallel=4 dist/ $FTP_DEST; bye" \
+            -e "set ftp:ssl-allow no; set net:timeout 30; set net:max-retries 3; set net:reconnect-interval-base 5; mirror --reverse --delete --verbose --parallel=4 --exclude-glob uploads/ dist/ $FTP_DEST; bye" \
             web1.ping64.net
 
       - name: 📧 Notify newsletter subscribers

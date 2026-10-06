@@ -60,8 +60,7 @@
 <script>
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { getRootNodes } from "../filesystem";
-import { projects as projectsData } from "../projectsData";
-import { galleryImages } from "../galleryImages";
+import { visibleProjects, visibleArt, projectTitle } from "../contentStore";
 
 export default {
   components: { FontAwesomeIcon },
@@ -110,13 +109,13 @@ export default {
           out.push({ kind: "node", id: "n-" + n.id, label, icon: n.icon, node: n });
         }
       }
-      for (const p of projectsData) {
-        const label = this.$t(p.titleKey);
+      for (const p of visibleProjects()) {
+        const label = projectTitle(p);
         if (label.toLowerCase().includes(q)) {
           out.push({ kind: "project", id: "p-" + p.titleKey, label, icon: "folder", titleKey: p.titleKey });
         }
       }
-      for (const im of galleryImages) {
+      for (const im of visibleArt()) {
         if (im.name.toLowerCase().includes(q)) {
           out.push({ kind: "photo", id: "img-" + im.name, label: im.name, icon: "image", src: im.src });
         }

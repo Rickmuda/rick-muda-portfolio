@@ -137,7 +137,7 @@
 </template>
 
 <script>
-import { projects as projectsData } from "../../projectsData";
+import { visibleProjects, projectTitle, projectDesc } from "../../contentStore";
 
 export default {
   props: {
@@ -148,13 +148,13 @@ export default {
   },
   data() {
     return {
-      projects: [],
       recycleProjects: [],
       selectedProject: null,
       currentImageIndex: 0,
       carouselInterval: null,
-      sortBy: 'date',
-      sortDirection: 'desc',
+      // 'order' = the order set in the admin panel (drag to reorder).
+      sortBy: 'order',
+      sortDirection: 'asc',
       pmSelected: null,
       pmDetailIndex: 0,
       pmTouchStartX: 0,
@@ -164,6 +164,15 @@ export default {
     };
   },
   computed: {
+    // Project data lives in src/contentStore.js (shared with the Project photos
+    // gallery and editable from the admin panel).
+    projects() {
+      return visibleProjects().map((p) => ({
+        ...p,
+        title: projectTitle(p),
+        description: projectDesc(p),
+      }));
+    },
     sortedProjects() {
       const typeOrder = { 'Web Project': 0, 'Portfolio': 1, 'Video Project': 2, 'Game': 3 };
       const statusOrder = { 'Published': 0, 'W.I.P': 1, 'Outdated': 2, 'Private': 3, 'Scrapped': 4 };
@@ -187,6 +196,9 @@ export default {
           case 'date':
             comparison = new Date(b.dateCreated) - new Date(a.dateCreated);
             break;
+          case 'order':
+            comparison = a.order - b.order;
+            break;
         }
         
         return this.sortDirection === 'asc' ? comparison : -comparison;
@@ -196,6 +208,23 @@ export default {
   watch: {
     selection() {
       this.applySelection();
+    },
+    // Content can arrive from the server after the window opened, or change
+    // while it is open (admin panel save): keep the selection pointing at
+    // the fresh copy of the same project.
+    projects() {
+      const key = this.selectedProject?.titleKey;
+      const fresh = key && this.sortedProjects.find((p) => p.titleKey === key);
+      if (fresh) {
+        this.selectedProject = fresh;
+        if (this.currentImageIndex >= fresh.images.length) this.currentImageIndex = 0;
+      } else if (!this.applySelection()) {
+        this.selectProject(this.sortedProjects[0] || null);
+      }
+      if (this.pmSelected) {
+        this.pmSelected = this.sortedProjects.find((p) => p.titleKey === this.pmSelected.titleKey) || null;
+        this.pmDetailIndex = 0;
+      }
     },
   },
   methods: {
@@ -322,22 +351,11 @@ export default {
       this.pmTouchDeltaX = 0;
       this.pmIsSwiping = false;
     },
-    initializeProjects() {
-      // Project data lives in src/projectsData.js (shared with the Project photos
-      // gallery). Translate the i18n keys into display fields here.
-      this.projects = projectsData.map((p) => ({
-        ...p,
-        title: this.$t(p.titleKey),
-        description: this.$t(p.descKey),
-      }));
-
-      // Scrapped / back-burner projects shown in the Recycle Bin (variant='recycle').
-      // Empty for now - add scrapped work here when there is some.
-      this.recycleProjects = [];
-    }
   },
   created() {
-    this.initializeProjects();
+    // Scrapped / back-burner projects shown in the Recycle Bin (variant='recycle').
+    // Empty for now - add scrapped work here when there is some.
+    this.recycleProjects = [];
     if (!this.applySelection()) {
       this.selectedProject = this.sortedProjects[0] || null;
     }

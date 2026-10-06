@@ -41,8 +41,7 @@
 <script>
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import { unlock as unlockAchievement } from "../../achievements";
-import { projects as projectsData } from "../../projectsData";
-import { galleryImages } from "../../galleryImages";
+import { visibleProjects, visibleArt, projectTitle } from "../../contentStore";
 
 export default {
   name: "PicturesGallery",
@@ -63,15 +62,15 @@ export default {
     images() {
       if (this.source === "projects") {
         const out = [];
-        for (const p of projectsData) {
-          const title = this.$t(p.titleKey);
+        for (const p of visibleProjects()) {
+          const title = projectTitle(p);
           p.images.forEach((src, i) => {
             out.push({ src, name: p.images.length > 1 ? `${title} (${i + 1})` : title });
           });
         }
         return out;
       }
-      return galleryImages;
+      return visibleArt();
     },
     currentImage() {
       return this.images[this.fullscreenIndex] || null;

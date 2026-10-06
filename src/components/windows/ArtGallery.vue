@@ -93,6 +93,7 @@
 
 <script>
 import { unlock as unlockAchievement } from "../../achievements";
+import { visibleArt } from "../../contentStore";
 
 export default {
   props: {
@@ -101,16 +102,6 @@ export default {
   },
   data() {
     return {
-      artGalleryImages: [
-        new URL('@/assets/img/imggallery/fnf.webp', import.meta.url).href,
-        new URL('@/assets/img/imggallery/panels.webp', import.meta.url).href,
-        new URL('@/assets/img/imggallery/pepe.webp', import.meta.url).href,
-        new URL('@/assets/img/imggallery/room.webp', import.meta.url).href,
-        new URL('@/assets/img/imggallery/vtuber.webp', import.meta.url).href,
-        new URL('@/assets/img/imggallery/pose.webp', import.meta.url).href,
-        new URL('@/assets/img/imggallery/swag.webp', import.meta.url).href,
-        new URL('@/assets/img/imggallery/dance.gif', import.meta.url).href,
-      ],
       selectedImageIndex: 0,
       frozenGifFrames: {},
       touchStartX: 0,
@@ -126,7 +117,18 @@ export default {
   beforeUnmount() {
     window.removeEventListener('keydown', this.handleKeydown);
   },
+  computed: {
+    // Art list lives in src/contentStore.js (editable from the admin panel).
+    artGalleryImages() {
+      return visibleArt().map((a) => a.src);
+    },
+  },
   watch: {
+    artGalleryImages() {
+      this.frozenGifFrames = {};
+      if (this.selectedImageIndex >= this.artGalleryImages.length) this.selectedImageIndex = 0;
+      this.extractGifFirstFrames();
+    },
     selectedImageIndex() {
       this.$nextTick(this.scrollActiveThumb);
     },

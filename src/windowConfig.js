@@ -28,6 +28,8 @@ const windowLoaders = {
   fileExplorer:    () => import("./components/windows/FileExplorer.vue"),
   camera:          () => import("./components/windows/CameraApp.vue"),
   scoreboards:     () => import("./components/windows/Scoreboards.vue"),
+  // Hidden admin panel, opened only via the `admin` terminal command.
+  admin:           () => import("./components/windows/AdminPanel.vue"),
 };
 
 const lazy = (loader) => defineAsyncComponent(loader);
@@ -53,6 +55,7 @@ export const windowConfig = {
   fileExplorer:    { component: lazy(windowLoaders.fileExplorer),    title: "fileExplorer",   defaultWidth: 1240, defaultHeight: 800, defaultX: 180, defaultY: 50 },
   camera:          { component: lazy(windowLoaders.camera),         title: "camera",         defaultWidth: 480,  defaultHeight: 720, defaultX: 360, defaultY: 40 },
   scoreboards:     { component: lazy(windowLoaders.scoreboards),    title: "scoreboards",    defaultWidth: 800,  defaultHeight: 600, defaultX: 340, defaultY: 90 },
+  admin:           { component: lazy(windowLoaders.admin),          title: "admin",          defaultWidth: 1100, defaultHeight: 780, defaultX: 160, defaultY: 30 },
 };
 
 // Warm the dynamic-import cache for every window during browser idle time so

@@ -1,7 +1,7 @@
-// Shared list of the (non-project) art photos shown in the Art folder gallery.
-// Consumed by PicturesGallery.vue (source='art') and the start-menu search.
+// Default (non-project) art photos, bundled with the site. Components read
+// them through src/contentStore.js, which the admin panel can override.
 
-const img = (file) => new URL(`./assets/img/imggallery/${file}`, import.meta.url).href;
+const img = (file) => `bundled:art/${file}`;
 
 export const galleryImages = [
   { src: img("room.webp"),   name: "room" },

@@ -78,6 +78,25 @@
         <font-awesome-icon icon="egg" />
         <span v-if="openWindows.includes(app)" class="taskbar-indicator" :class="{ minimized: minimizedWindows[app] }"></span>
       </div>
+
+      <!-- Admin panel: hidden app, so its icon only shows while the window is open. -->
+      <div
+        v-if="openWindows.includes('admin')"
+        class="taskbar-icon"
+        :class="iconState('admin')"
+        tabindex="0"
+        role="button"
+        aria-pressed="true"
+        :title="$t('admin')"
+        @click="openApp('admin')"
+        @keydown.enter="openApp('admin')"
+        @keydown.space.prevent="openApp('admin')"
+        @mouseenter="onIconEnter('admin', $event)"
+        @mouseleave="onIconLeave"
+      >
+        <font-awesome-icon icon="lock" />
+        <span class="taskbar-indicator" :class="{ minimized: minimizedWindows.admin }"></span>
+      </div>
     </div>
 
     <!-- Hover preview of a minimized window -->
