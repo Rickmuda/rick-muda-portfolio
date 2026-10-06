@@ -136,3 +136,19 @@ defaults in `src/projectsData.js`, `src/galleryImages.js` and `src/i18n.js`.
   therefore not bring those files back.
 - The admin panel only works on the live site (or `php -S` on a built `dist/`), not on
   `npm run dev`, which has no PHP. The site itself still works there with the defaults.
+
+### Downloads, vinyl, skill tree, wallpapers and statistics
+
+These are also managed from the admin panel (tabs of the same name):
+
+- **Downloads**: once the admin panel has saved its downloads list, that list decides
+  which downloads exist, whether they need a password and whether they're available.
+  Files uploaded from the panel go to `protected-files/cms-downloads/<id>/` (uploaded
+  in 2 MB chunks, so large files work regardless of the host's upload limit) and win
+  over the files listed in `downloads-config.php`. Passwords set from the panel are
+  stored as hashes in `protected-files/cms/download-passwords.json` and win over
+  `download-secrets.php`. Downloads without a panel file/password keep using the
+  existing files and passwords described above.
+- **Statistics** (`public/api/stats.php`): daily totals in `protected-files/cms/stats/`.
+  No cookies; unique visitors are counted with a per-day hash that is deleted after
+  two days. The admin's own browser is excluded after logging in once.

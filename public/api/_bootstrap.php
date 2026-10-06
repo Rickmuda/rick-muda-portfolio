@@ -23,6 +23,10 @@ define('CONTENT_FILE', CMS_DIR . '/content.json');
 define('BACKUP_DIR', CMS_DIR . '/backups');
 define('UPLOADS_DIR', __DIR__ . '/../uploads');
 define('MAX_BACKUPS', 10);
+// Sub-folders of uploads/ the admin panel may upload images into.
+define('UPLOAD_FOLDERS', ['projects', 'art', 'downloads', 'vinyl', 'wallpapers', 'about', 'cv']);
+// Download files managed from the admin panel (outside the web root).
+define('CMS_DOWNLOADS_DIR', PROTECTED_DIR . '/cms-downloads');
 
 function send_json($status, $payload)
 {

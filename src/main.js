@@ -76,6 +76,8 @@ import {
   faUpload,
   faRightFromBracket,
   faFloppyDisk,
+  faLink,
+  faChartColumn,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faTwitter,
@@ -86,6 +88,15 @@ import {
   faTiktok,
   faSpotify,
   faSteam,
+  faXTwitter,
+  faBluesky,
+  faFacebook,
+  faTwitch,
+  faDiscord,
+  faReddit,
+  faSoundcloud,
+  faBehance,
+  faDribbble,
 } from "@fortawesome/free-brands-svg-icons";
 
 // Add icons to the library
@@ -153,9 +164,13 @@ library.add(
   faGripVertical,
   faUpload,
   faRightFromBracket,
-  faFloppyDisk
+  faFloppyDisk,
+  faLink,
+  faChartColumn
 );
 library.add(faTwitter, faInstagram, faLinkedin, faGithub, faYoutube, faTiktok, faSpotify, faSteam);
+// Extra brands the About Me social links can use (see socialIcons in src/aboutData.js).
+library.add(faXTwitter, faBluesky, faFacebook, faTwitch, faDiscord, faReddit, faSoundcloud, faBehance, faDribbble);
 
 const app = createApp(App);
 

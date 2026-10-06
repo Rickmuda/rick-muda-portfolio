@@ -118,6 +118,7 @@ import { unlock as unlockAchievement } from "./achievements";
 import { getCurrent as getCurrentWallpaper, onChange as onWallpaperChange } from "./wallpapers";
 import { getOverride as getDarkModeOverride, setOverride as setDarkModeOverride } from "./darkMode";
 import { getChromeState, setChromeState } from "./windowState";
+import { trackVisit, trackOpen } from "./stats";
 import { getDeviceTier } from "./deviceTier";
 
 export default {
@@ -157,7 +158,9 @@ export default {
       booting: typeof sessionStorage !== "undefined" && sessionStorage.getItem("booted") !== "1",
       openedAppsEver: new Set(),
       windowThumbnails: {},
-      wallpaper: getCurrentWallpaper(),
+      // Bumped when the visitor picks a wallpaper (the pick itself lives in
+      // localStorage, which Vue can't watch).
+      wallpaperTick: 0,
       wallpaperUnsubscribe: null,
       // MediaQueryList for prefers-color-scheme, kept for cleanup. Only set when
       // there's no stored manual override and the browser supports matchMedia.
@@ -186,6 +189,11 @@ export default {
   computed: {
     windowConfig() {
       return windowConfig;
+    },
+    // Recomputed on a new pick and when the admin's wallpaper list arrives.
+    wallpaper() {
+      void this.wallpaperTick;
+      return getCurrentWallpaper();
     },
     wallpaperId() {
       return this.wallpaper.id;
@@ -264,6 +272,7 @@ export default {
       this.openWindows.push(appName);
       this.windowZIndices[appName] = this.zIndexCounter++;
       sounds.play("open");
+      trackOpen(appName);
 
       unlockAchievement("first-boot");
       this.openedAppsEver.add(appName);
@@ -288,6 +297,7 @@ export default {
         this.openWindows.push(appName);
         this.windowZIndices[appName] = this.zIndexCounter++;
         sounds.play("open");
+        trackOpen(appName);
         unlockAchievement("first-boot");
         return;
       }
@@ -304,6 +314,8 @@ export default {
       if (node.type === "explorer") {
         this.openExplorerRoot();
       } else if (node.type === "folder") {
+        // Folders open inside the File Explorer; count them under their own id.
+        trackOpen(node.id);
         this.explorerSelect = null;
         this.explorerPath = findNodePath(node.id) || [node.id];
         this.ensureOpen("fileExplorer");
@@ -665,6 +677,8 @@ export default {
 
     this.initDarkMode();
 
+    trackVisit({ device: this.isMobile ? "mobile" : "desktop", lang: this.$i18n.locale });
+
     if (!this.keydownListenerAdded) {
       window.addEventListener("keydown", this.handleKeydown);
       this.keydownListenerAdded = true;
@@ -675,8 +689,8 @@ export default {
       this.touchListenersAdded = true;
     }
 
-    this.wallpaperUnsubscribe = onWallpaperChange((wp) => {
-      this.wallpaper = wp;
+    this.wallpaperUnsubscribe = onWallpaperChange(() => {
+      this.wallpaperTick++;
     });
 
     // Lets a window open another one (the terminal's `admin` command).

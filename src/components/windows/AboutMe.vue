@@ -8,8 +8,8 @@
     ></div>
     
     <aside class="messenger-sidebar">
-      <img src="/src/assets/img/self-image-1.webp" alt="Rick" class="avatar" loading="lazy" decoding="async" />
-      <p class="status">Rick · Online</p>
+      <img v-if="about.avatar" :src="about.avatar" alt="Rick" class="avatar" loading="lazy" decoding="async" />
+      <p class="status">{{ about.status }}</p>
     </aside>
 
     <section class="messenger-chat">
@@ -19,9 +19,9 @@
             <span class="bubble-author">You</span>
             {{ item.question }}
           </div>
-          <div v-if="item.answer" class="bubble bubble-answer">
+          <div v-if="item.greeting || item.answer" class="bubble bubble-answer">
             <span class="bubble-author">Rick</span>
-            {{ item.answer }}
+            {{ item.greeting ? about.greeting : item.answer }}
           </div>
           <!-- File download box -->
           <div v-if="item.file" class="bubble bubble-answer file-bubble">
@@ -38,29 +38,17 @@
           <div v-if="item.socials" class="bubble bubble-answer socials-bubble">
             <span class="bubble-author">Rick</span>
             <div class="chat-socials">
-              <a href="https://twitter.com/Rick_rickerd" target="_blank" rel="noopener noreferrer" class="chat-social-icon" aria-label="Twitter">
-                <font-awesome-icon :icon="['fab', 'twitter']" />
-              </a>
-              <a href="https://www.instagram.com/rick_muda/" target="_blank" rel="noopener noreferrer" class="chat-social-icon" aria-label="Instagram">
-                <font-awesome-icon :icon="['fab', 'instagram']" />
-              </a>
-              <a href="https://www.linkedin.com/in/rick-ambergen-30b73a29a/" target="_blank" rel="noopener noreferrer" class="chat-social-icon" aria-label="LinkedIn">
-                <font-awesome-icon :icon="['fab', 'linkedin']" />
-              </a>
-              <a href="https://github.com/rickmuda" target="_blank" rel="noopener noreferrer" class="chat-social-icon" aria-label="GitHub">
-                <font-awesome-icon :icon="['fab', 'github']" />
-              </a>
-              <a href="https://www.youtube.com/channel/UCHSimkVEkXs0Xp1U4nInA0w" target="_blank" rel="noopener noreferrer" class="chat-social-icon" aria-label="YouTube">
-                <font-awesome-icon :icon="['fab', 'youtube']" />
-              </a>
-              <a href="https://www.tiktok.com/@rick_muda" target="_blank" rel="noopener noreferrer" class="chat-social-icon" aria-label="TikTok">
-                <font-awesome-icon :icon="['fab', 'tiktok']" />
-              </a>
-              <a href="https://open.spotify.com/user/rick_rickerd_rickman" target="_blank" rel="noopener noreferrer" class="chat-social-icon" aria-label="Spotify">
-                <font-awesome-icon :icon="['fab', 'spotify']" />
-              </a>
-              <a href="https://steamcommunity.com/id/rick_muda/" target="_blank" rel="noopener noreferrer" class="chat-social-icon" aria-label="Steam">
-                <font-awesome-icon :icon="['fab', 'steam']" />
+              <a
+                v-for="social in about.socials"
+                :key="social.id"
+                :href="social.url"
+                target="_blank"
+                rel="noopener noreferrer"
+                class="chat-social-icon"
+                :aria-label="social.label || social.icon"
+                :title="social.label || social.icon"
+              >
+                <font-awesome-icon :icon="social.icon === 'link' ? 'link' : ['fab', social.icon]" />
               </a>
             </div>
           </div>
@@ -69,7 +57,7 @@
             <span class="bubble-author">Rick</span>
             <div class="chat-certificates">
               <div 
-                v-for="(cert, certIndex) in certificatesList" 
+                v-for="(cert, certIndex) in about.certificates" 
                 :key="certIndex"
                 class="chat-certificate"
                 :class="{ expanded: expandedCertificates[certIndex] }"
@@ -98,11 +86,11 @@
 
       <div class="quick-options">
         <button
-          v-for="option in allOptions"
-          :key="option.key"
+          v-for="option in about.questions"
+          :key="option.id"
           class="option-button"
-          :class="{ used: usedKeys.includes(option.key), waiting: isTyping && !usedKeys.includes(option.key) }"
-          :disabled="isTyping || usedKeys.includes(option.key)"
+          :class="{ used: usedKeys.includes(option.id), waiting: isTyping && !usedKeys.includes(option.id) }"
+          :disabled="isTyping || usedKeys.includes(option.id)"
           @click="pickOption(option)"
         >
           {{ option.label }}
@@ -114,6 +102,7 @@
 
 <script>
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import { aboutSettings } from "../../contentStore";
 
 export default {
   components: {
@@ -121,69 +110,19 @@ export default {
   },
   data() {
     return {
-      allOptions: [
-        { key: "about", label: this.$t("tellMeAboutYourself") },
-        { key: "projects", label: this.$t("showMeYourProjects") },
-        { key: "skills", label: this.$t("whatAreYourSkills") },
-        { key: "cv", label: this.$t("canISeeYourCV") || "Can I see your CV?" },
-        { key: "socials", label: this.$t("whatAreYourSocials") || "What are your socials?" },
-        { key: "certificates", label: this.$t("showMeYourCertificates") || "Show me your certificates." },
-      ],
-      responses: {},
-      // Multi-message sequences for all options
-      sequences: {},
       usedKeys: [],
-      chatLog: [
-        {
-          answer: this.$t("greeting"),
-        },
-      ],
+      // The greeting entry renders about.greeting, so it follows language
+      // switches and admin changes.
+      chatLog: [{ greeting: true }],
       isTyping: false,
       expandedCertificates: {},
-      certificatesList: [
-        {
-          title: "Rat Tickling",
-          image: new URL('@/assets/img/certificates/rattickling.webp', import.meta.url).href
-        },
-        {
-          title: "Church of Dudeism",
-          image: new URL('@/assets/img/certificates/dudeism.webp', import.meta.url).href
-        },
-      ],
-    };
-  },
-  created() {
-    this.sequences = {
-      about: [
-        this.$t("aboutMeNerd"),
-        this.$t("aboutMeGadgets"),
-        this.$t("aboutMeVinyls"),
-        this.$t("aboutMeGames"),
-        this.$t("aboutMeBooks"),
-      ],
-      projects: [
-        this.$t("projectsIntro"),
-        this.$t("projectsGithub"),
-      ],
-      skills: [
-        this.$t("skillsIntro"),
-        this.$t("skillsLanguages"),
-        this.$t("skillsBackEnd"),
-      ],
-      cv: [
-        this.$t("cvSure"),
-      ],
-      socials: [
-        this.$t("socialsIntro"),
-      ],
-      certificates: [
-        this.$t("certificatesIntro"),
-      ],
     };
   },
   computed: {
-    availableOptions() {
-      return this.allOptions.filter((o) => !this.usedKeys.includes(o.key));
+    // Profile, questions + answers, CV, socials and certificates live in
+    // src/aboutData.js / the admin panel (via src/contentStore.js).
+    about() {
+      return aboutSettings();
     },
     hasCertificateExpanded() {
       return Object.values(this.expandedCertificates).some(expanded => expanded);
@@ -197,7 +136,7 @@ export default {
       if (this.isTyping) return;
 
       // Mark option as used
-      this.usedKeys.push(option.key);
+      this.usedKeys.push(option.id);
 
       // Show user message immediately
       this.chatLog.push({
@@ -206,12 +145,13 @@ export default {
       });
       this.scrollToBottom();
 
-      this.playSequence(option.key);
+      this.playSequence(option);
     },
 
-    async playSequence(key) {
-      const messages = this.sequences[key];
-      if (!messages || messages.length === 0) return;
+    async playSequence(option) {
+      const messages = option.messages;
+      const attachment = option.attachment;
+      if (!messages.length && attachment === "none") return;
       this.isTyping = true;
       this.scrollToBottom();
 
@@ -232,23 +172,20 @@ export default {
         this.scrollToBottom();
       }
 
-      // If this is the CV option, append the file download entry
-      if (key === "cv") {
+      // CV attachment: the download entry (only once a CV has been uploaded).
+      if (attachment === "cv" && this.about.cv) {
         const delay = 600 + Math.random() * 400;
         await this.wait(delay);
         this.chatLog.push({
           question: null,
           answer: null,
-          file: {
-            name: "Rick_Ambergen_CV.pdf",
-            url: "/cv/Rick_Ambergen_CV.pdf",
-          },
+          file: { ...this.about.cv },
         });
         this.scrollToBottom();
       }
 
-      // If this is the socials option, append the social icons entry
-      if (key === "socials") {
+      // Socials attachment: the social icons entry
+      if (attachment === "socials" && this.about.socials.length) {
         const delay = 600 + Math.random() * 400;
         await this.wait(delay);
         this.chatLog.push({
@@ -259,8 +196,8 @@ export default {
         this.scrollToBottom();
       }
 
-      // If this is the certificates option, append the certificates entry
-      if (key === "certificates") {
+      // Certificates attachment: the certificates entry
+      if (attachment === "certificates" && this.about.certificates.length) {
         const delay = 600 + Math.random() * 400;
         await this.wait(delay);
         this.chatLog.push({

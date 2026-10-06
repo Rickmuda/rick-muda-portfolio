@@ -2,7 +2,7 @@
 /**
  * Image upload for the admin panel.
  *
- * POST /api/upload.php  (multipart: file=<image>, folder=projects|art, X-CSRF-Token header)
+ * POST /api/upload.php  (multipart: file=<image>, folder=<one of UPLOAD_FOLDERS>, X-CSRF-Token header)
  *   -> {"url":"/uploads/projects/<random>.webp"}
  *
  * The file only becomes part of the site once content.php is saved with its
@@ -21,7 +21,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 require_admin();
 
 $folder = isset($_POST['folder']) ? (string) $_POST['folder'] : '';
-if (!in_array($folder, ['projects', 'art'], true)) {
+if (!in_array($folder, UPLOAD_FOLDERS, true)) {
     send_json(400, ['error' => 'Invalid folder']);
 }
 
@@ -32,6 +32,24 @@ if (!isset($_FILES['file']) || !is_array($_FILES['file']) || $_FILES['file']['er
 $file = $_FILES['file'];
 if ($file['size'] <= 0 || $file['size'] > MAX_UPLOAD_BYTES) {
     send_json(413, ['error' => 'File too large']);
+}
+
+// The cv/ folder takes PDFs only; every other folder takes images only.
+if ($folder === 'cv') {
+    $head = (string) file_get_contents($file['tmp_name'], false, null, 0, 5);
+    $mime = function_exists('finfo_open') ? (string) finfo_file(finfo_open(FILEINFO_MIME_TYPE), $file['tmp_name']) : '';
+    if ($head !== '%PDF-' || ($mime !== '' && $mime !== 'application/pdf')) {
+        send_json(415, ['error' => 'Unsupported file type']);
+    }
+    $dir = UPLOADS_DIR . '/cv';
+    ensure_dir($dir);
+    protect_uploads_dir();
+    $name = gmdate('Ymd') . '-' . bin2hex(random_bytes(8)) . '.pdf';
+    if (!move_uploaded_file($file['tmp_name'], $dir . '/' . $name)) {
+        send_json(500, ['error' => 'Could not store file']);
+    }
+    @chmod($dir . '/' . $name, 0644);
+    send_json(200, ['url' => '/uploads/cv/' . $name]);
 }
 
 // Check the actual bytes, never the client-supplied name/type.

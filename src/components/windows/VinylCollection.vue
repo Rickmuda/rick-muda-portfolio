@@ -148,7 +148,8 @@
 </template>
 
 <script>
-const DISCOGS_USERNAME = 'Rick_muda';
+import { vinylSettings } from '../../contentStore';
+
 const TICK_MS = 500;
 
 export default {
@@ -174,6 +175,13 @@ export default {
     };
   },
   computed: {
+    // Discogs user, hidden releases and hand-added albums (admin panel).
+    settings() {
+      return vinylSettings();
+    },
+    settingsKey() {
+      return JSON.stringify(this.settings);
+    },
     currentAlbum() {
       return this.albums[this.selectedIndex] || {};
     },
@@ -198,6 +206,9 @@ export default {
     },
   },
   watch: {
+    settingsKey() {
+      this.fetchCollection();
+    },
     currentAlbum(newAlbum) {
       if (newAlbum && newAlbum.discogsId && this.durations[newAlbum.discogsId] === undefined) {
         this.fetchAlbumDuration(newAlbum.discogsId);
@@ -228,7 +239,7 @@ export default {
         let totalPages = 1;
 
         do {
-          const url = `https://api.discogs.com/users/${encodeURIComponent(DISCOGS_USERNAME)}/collection/folders/0/releases?per_page=${perPage}&page=${page}&sort=added&sort_order=desc`;
+          const url = `https://api.discogs.com/users/${encodeURIComponent(this.settings.username)}/collection/folders/0/releases?per_page=${perPage}&page=${page}&sort=added&sort_order=desc`;
           const response = await fetch(url, { headers: { Accept: 'application/json' } });
 
           if (!response.ok) {
@@ -247,7 +258,16 @@ export default {
           page += 1;
         } while (page <= totalPages && page <= 5);
 
-        this.albums = collected;
+        const hidden = new Set(this.settings.hidden.map(Number));
+        const extra = this.settings.extra.map((a) => ({
+          id: `extra-${a.id}`,
+          discogsId: null,
+          title: a.title || 'Unknown title',
+          artist: a.artist || 'Unknown artist',
+          cover: a.cover || null,
+          thumb: a.cover || null,
+        }));
+        this.albums = [...extra, ...collected.filter((a) => !hidden.has(Number(a.discogsId)))];
       } catch (err) {
         this.error = err.message || 'Unknown error fetching collection.';
       } finally {

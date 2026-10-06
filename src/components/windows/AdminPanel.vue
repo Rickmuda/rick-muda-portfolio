@@ -4,56 +4,79 @@
     <div v-if="checking" class="cms-center">{{ $t('adminLoading') }}</div>
 
     <!-- Login -->
-    <form v-else-if="!admin.loggedIn" class="cms-login" @submit.prevent="doLogin">
-      <font-awesome-icon icon="lock" class="cms-login-icon" />
-      <h2>{{ $t('admin') }}</h2>
-      <input
-        ref="password"
-        v-model="password"
-        type="password"
-        class="cms-input"
-        :placeholder="$t('adminPassword')"
-        autocomplete="current-password"
-      />
-      <button type="submit" class="cms-btn primary" :disabled="loggingIn || !password">
-        {{ $t('adminLogin') }}
-      </button>
-      <div v-if="loginError" class="cms-message error">{{ loginError }}</div>
-    </form>
+    <div v-else-if="!admin.loggedIn" class="cms-center">
+      <form class="cms-login" @submit.prevent="doLogin">
+        <span class="cms-login-icon"><font-awesome-icon icon="lock" /></span>
+        <h2>{{ $t('admin') }}</h2>
+        <p class="cms-hint">{{ $t('adminLoginIntro') }}</p>
+        <input
+          ref="password"
+          v-model="password"
+          type="password"
+          class="cms-input"
+          :placeholder="$t('adminPassword')"
+          autocomplete="current-password"
+        />
+        <button type="submit" class="cms-btn primary block" :disabled="loggingIn || !password">
+          {{ $t('adminLogin') }}
+        </button>
+        <div v-if="loginError" class="cms-message error">{{ loginError }}</div>
+      </form>
+    </div>
 
     <!-- Panel -->
-    <template v-else>
-      <header class="cms-header">
-        <div class="cms-tabs" role="tablist">
+    <div v-else class="cms-shell">
+      <nav class="cms-sidebar" :aria-label="$t('admin')">
+        <div class="cms-brand">
+          <font-awesome-icon icon="lock" />
+          <span>{{ $t('admin') }}</span>
+        </div>
+        <div v-for="group in navGroups" :key="group.labelKey" class="cms-nav-group">
+          <span class="cms-nav-title">{{ $t(group.labelKey) }}</span>
           <button
-            v-for="t in tabs"
+            v-for="t in group.tabs"
             :key="t.key"
-            class="cms-tab"
+            type="button"
+            class="cms-nav-item"
             :class="{ active: tab === t.key }"
-            role="tab"
-            :aria-selected="tab === t.key"
+            :data-tab="t.key"
+            :aria-current="tab === t.key ? 'page' : null"
             @click="tab = t.key"
           >
-            {{ $t(t.labelKey) }}
+            <font-awesome-icon :icon="t.icon" fixed-width />
+            <span>{{ $t(t.labelKey) }}</span>
           </button>
         </div>
-        <div class="cms-actions">
-          <span v-if="dirty" class="cms-dirty">{{ $t('adminUnsaved') }}</span>
-          <span v-if="message" class="cms-message" :class="message.type">{{ message.text }}</span>
-          <button v-if="dirty" class="cms-btn" @click="discard">{{ $t('adminDiscard') }}</button>
-          <button class="cms-btn primary" :disabled="!draft || saving || (!dirty && !isDefault)" @click="save">
-            <font-awesome-icon icon="floppy-disk" /> {{ saving ? $t('adminSaving') : $t('adminSave') }}
-          </button>
-          <button class="cms-btn" :title="$t('adminLogout')" @click="doLogout">
-            <font-awesome-icon icon="right-from-bracket" />
-          </button>
-        </div>
-      </header>
+        <button type="button" class="cms-nav-item cms-logout" @click="doLogout">
+          <font-awesome-icon icon="right-from-bracket" fixed-width />
+          <span>{{ $t('adminLogout') }}</span>
+        </button>
+      </nav>
 
-      <div v-if="!draft" class="cms-center">{{ loadError || $t('adminLoading') }}</div>
+      <div class="cms-main">
+        <header class="cms-topbar">
+          <div class="cms-topbar-text">
+            <h2>{{ $t(currentTab.labelKey) }}</h2>
+            <p>{{ $t('adminDesc_' + tab) }}</p>
+          </div>
+          <div v-if="!readOnlyTab" class="cms-actions">
+            <span v-if="message" class="cms-message" :class="message.type">{{ message.text }}</span>
+            <span v-else-if="dirty" class="cms-pill warn">{{ $t('adminUnsaved') }}</span>
+            <span v-else-if="draft && !isDefault" class="cms-pill">{{ $t('adminAllSaved') }}</span>
+            <button v-if="dirty" class="cms-btn ghost" @click="discard">{{ $t('adminDiscard') }}</button>
+            <button class="cms-btn primary" :disabled="!draft || saving || (!dirty && !isDefault)" @click="save">
+              <font-awesome-icon icon="floppy-disk" /> {{ saving ? $t('adminSaving') : $t('adminSave') }}
+            </button>
+          </div>
+          <span v-else-if="message" class="cms-message" :class="message.type">{{ message.text }}</span>
+        </header>
 
-      <div v-else class="cms-body">
-        <p v-if="isDefault && tab !== 'scores'" class="cms-note">{{ $t('adminFallbackNote') }}</p>
+        <div v-if="!draft" class="cms-center">{{ loadError || $t('adminLoading') }}</div>
+
+        <div v-else class="cms-body">
+          <p v-if="isDefault && !readOnlyTab" class="cms-note">
+            <font-awesome-icon icon="circle-info" /> {{ $t('adminFallbackNote') }}
+          </p>
 
         <!-- Projects -->
         <section v-if="tab === 'projects'" class="cms-projects">
@@ -84,6 +107,7 @@
                   <small>{{ p.type }}<template v-if="p.status"> - {{ p.status }}</template></small>
                 </span>
                 <span v-if="p.hidden" class="cms-badge">{{ $t('adminHidden') }}</span>
+                <span v-if="p.scrapped" class="cms-badge">{{ $t('adminScrappedBadge') }}</span>
                 <div class="cms-row-buttons">
                   <button class="cms-icon-btn" :title="p.hidden ? $t('adminShow') : $t('adminHide')" @click="p.hidden = !p.hidden">
                     <font-awesome-icon :icon="p.hidden ? 'eye-slash' : 'eye'" />
@@ -112,47 +136,50 @@
               <h3>{{ titleOf(editingProject) }}</h3>
               <button class="cms-btn" @click="editingId = null">{{ $t('adminDone') }}</button>
             </div>
-            <div class="cms-grid2">
-              <label v-for="lang in langs" :key="'t' + lang" class="cms-field">
-                <span>{{ $t('adminTitle') }} ({{ lang.toUpperCase() }})</span>
-                <input
-                  v-model="editingProject.title[lang]"
-                  class="cms-input"
-                  :placeholder="defaultTranslation(lang, editingProject.titleKey)"
-                />
-              </label>
-              <label v-for="lang in langs" :key="'d' + lang" class="cms-field">
-                <span>{{ $t('adminDescription') }} ({{ lang.toUpperCase() }})</span>
-                <textarea
-                  v-model="editingProject.description[lang]"
-                  class="cms-input"
-                  rows="6"
-                  :placeholder="defaultTranslation(lang, editingProject.descKey)"
-                ></textarea>
-              </label>
-              <label class="cms-field">
-                <span>{{ $t('adminType') }}</span>
-                <input v-model="editingProject.type" class="cms-input" list="cms-types" />
-              </label>
-              <label class="cms-field">
-                <span>{{ $t('adminDate') }}</span>
-                <input v-model="editingProject.dateCreated" type="date" class="cms-input" />
-              </label>
-              <label class="cms-field">
-                <span>{{ $t('adminLink') }}</span>
-                <input v-model="editingProject.link" type="url" class="cms-input" />
-              </label>
-              <label class="cms-field">
-                <span>{{ $t('adminRepository') }}</span>
-                <input v-model="editingProject.repository" type="url" class="cms-input" />
-              </label>
-              <label class="cms-field">
-                <span>{{ $t('adminStatus') }}</span>
-                <input v-model="editingProject.status" class="cms-input" list="cms-statuses" :placeholder="$t('adminStatusNone')" />
-              </label>
-              <label class="cms-field cms-check">
+
+            <div class="cms-card">
+              <h4 class="cms-card-title">{{ $t('adminSectionText') }}</h4>
+              <LocalizedInput v-model="editingProject.title" :label="$t('adminTitle')" :defaults="textDefaults(editingProject.titleKey)" />
+              <LocalizedInput
+                v-model="editingProject.description"
+                :label="$t('adminDescription')"
+                :defaults="textDefaults(editingProject.descKey)"
+                multiline
+                :rows="6"
+              />
+            </div>
+
+            <div class="cms-card">
+              <h4 class="cms-card-title">{{ $t('adminSectionDetails') }}</h4>
+              <div class="cms-grid2">
+                <label class="cms-field">
+                  <span>{{ $t('adminType') }}</span>
+                  <input v-model="editingProject.type" class="cms-input" list="cms-types" />
+                </label>
+                <label class="cms-field">
+                  <span>{{ $t('adminDate') }}</span>
+                  <input v-model="editingProject.dateCreated" type="date" class="cms-input" />
+                </label>
+                <label class="cms-field">
+                  <span>{{ $t('adminLink') }}</span>
+                  <input v-model="editingProject.link" type="url" class="cms-input" placeholder="https://" />
+                </label>
+                <label class="cms-field">
+                  <span>{{ $t('adminRepository') }}</span>
+                  <input v-model="editingProject.repository" type="url" class="cms-input" placeholder="https://github.com/..." />
+                </label>
+                <label class="cms-field">
+                  <span>{{ $t('adminStatus') }}</span>
+                  <input v-model="editingProject.status" class="cms-input" list="cms-statuses" :placeholder="$t('adminStatusNone')" />
+                </label>
+              </div>
+              <label class="cms-check">
                 <input v-model="editingProject.disabled" type="checkbox" />
                 <span>{{ $t('adminDisabled') }}</span>
+              </label>
+              <label class="cms-check">
+                <input v-model="editingProject.scrapped" type="checkbox" />
+                <span>{{ $t('adminScrapped') }}</span>
               </label>
             </div>
             <datalist id="cms-types">
@@ -162,30 +189,35 @@
               <option v-for="s in knownStatuses" :key="s" :value="s" />
             </datalist>
 
-            <h4>{{ $t('adminPhotos') }}</h4>
-            <div class="cms-photos">
-              <div
-                v-for="(img, i) in editingProject.images"
-                :key="img"
-                class="cms-photo"
-                :class="{ dragging: isDragging(editingProject.images, i) }"
-                draggable="true"
-                @dragstart="dragStart(editingProject.images, i, $event)"
-                @dragover.prevent="dragOver(editingProject.images, i)"
-                @dragend="dragEnd"
-                @drop.prevent="dragEnd"
-              >
-                <img :src="resolveImage(img)" alt="" />
-                <button class="cms-photo-remove" :title="$t('adminDelete')" @click="editingProject.images.splice(i, 1)">
-                  <font-awesome-icon icon="xmark" />
-                </button>
+            <div class="cms-card">
+              <div class="cms-card-head">
+                <h4 class="cms-card-title">{{ $t('adminPhotos') }}</h4>
+                <label class="cms-btn small upload" :class="{ disabled: uploading }">
+                  <font-awesome-icon icon="upload" /> {{ uploading ? $t('adminUploading') : $t('adminUpload') }}
+                  <input type="file" accept="image/webp,image/jpeg,image/png,image/gif" multiple hidden :disabled="uploading" @change="uploadProjectImages" />
+                </label>
               </div>
-              <span v-if="!editingProject.images.length" class="cms-hint">{{ $t('adminNoPhotos') }}</span>
+              <div class="cms-photos">
+                <div
+                  v-for="(img, i) in editingProject.images"
+                  :key="img"
+                  class="cms-photo"
+                  :class="{ dragging: isDragging(editingProject.images, i) }"
+                  draggable="true"
+                  @dragstart="dragStart(editingProject.images, i, $event)"
+                  @dragover.prevent="dragOver(editingProject.images, i)"
+                  @dragend="dragEnd"
+                  @drop.prevent="dragEnd"
+                >
+                  <img :src="resolveImage(img)" alt="" />
+                  <span v-if="i === 0" class="cms-photo-badge">{{ $t('adminCover') }}</span>
+                  <button class="cms-photo-remove" :title="$t('adminDelete')" @click="editingProject.images.splice(i, 1)">
+                    <font-awesome-icon icon="xmark" />
+                  </button>
+                </div>
+                <span v-if="!editingProject.images.length" class="cms-hint">{{ $t('adminNoPhotos') }}</span>
+              </div>
             </div>
-            <label class="cms-btn upload" :class="{ disabled: uploading }">
-              <font-awesome-icon icon="upload" /> {{ uploading ? $t('adminUploading') : $t('adminUpload') }}
-              <input type="file" accept="image/webp,image/jpeg,image/png,image/gif" multiple hidden :disabled="uploading" @change="uploadProjectImages" />
-            </label>
           </div>
         </section>
 
@@ -313,6 +345,13 @@
           </div>
         </section>
 
+        <AdminAbout v-else-if="tab === 'about'" :draft="draft" @flash="flash" />
+        <AdminDownloads v-else-if="tab === 'downloads'" :draft="draft" @flash="flash" />
+        <AdminVinyl v-else-if="tab === 'vinyl'" :draft="draft" @flash="flash" />
+        <AdminSkills v-else-if="tab === 'skills'" :draft="draft" />
+        <AdminWallpapers v-else-if="tab === 'wallpapers'" :draft="draft" @flash="flash" />
+        <AdminStats v-else-if="tab === 'stats'" />
+
         <!-- Texts -->
         <section v-else-if="tab === 'texts'" class="cms-texts">
           <div class="cms-toolbar">
@@ -397,8 +436,9 @@
             </tbody>
           </table>
         </section>
+        </div>
       </div>
-    </template>
+    </div>
   </div>
 </template>
 
@@ -421,6 +461,14 @@ import {
 import { getDesktopCandidates, getDesktopNodes, getDesktopDefaultCells } from "../../filesystem";
 import { appList, getMobileApps } from "../../windowConfig";
 import { snapshotCells } from "../../desktopLayout";
+import reorderMixin from "../admin/reorderMixin";
+import AdminAbout from "../admin/AdminAbout.vue";
+import LocalizedInput from "../admin/LocalizedInput.vue";
+import AdminDownloads from "../admin/AdminDownloads.vue";
+import AdminVinyl from "../admin/AdminVinyl.vue";
+import AdminSkills from "../admin/AdminSkills.vue";
+import AdminWallpapers from "../admin/AdminWallpapers.vue";
+import AdminStats from "../admin/AdminStats.vue";
 
 // Mirrors MobileHome.vue: the home screen shows this many apps per page.
 const MOBILE_APPS_PER_PAGE = 6;
@@ -438,19 +486,41 @@ const newId = (prefix) => prefix + Date.now().toString(36) + Math.random().toStr
 
 export default {
   name: "AdminPanel",
-  components: { FontAwesomeIcon },
+  components: { FontAwesomeIcon, LocalizedInput, AdminAbout, AdminDownloads, AdminVinyl, AdminSkills, AdminWallpapers, AdminStats },
+  mixins: [reorderMixin],
   data() {
     return {
       admin: content.admin,
       GAMES,
       DIFFICULTIES,
       langs: ["en", "nl"],
-      tabs: [
-        { key: "projects", labelKey: "adminTabProjects" },
-        { key: "art", labelKey: "adminTabArt" },
-        { key: "layout", labelKey: "adminTabLayout" },
-        { key: "texts", labelKey: "adminTabTexts" },
-        { key: "scores", labelKey: "adminTabScores" },
+      navGroups: [
+        {
+          labelKey: "adminNavContent",
+          tabs: [
+            { key: "projects", labelKey: "adminTabProjects", icon: "code" },
+            { key: "art", labelKey: "adminTabArt", icon: "palette" },
+            { key: "about", labelKey: "adminTabAbout", icon: "user" },
+            { key: "downloads", labelKey: "adminTabDownloads", icon: "download" },
+            { key: "vinyl", labelKey: "adminTabVinyl", icon: "compact-disc" },
+            { key: "skills", labelKey: "adminTabSkills", icon: "sitemap" },
+          ],
+        },
+        {
+          labelKey: "adminNavSite",
+          tabs: [
+            { key: "layout", labelKey: "adminTabLayout", icon: "table-cells-large" },
+            { key: "wallpapers", labelKey: "adminTabWallpapers", icon: "image" },
+            { key: "texts", labelKey: "adminTabTexts", icon: "file-lines" },
+          ],
+        },
+        {
+          labelKey: "adminNavInsights",
+          tabs: [
+            { key: "stats", labelKey: "adminTabStats", icon: "chart-column" },
+            { key: "scores", labelKey: "adminTabScores", icon: "ranking-star" },
+          ],
+        },
       ],
       tab: "projects",
       checking: true,
@@ -466,7 +536,6 @@ export default {
       editingId: null,
       confirmDeleteId: null,
       uploading: false,
-      drag: null, // { list, index }
       textSearch: "",
       onlyChangedTexts: false,
       scoreGame: "minesweeper",
@@ -477,6 +546,17 @@ export default {
     };
   },
   computed: {
+    currentTab() {
+      for (const group of this.navGroups) {
+        const found = group.tabs.find((t) => t.key === this.tab);
+        if (found) return found;
+      }
+      return this.navGroups[0].tabs[0];
+    },
+    // Tabs that don't edit the saved content (no save button there).
+    readOnlyTab() {
+      return this.tab === "scores" || this.tab === "stats";
+    },
     dirty() {
       return !!this.draft && JSON.stringify(this.draft) !== this.savedSnapshot;
     },
@@ -660,6 +740,10 @@ export default {
       const locale = this.$i18n.locale;
       return p.title?.[locale] || p.title?.en || this.defaultTranslation(locale, p.titleKey) || p.id;
     },
+    // Built-in { en, nl } text for an i18n key (including Texts-tab edits).
+    textDefaults(key) {
+      return { en: this.defaultTranslation("en", key), nl: this.defaultTranslation("nl", key) };
+    },
     defaultTranslation(lang, key) {
       if (!key) return "";
       const override = this.draft?.texts?.[lang]?.[key];
@@ -716,32 +800,6 @@ export default {
       }
     },
 
-    // --- ordering (drag & drop, plus arrow buttons for touch) -------------
-    dragStart(list, index, e) {
-      this.drag = { list, index };
-      if (e.dataTransfer) {
-        e.dataTransfer.effectAllowed = "move";
-        e.dataTransfer.setData("text/plain", String(index));
-      }
-    },
-    dragOver(list, index) {
-      if (!this.drag || this.drag.list !== list || this.drag.index === index) return;
-      const [item] = list.splice(this.drag.index, 1);
-      list.splice(index, 0, item);
-      this.drag.index = index;
-    },
-    dragEnd() {
-      this.drag = null;
-    },
-    isDragging(list, index) {
-      return !!this.drag && this.drag.list === list && this.drag.index === index;
-    },
-    move(list, index, dir) {
-      const target = index + dir;
-      if (target < 0 || target >= list.length) return;
-      const [item] = list.splice(index, 1);
-      list.splice(target, 0, item);
-    },
 
     // --- layout -----------------------------------------------------------
     desktopMeta(id) {
@@ -825,218 +883,597 @@ export default {
 };
 </script>
 
-<style scoped>
+<style>
+/* Not scoped: the tab components in src/components/admin/ share these styles.
+   Every selector uses the cms- prefix, so nothing leaks into the rest of the site. */
 .cms-window {
+  --cms-bg: #13131b;
+  --cms-panel: #191924;
+  --cms-card: #1f1f2c;
+  --cms-raised: #262636;
+  --cms-border: #2c2c3e;
+  --cms-border-strong: #3d3d55;
+  --cms-text: #ecebf3;
+  --cms-muted: #9993a8;
+  --cms-faint: #6d6880;
+  --cms-accent: #a43bc2;
+  --cms-accent-hover: #b951d6;
+  --cms-accent-soft: rgba(164, 59, 194, 0.16);
+  --cms-danger: #d9475f;
+  --cms-success: #5fcf8f;
+  --cms-warn: #f2c464;
+  --cms-radius: 8px;
+
+  container-type: inline-size;
   height: 100%;
-  background: #1a1a24;
-  color: #fff;
-  border: 2px solid #000;
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: var(--cms-bg);
+  color: var(--cms-text);
+  /* Same font as the rest of the site. */
+  font-family: "PortfolioFont", sans-serif;
   font-size: 14px;
+  line-height: 1.45;
+  letter-spacing: normal;
+}
+.cms-window *,
+.cms-window *::before,
+.cms-window *::after {
+  box-sizing: border-box;
+}
+.cms-window h2,
+.cms-window h3,
+.cms-window h4 {
+  font-family: inherit;
+  margin: 0;
+  font-weight: 650;
 }
 
 .cms-center {
   margin: auto;
-  color: #c0b8cc;
   padding: 24px;
+  color: var(--cms-muted);
   text-align: center;
 }
 
-/* Login */
+/* ---------------------------------------------------------------- Login */
 .cms-login {
-  margin: auto;
-  width: min(320px, 90%);
+  width: min(340px, 100%);
   display: flex;
   flex-direction: column;
   gap: 12px;
-  align-items: stretch;
+  padding: 28px;
+  border: 1px solid var(--cms-border);
+  border-radius: 14px;
+  background: var(--cms-panel);
   text-align: center;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.35);
 }
 .cms-login h2 {
-  margin: 0;
+  font-size: 20px;
+  color: var(--cms-text);
+}
+.cms-login .cms-hint {
+  margin: -6px 0 6px;
 }
 .cms-login-icon {
-  font-size: 36px;
-  color: #c637e6;
   align-self: center;
+  display: grid;
+  place-items: center;
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  background: var(--cms-accent-soft);
+  color: var(--cms-accent-hover);
+  font-size: 20px;
 }
 
-/* Header */
-.cms-header {
+/* ---------------------------------------------------------------- Shell */
+.cms-shell {
+  flex: 1;
+  min-height: 0;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  justify-content: space-between;
-  gap: 8px;
-  padding: 8px 12px;
-  background: linear-gradient(180deg, #2a2a35, #1f1f2d);
-  border-bottom: 2px solid #4f115d;
 }
-.cms-tabs,
-.cms-actions,
-.cms-toolbar,
-.cms-row-buttons {
+.cms-sidebar {
+  /* Wide enough for the site's (wide) pixel font. */
+  width: 228px;
+  flex-shrink: 0;
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 6px;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 10px;
+  background: var(--cms-panel);
+  border-right: 1px solid var(--cms-border);
+  overflow-y: auto;
 }
-.cms-toolbar {
+.cms-brand {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 4px 10px 12px;
+  font-weight: 700;
+  font-size: 15px;
+  color: var(--cms-text);
+}
+.cms-brand svg {
+  color: var(--cms-accent-hover);
+}
+.cms-nav-group {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   margin-bottom: 10px;
 }
+.cms-nav-title {
+  padding: 6px 10px 4px;
+  font-size: 11px;
+  font-weight: 650;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cms-faint);
+}
+.cms-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: none;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--cms-muted);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cms-nav-item span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cms-nav-item:hover {
+  background: var(--cms-raised);
+  color: var(--cms-text);
+}
+.cms-nav-item.active {
+  background: var(--cms-accent-soft);
+  color: var(--cms-text);
+  box-shadow: inset 3px 0 0 var(--cms-accent);
+}
+.cms-nav-item.active svg {
+  color: var(--cms-accent-hover);
+}
+.cms-logout {
+  margin-top: auto;
+}
 
-.cms-tab,
+.cms-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.cms-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 22px;
+  border-bottom: 1px solid var(--cms-border);
+  background: var(--cms-bg);
+}
+.cms-topbar-text {
+  min-width: 0;
+}
+.cms-topbar h2 {
+  font-size: 18px;
+}
+.cms-topbar p {
+  margin: 2px 0 0;
+  color: var(--cms-muted);
+  font-size: 13px;
+}
+.cms-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.cms-body {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+  padding: 18px 22px 28px;
+}
+
+/* ---------------------------------------------------------------- Buttons */
 .cms-btn,
+.cms-tab,
 .cms-icon-btn {
   font: inherit;
-  color: #fff;
-  border: 1px solid #4f115d;
-  border-radius: 4px;
-  background: #252535;
-  cursor: pointer;
-  padding: 6px 12px;
   display: inline-flex;
   align-items: center;
-  gap: 6px;
+  justify-content: center;
+  gap: 7px;
+  border-radius: var(--cms-radius);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background 0.12s ease, border-color 0.12s ease, color 0.12s ease;
 }
-.cms-tab {
-  background: transparent;
-  color: #c0b8cc;
+.cms-btn {
+  padding: 7px 14px;
+  border: 1px solid var(--cms-border-strong);
+  background: var(--cms-raised);
+  color: var(--cms-text);
+  font-weight: 550;
 }
-.cms-tab:hover,
-.cms-btn:hover,
-.cms-icon-btn:hover {
-  background: rgba(155, 32, 183, 0.25);
+.cms-btn:hover {
+  border-color: var(--cms-faint);
+  background: #2e2e41;
 }
-.cms-tab.active,
 .cms-btn.primary {
-  background: #9b20b7;
-  border-color: #c637e6;
+  background: var(--cms-accent);
+  border-color: var(--cms-accent);
   color: #fff;
 }
-.cms-btn.danger,
-.cms-icon-btn.danger:hover {
-  background: #a3263a;
-  border-color: #d64560;
+.cms-btn.primary:hover {
+  background: var(--cms-accent-hover);
+  border-color: var(--cms-accent-hover);
 }
-.cms-btn.small,
-.cms-tab.small {
-  padding: 3px 8px;
-  font-size: 12px;
-}
-.cms-icon-btn {
-  padding: 5px 8px;
+.cms-btn.ghost {
   background: transparent;
+  border-color: transparent;
+  color: var(--cms-muted);
 }
-.cms-btn:disabled,
-.cms-icon-btn:disabled,
-.cms-btn.disabled {
-  opacity: 0.45;
-  cursor: default;
-  pointer-events: none;
+.cms-btn.ghost:hover {
+  color: var(--cms-text);
+  background: var(--cms-raised);
+}
+.cms-btn.danger {
+  background: var(--cms-danger);
+  border-color: var(--cms-danger);
+  color: #fff;
+}
+.cms-btn.small {
+  padding: 4px 10px;
+  font-size: 12.5px;
+}
+.cms-btn.block {
+  width: 100%;
+  padding: 10px 14px;
 }
 .cms-btn.upload {
   position: relative;
 }
-
-.cms-dirty {
-  color: #f0c060;
+.cms-tab {
+  padding: 6px 12px;
+  border: 1px solid var(--cms-border);
+  background: transparent;
+  color: var(--cms-muted);
+}
+.cms-tab:hover {
+  color: var(--cms-text);
+  background: var(--cms-raised);
+}
+.cms-tab.active {
+  background: var(--cms-accent-soft);
+  border-color: var(--cms-accent);
+  color: var(--cms-text);
+}
+.cms-tab.small {
+  padding: 3px 9px;
+  font-size: 12.5px;
+}
+.cms-icon-btn {
+  width: 30px;
+  height: 30px;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: var(--cms-muted);
+}
+.cms-icon-btn:hover {
+  background: var(--cms-raised);
+  border-color: var(--cms-border);
+  color: var(--cms-text);
+}
+.cms-icon-btn.danger:hover {
+  background: rgba(217, 71, 95, 0.15);
+  border-color: rgba(217, 71, 95, 0.4);
+  color: #ff8a9c;
+}
+.cms-btn:disabled,
+.cms-icon-btn:disabled,
+.cms-btn.disabled {
+  opacity: 0.4;
+  cursor: default;
+  pointer-events: none;
+}
+.cms-link-btn {
+  border: none;
+  background: none;
+  padding: 0;
+  font: inherit;
   font-size: 12px;
+  color: var(--cms-accent-hover);
+  cursor: pointer;
+}
+.cms-link-btn:hover {
+  text-decoration: underline;
+}
+.cms-window :focus-visible {
+  outline: 2px solid var(--cms-accent-hover);
+  outline-offset: 2px;
+}
+
+/* Arrow buttons are the touch fallback for drag & drop: hide them where a
+   mouse can drag. */
+@media (hover: hover) and (pointer: fine) {
+  .cms-move,
+  .cms-icon-btn[aria-label="Up"],
+  .cms-icon-btn[aria-label="Down"],
+  .cms-icon-btn[aria-label="Left"],
+  .cms-icon-btn[aria-label="Right"] {
+    display: none;
+  }
+}
+.cms-move {
+  display: inline-flex;
+  flex-direction: column;
+}
+.cms-move .cms-icon-btn {
+  width: 24px;
+  height: 15px;
+  font-size: 9px;
+}
+
+/* ---------------------------------------------------------------- Status */
+/* Save status next to the Save button: a colored dot + short label. */
+.cms-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 11px;
+  border: 1px solid var(--cms-border);
+  border-radius: 999px;
+  background: var(--cms-card);
+  color: var(--cms-muted);
+  font-size: 12px;
+  font-weight: normal;
+  line-height: 1;
+  white-space: nowrap;
+}
+.cms-pill::before {
+  content: "";
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cms-success);
+  flex-shrink: 0;
+}
+.cms-pill.warn {
+  border-color: rgba(242, 196, 100, 0.45);
+  background: rgba(242, 196, 100, 0.08);
+  color: var(--cms-warn);
+}
+.cms-pill.warn::before {
+  background: var(--cms-warn);
+  box-shadow: 0 0 0 3px rgba(242, 196, 100, 0.18);
 }
 .cms-message {
   font-size: 13px;
+  white-space: nowrap;
 }
 .cms-message.error {
-  color: #ff7b8a;
+  color: #ff8a9c;
 }
 .cms-message.success {
-  color: #7be08a;
+  color: var(--cms-success);
 }
 .cms-hint {
-  color: #8c849c;
-  font-size: 12px;
+  color: var(--cms-muted);
+  font-size: 12.5px;
+}
+p.cms-hint {
+  margin: 0 0 10px;
 }
 .cms-note {
-  margin: 0 0 12px;
-  padding: 8px 12px;
-  border-left: 3px solid #c637e6;
-  background: rgba(155, 32, 183, 0.12);
-  color: #d4c8e0;
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  margin: 0 0 16px;
+  padding: 10px 14px;
+  border: 1px solid rgba(164, 59, 194, 0.35);
+  border-radius: var(--cms-radius);
+  background: var(--cms-accent-soft);
+  color: #ddd3e8;
+  font-size: 13px;
+}
+.cms-note svg {
+  margin-top: 3px;
+  color: var(--cms-accent-hover);
 }
 .cms-badge {
   font-size: 11px;
-  padding: 1px 6px;
-  border-radius: 3px;
-  background: #4f115d;
-  color: #e6c8f0;
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 999px;
+  background: var(--cms-raised);
+  color: var(--cms-muted);
   white-space: nowrap;
 }
 
-/* Inputs */
+/* ---------------------------------------------------------------- Forms */
 .cms-input {
-  font: inherit;
-  color: #fff;
-  background: #252535;
-  border: 1px solid #3a3a4d;
-  border-radius: 4px;
-  padding: 6px 8px;
   width: 100%;
-  box-sizing: border-box;
+  padding: 8px 10px;
+  border: 1px solid var(--cms-border-strong);
+  border-radius: var(--cms-radius);
+  background: var(--cms-bg);
+  color: var(--cms-text);
+  font: inherit;
   resize: vertical;
+  transition: border-color 0.12s ease, box-shadow 0.12s ease;
+}
+.cms-input:hover {
+  border-color: var(--cms-faint);
 }
 .cms-input:focus {
   outline: none;
-  border-color: #c637e6;
+  border-color: var(--cms-accent);
+  box-shadow: 0 0 0 3px var(--cms-accent-soft);
 }
 .cms-input::placeholder {
-  color: #6a647a;
+  color: var(--cms-faint);
+}
+.cms-input:disabled {
+  opacity: 0.5;
 }
 .cms-input.grow {
   flex: 1;
   min-width: 160px;
   width: auto;
 }
+.cms-input.mono {
+  font-family: inherit;
+  font-size: 12px;
+}
+select.cms-input {
+  resize: none;
+  cursor: pointer;
+}
+input[type="date"].cms-input {
+  color-scheme: dark;
+}
 .cms-field {
   display: flex;
   flex-direction: column;
-  gap: 4px;
-  font-size: 12px;
-  color: #c0b8cc;
+  gap: 5px;
+  font-size: 12.5px;
+  font-weight: 550;
+  color: var(--cms-muted);
+}
+.cms-field.grow {
+  flex: 1;
+  min-width: 0;
 }
 .cms-check {
   display: flex;
-  flex-direction: row;
   align-items: center;
-  gap: 6px;
-  font-size: 13px;
-  color: #c0b8cc;
+  gap: 8px;
+  margin-top: 10px;
+  font-size: 13.5px;
+  color: var(--cms-text);
+  cursor: pointer;
 }
 .cms-check input {
-  accent-color: #9b20b7;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--cms-accent);
 }
 .cms-grid2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
+  gap: 12px;
 }
-
-/* Body */
-.cms-body {
+.cms-grid2.grow {
   flex: 1;
-  overflow: auto;
-  padding: 12px;
+  min-width: 0;
+}
+.cms-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 14px;
 }
 
-/* Projects */
+/* Localized (EN / NL) field */
+.cms-loc {
+  margin-bottom: 14px;
+}
+.cms-loc.grow {
+  flex: 1;
+  min-width: 0;
+  margin-bottom: 0;
+}
+.cms-loc-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 5px;
+}
+.cms-loc-label {
+  font-size: 12.5px;
+  font-weight: 550;
+  color: var(--cms-muted);
+}
+.cms-loc-fields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 8px;
+}
+.cms-loc-field,
+.cms-inline-lang {
+  position: relative;
+  display: block;
+}
+.cms-loc-field .cms-input,
+.cms-inline-lang .cms-input {
+  padding-left: 40px;
+}
+.cms-lang {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  padding: 1px 5px;
+  border-radius: 4px;
+  background: var(--cms-raised);
+  color: var(--cms-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  pointer-events: none;
+}
+
+/* Cards */
+.cms-card {
+  padding: 16px;
+  margin-bottom: 14px;
+  border: 1px solid var(--cms-border);
+  border-radius: 10px;
+  background: var(--cms-card);
+}
+.cms-card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.cms-card-head .cms-card-title {
+  margin: 0;
+}
+.cms-card-title {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 650;
+  color: var(--cms-text);
+}
+h4.cms-card-title {
+  margin-bottom: 12px;
+}
+
+/* ---------------------------------------------------------------- Lists */
 .cms-projects {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
-  gap: 16px;
+  gap: 18px;
+  align-items: start;
 }
 .cms-projects:has(.cms-edit-col) {
-  grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
+  grid-template-columns: minmax(260px, 0.9fr) minmax(0, 1.3fr);
 }
 .cms-list {
   list-style: none;
@@ -1044,42 +1481,57 @@ export default {
   padding: 0;
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
 }
 .cms-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 6px 8px;
-  border: 1px solid #2c2c3c;
-  border-radius: 4px;
-  background: #1f1f2d;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--cms-border);
+  border-radius: var(--cms-radius);
+  background: var(--cms-card);
   cursor: grab;
+  transition: border-color 0.12s ease, background 0.12s ease;
+}
+.cms-row:hover {
+  border-color: var(--cms-border-strong);
+  background: #232332;
 }
 .cms-row.active {
-  border-color: #c637e6;
+  border-color: var(--cms-accent);
+  background: var(--cms-accent-soft);
 }
-.cms-row.hidden,
-.cms-art.hidden {
-  opacity: 0.55;
+.cms-row.hidden .cms-row-title,
+.cms-row.hidden .cms-row-thumb,
+.cms-art.hidden img,
+.cms-art.hidden .cms-wp-previews {
+  opacity: 0.45;
 }
 .cms-row.dragging,
 .cms-art.dragging,
-.cms-photo.dragging {
-  outline: 2px dashed #c637e6;
+.cms-photo.dragging,
+.cms-question.dragging > .cms-row {
+  outline: 2px dashed var(--cms-accent);
+  outline-offset: 2px;
 }
 .cms-grip {
-  color: #6a647a;
-}
-.cms-row-thumb {
-  width: 48px;
-  height: 32px;
-  object-fit: cover;
-  border-radius: 3px;
+  color: var(--cms-faint);
   flex-shrink: 0;
 }
+.cms-row-thumb {
+  width: 56px;
+  height: 36px;
+  object-fit: cover;
+  border-radius: 5px;
+  flex-shrink: 0;
+}
+.cms-row-thumb.square {
+  width: 36px;
+  height: 36px;
+}
 .cms-row-thumb.empty {
-  background: #2c2c3c;
+  background: var(--cms-raised);
 }
 .cms-row-title {
   flex: 1;
@@ -1087,25 +1539,27 @@ export default {
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
+  font-weight: 550;
 }
 .cms-row-title small {
   display: block;
-  color: #8c849c;
+  margin-top: 1px;
+  font-weight: 400;
+  font-size: 12px;
+  color: var(--cms-muted);
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
-.cms-move {
-  display: inline-flex;
-  flex-direction: column;
-}
-.cms-move .cms-icon-btn {
-  padding: 0 6px;
-  font-size: 9px;
+.cms-row-buttons {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
 }
 
 .cms-edit-col {
-  border: 1px solid #2c2c3c;
-  border-radius: 6px;
-  padding: 12px;
-  background: #1f1f2d;
+  position: sticky;
+  top: 0;
   align-self: start;
 }
 .cms-edit-head {
@@ -1113,94 +1567,148 @@ export default {
   justify-content: space-between;
   align-items: center;
   gap: 8px;
-  margin-bottom: 10px;
+  margin-bottom: 12px;
 }
-.cms-edit-head h3,
-.cms-edit-col h4 {
-  margin: 0;
-}
-.cms-edit-col h4 {
-  margin: 16px 0 8px;
+.cms-edit-head h3 {
+  font-size: 16px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
+/* Photos */
 .cms-photos {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
   gap: 8px;
-  margin-bottom: 10px;
 }
 .cms-photo {
   position: relative;
-  width: 120px;
-  height: 80px;
+  aspect-ratio: 3 / 2;
   cursor: grab;
 }
 .cms-photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 6px;
+  border: 1px solid var(--cms-border);
+}
+.cms-photo-badge {
+  position: absolute;
+  left: 6px;
+  bottom: 6px;
+  padding: 1px 7px;
+  border-radius: 999px;
+  background: var(--cms-accent);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 600;
 }
 .cms-photo-remove {
   position: absolute;
-  top: 4px;
-  right: 4px;
+  top: 6px;
+  right: 6px;
+  display: grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
   border: none;
   border-radius: 50%;
-  width: 22px;
-  height: 22px;
   background: rgba(0, 0, 0, 0.7);
   color: #fff;
   cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.12s ease;
+}
+.cms-photo:hover .cms-photo-remove,
+.cms-photo-remove:focus-visible {
+  opacity: 1;
 }
 .cms-photo-remove:hover {
-  background: #a3263a;
+  background: var(--cms-danger);
+}
+@media (hover: none) {
+  .cms-photo-remove {
+    opacity: 1;
+  }
+}
+.cms-thumb-preview {
+  width: 64px;
+  height: 64px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid var(--cms-border);
+}
+.cms-thumb-preview.round {
+  border-radius: 50%;
 }
 
-/* Art */
+/* Card grids (art, wallpapers, certificates) */
 .cms-art-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
-  gap: 10px;
+  grid-template-columns: repeat(auto-fill, minmax(190px, 1fr));
+  gap: 12px;
+}
+.cms-art-grid.wide {
+  grid-template-columns: repeat(auto-fill, minmax(260px, 1fr));
 }
 .cms-art {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  padding: 8px;
-  border: 1px solid #2c2c3c;
-  border-radius: 6px;
-  background: #1f1f2d;
+  gap: 8px;
+  padding: 10px;
+  border: 1px solid var(--cms-border);
+  border-radius: 10px;
+  background: var(--cms-card);
   cursor: grab;
 }
-.cms-art img {
+.cms-art:hover {
+  border-color: var(--cms-border-strong);
+}
+.cms-art.is-default {
+  border-color: var(--cms-accent);
+}
+.cms-art > img {
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
-  border-radius: 4px;
+  border-radius: 6px;
+}
+.cms-art .cms-loc {
+  margin-bottom: 0;
+}
+.cms-art .cms-toolbar {
+  margin-bottom: 0;
+}
+.cms-art .cms-check {
+  margin-top: 0;
 }
 
-/* Texts */
-/* Layout */
+/* ---------------------------------------------------------------- Layout tab */
 .cms-layout {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 20px;
+  align-items: start;
 }
 .cms-layout h3 {
   margin: 0 0 4px;
+  font-size: 15px;
 }
 .cms-layout-icon {
   width: 20px;
-  color: #d4a8e8;
+  color: var(--cms-accent-hover);
+  flex-shrink: 0;
 }
 
+/* ---------------------------------------------------------------- Texts tab */
 .cms-text-row {
-  padding: 8px 0;
-  border-bottom: 1px solid #2c2c3c;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--cms-border);
 }
 .cms-text-row.changed code {
-  color: #f0c060;
+  color: var(--cms-warn);
 }
 .cms-text-key {
   display: flex;
@@ -1211,27 +1719,398 @@ export default {
 .cms-text-key code {
   color: #d4a8e8;
   font-size: 12px;
+  font-family: inherit;
 }
 
-/* Scores */
+/* ---------------------------------------------------------------- Scores */
 .cms-table {
   width: 100%;
   border-collapse: collapse;
+  border: 1px solid var(--cms-border);
+  border-radius: var(--cms-radius);
+  overflow: hidden;
 }
 .cms-table td {
-  padding: 6px 8px;
-  border-bottom: 1px solid #2c2c3c;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--cms-border);
+}
+.cms-table tr:nth-child(even) td {
+  background: var(--cms-card);
 }
 .cms-table-actions {
   text-align: right;
   white-space: nowrap;
 }
 
-@media (max-width: 760px) {
+/* ---------------------------------------------------------------- About Me */
+.cms-about {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cms-about-block {
+  padding: 16px;
+  margin-bottom: 14px;
+  border: 1px solid var(--cms-border);
+  border-radius: 10px;
+  background: var(--cms-card);
+}
+.cms-about-block h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+.cms-about-block .cms-row {
+  background: var(--cms-bg);
+}
+.cms-question .cms-edit-col {
+  position: static;
+  margin: 6px 0 10px 22px;
+  padding: 14px;
+  border-left: 2px solid var(--cms-accent);
+  background: var(--cms-bg);
+  border-radius: 0 8px 8px 0;
+}
+.cms-question.hidden > .cms-row .cms-row-title {
+  opacity: 0.45;
+}
+.cms-message-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.cms-message-nr {
+  width: 18px;
+  padding-top: 9px;
+  color: var(--cms-faint);
+  text-align: right;
+  flex-shrink: 0;
+  font-weight: 600;
+}
+.cms-social-row {
+  flex-wrap: wrap;
+}
+.cms-social-icon {
+  width: 130px;
+}
+.cms-social-label {
+  width: 140px;
+}
+
+/* ---------------------------------------------------------------- Vinyl */
+.cms-vinyl {
+  display: grid;
+  grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.cms-vinyl h3 {
+  margin: 0 0 4px;
+  font-size: 15px;
+}
+.cms-vinyl .cms-art {
+  margin-bottom: 10px;
+}
+.cms-vinyl-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+.cms-vinyl-item {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 6px;
+  font: inherit;
+  color: var(--cms-text);
+  text-align: left;
+  background: var(--cms-card);
+  border: 1px solid var(--cms-border);
+  border-radius: 8px;
+  cursor: pointer;
+}
+.cms-vinyl-item:hover {
+  border-color: var(--cms-border-strong);
+}
+.cms-vinyl-item.hidden img,
+.cms-vinyl-item.hidden .cms-vinyl-text {
+  opacity: 0.35;
+}
+.cms-vinyl-item img {
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 5px;
+}
+.cms-vinyl-text {
+  display: flex;
+  flex-direction: column;
+  font-size: 12px;
+  overflow: hidden;
+}
+.cms-vinyl-text strong,
+.cms-vinyl-text small {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.cms-vinyl-text small {
+  color: var(--cms-muted);
+}
+.cms-vinyl-eye {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  padding: 5px;
+  border-radius: 6px;
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* ---------------------------------------------------------------- Skill tree */
+.cms-skill-canvas-wrap {
+  border: 1px solid var(--cms-border);
+  border-radius: 10px;
+  background:
+    linear-gradient(var(--cms-border) 1px, transparent 1px) 0 0 / 40px 40px,
+    linear-gradient(90deg, var(--cms-border) 1px, transparent 1px) 0 0 / 40px 40px,
+    var(--cms-panel);
+  background-blend-mode: normal;
+  margin-bottom: 16px;
+  touch-action: none;
+}
+.cms-skill-canvas {
+  display: block;
+  width: 100%;
+  height: auto;
+  max-height: 440px;
+}
+.cms-skill-node {
+  cursor: grab;
+}
+.cms-skill-label {
+  fill: var(--cms-text);
+  font-size: 15px;
+  font-family: "PortfolioFont", sans-serif;
+  pointer-events: none;
+}
+.cms-skills .cms-edit-col {
+  position: static;
+  padding: 16px;
+  border: 1px solid var(--cms-border);
+  border-radius: 10px;
+  background: var(--cms-card);
+}
+.cms-chip-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cms-chip {
+  margin-top: 0;
+  padding: 4px 10px;
+  border: 1px solid var(--cms-border-strong);
+  border-radius: 999px;
+  font-size: 12.5px;
+}
+.cms-chip:has(input:checked) {
+  border-color: var(--cms-accent);
+  background: var(--cms-accent-soft);
+}
+.cms-category-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+.cms-category-row .cms-inline-lang {
+  flex: 1;
+  min-width: 0;
+}
+.cms-color {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  border: 1px solid var(--cms-border-strong);
+  border-radius: 8px;
+  background: none;
+  cursor: pointer;
+  flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------------- Wallpapers */
+.cms-wp-previews {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 6px;
+}
+.cms-wp-preview {
+  aspect-ratio: 16 / 10;
+  border-radius: 6px;
+  background-size: cover;
+  background-position: center;
+  border: 1px solid var(--cms-border);
+}
+
+/* ---------------------------------------------------------------- Statistics */
+.cms-stat-tiles {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 12px;
+  margin-bottom: 20px;
+}
+.cms-stat-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 14px 16px;
+  border: 1px solid var(--cms-border);
+  border-radius: 10px;
+  background: var(--cms-card);
+}
+.cms-stat-value {
+  font-size: 26px;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+.cms-stat-label {
+  font-size: 12.5px;
+  color: var(--cms-muted);
+}
+.cms-stats h4 {
+  margin: 0 0 10px;
+  font-size: 13px;
+}
+.cms-chart {
+  display: flex;
+  align-items: flex-end;
+  gap: 3px;
+  height: 170px;
+  padding: 10px;
+  border: 1px solid var(--cms-border);
+  border-radius: 10px;
+  background: var(--cms-card);
+}
+.cms-chart-bar {
+  flex: 1;
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+}
+.cms-chart-fill {
+  width: 100%;
+  background: var(--cms-accent);
+  border-radius: 3px 3px 0 0;
+}
+.cms-chart-bar:hover .cms-chart-fill {
+  background: var(--cms-accent-hover);
+}
+.cms-chart-axis {
+  display: flex;
+  justify-content: space-between;
+  font-size: 11.5px;
+  color: var(--cms-muted);
+  margin: 6px 0 20px;
+}
+.cms-top-apps {
+  list-style: none;
+  margin: 0 0 16px;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cms-top-apps li {
+  display: grid;
+  grid-template-columns: 160px 1fr 48px;
+  align-items: center;
+  gap: 10px;
+}
+.cms-top-name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cms-top-bar {
+  height: 10px;
+  border-radius: 5px;
+  background: var(--cms-raised);
+  overflow: hidden;
+}
+.cms-top-bar span {
+  display: block;
+  height: 100%;
+  border-radius: 5px;
+  background: var(--cms-accent);
+}
+.cms-top-count {
+  text-align: right;
+  color: var(--cms-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------- Narrow windows
+   Container queries: the admin panel lives in a resizable window, so react to
+   the window's width rather than the viewport's. */
+@container (max-width: 900px) {
   .cms-projects:has(.cms-edit-col),
   .cms-layout,
-  .cms-grid2 {
+  .cms-vinyl {
     grid-template-columns: minmax(0, 1fr);
+  }
+  .cms-edit-col {
+    position: static;
+  }
+}
+@container (max-width: 700px) {
+  .cms-shell {
+    flex-direction: column;
+  }
+  .cms-sidebar {
+    width: auto;
+    flex-direction: row;
+    align-items: center;
+    gap: 2px;
+    padding: 6px;
+    border-right: none;
+    border-bottom: 1px solid var(--cms-border);
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
+  .cms-brand,
+  .cms-nav-title {
+    display: none;
+  }
+  .cms-nav-group {
+    flex-direction: row;
+    margin: 0;
+  }
+  .cms-nav-item {
+    width: auto;
+    padding: 7px 10px;
+  }
+  .cms-nav-item.active {
+    box-shadow: inset 0 -2px 0 var(--cms-accent);
+  }
+  .cms-logout {
+    margin: 0 0 0 auto;
+  }
+  .cms-topbar {
+    flex-wrap: wrap;
+    padding: 12px 14px;
+  }
+  .cms-topbar p {
+    display: none;
+  }
+  .cms-body {
+    padding: 14px;
+  }
+  .cms-grid2,
+  .cms-loc-fields {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .cms-top-apps li {
+    grid-template-columns: 110px 1fr 40px;
   }
 }
 </style>

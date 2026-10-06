@@ -76,3 +76,63 @@ function resolve_download_entry($entry)
     }
     return ['file' => $entry['file'], 'downloadName' => $entry['downloadName'], 'version' => null];
 }
+
+// ---------------------------------------------------------------------------
+// Downloads managed from the admin panel (see public/api/download-file.php).
+//
+// Once the admin panel has saved a `downloads` list in
+// protected-files/cms/content.json, that list decides which downloads exist,
+// whether they need a password ("mode": "password") or not ("gated"), and
+// whether they're available. A file uploaded from the admin panel lives in
+// protected-files/cms-downloads/<id>/ and wins over the $DOWNLOADS registry
+// above; without one, the registry file is used. Same for the password: one
+// set from the admin panel (stored as a hash) wins over download-secrets.php.
+
+define('CMS_PROTECTED_DIR', __DIR__ . '/../protected-files');
+
+function cms_read_json($file)
+{
+    if (!is_file($file)) {
+        return null;
+    }
+    $data = json_decode(file_get_contents($file), true);
+    return is_array($data) ? $data : null;
+}
+
+// null  = the admin panel doesn't manage downloads (yet): use the registry.
+// false = it does, and this id isn't in its list.
+// array = the admin panel's entry for this id.
+function cms_download_entry($id)
+{
+    $content = cms_read_json(CMS_PROTECTED_DIR . '/cms/content.json');
+    if (!$content || !isset($content['downloads']) || !is_array($content['downloads'])) {
+        return null;
+    }
+    foreach ($content['downloads'] as $entry) {
+        if (isset($entry['id']) && $entry['id'] === $id) {
+            return $entry;
+        }
+    }
+    return false;
+}
+
+// The file uploaded for this id from the admin panel, or null.
+function cms_download_file($id)
+{
+    if (!preg_match('/^[A-Za-z0-9_-]+$/', $id)) {
+        return null;
+    }
+    $files = glob(CMS_PROTECTED_DIR . '/cms-downloads/' . $id . '/*');
+    foreach ((array) $files as $file) {
+        if (is_file($file) && substr($file, -5) !== '.part') {
+            return ['file' => $file, 'downloadName' => basename($file), 'version' => null];
+        }
+    }
+    return null;
+}
+
+function cms_download_password_hash($id)
+{
+    $hashes = cms_read_json(CMS_PROTECTED_DIR . '/cms/download-passwords.json');
+    return $hashes && isset($hashes[$id]) && is_string($hashes[$id]) ? $hashes[$id] : null;
+}

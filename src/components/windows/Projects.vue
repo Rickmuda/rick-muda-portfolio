@@ -137,7 +137,7 @@
 </template>
 
 <script>
-import { visibleProjects, projectTitle, projectDesc } from "../../contentStore";
+import { visibleProjects, scrappedProjects, projectTitle, projectDesc } from "../../contentStore";
 
 export default {
   props: {
@@ -148,7 +148,6 @@ export default {
   },
   data() {
     return {
-      recycleProjects: [],
       selectedProject: null,
       currentImageIndex: 0,
       carouselInterval: null,
@@ -167,11 +166,12 @@ export default {
     // Project data lives in src/contentStore.js (shared with the Project photos
     // gallery and editable from the admin panel).
     projects() {
-      return visibleProjects().map((p) => ({
-        ...p,
-        title: projectTitle(p),
-        description: projectDesc(p),
-      }));
+      return visibleProjects().map(this.withText);
+    },
+    // Scrapped / back-burner projects shown in the Recycle Bin (variant='recycle'),
+    // marked "scrapped" in the admin panel.
+    recycleProjects() {
+      return scrappedProjects().map(this.withText);
     },
     sortedProjects() {
       const typeOrder = { 'Web Project': 0, 'Portfolio': 1, 'Video Project': 2, 'Game': 3 };
@@ -211,8 +211,9 @@ export default {
     },
     // Content can arrive from the server after the window opened, or change
     // while it is open (admin panel save): keep the selection pointing at
-    // the fresh copy of the same project.
-    projects() {
+    // the fresh copy of the same project. Watches sortedProjects so the
+    // Recycle Bin variant gets the same treatment.
+    sortedProjects() {
       const key = this.selectedProject?.titleKey;
       const fresh = key && this.sortedProjects.find((p) => p.titleKey === key);
       if (fresh) {
@@ -228,6 +229,9 @@ export default {
     },
   },
   methods: {
+    withText(p) {
+      return { ...p, title: projectTitle(p), description: projectDesc(p) };
+    },
     // Mobile App screenshots are tall phone captures, not wide desktop shots -
     // cropping them with object-fit: cover chops off most of the screen, so
     // they get a taller box and object-fit: contain instead.
@@ -353,9 +357,6 @@ export default {
     },
   },
   created() {
-    // Scrapped / back-burner projects shown in the Recycle Bin (variant='recycle').
-    // Empty for now - add scrapped work here when there is some.
-    this.recycleProjects = [];
     if (!this.applySelection()) {
       this.selectedProject = this.sortedProjects[0] || null;
     }

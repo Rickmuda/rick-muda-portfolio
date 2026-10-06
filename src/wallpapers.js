@@ -1,41 +1,51 @@
-// Wallpaper presets. Each entry has a CSS background-image value that can be
-// either a url() (bundled via Vite) or a gradient. Pub-sub lets the desktop
-// background subscribe to changes from the Settings window.
+// Wallpapers. The list (and which one new visitors get) comes from
+// src/contentStore.js: the defaults in src/wallpapersData.js, or what the admin
+// panel saved. Each entry has a CSS background-image value (`cssValue`, a url()
+// or a gradient) plus a dark-mode variant (`darkCssValue`). The visitor's own
+// pick is kept in localStorage; pub-sub lets the desktop background follow
+// changes from the Settings window.
+
+import { wallpaperList, defaultWallpaper, itemText } from "./contentStore";
 
 const STORAGE_KEY = "portfolio-wallpaper";
 
-const roomUrl = new URL("@/assets/img/imggallery/room.webp", import.meta.url).href;
-const roomDarkUrl = new URL("@/assets/img/imggallery/roomdark.webp", import.meta.url).href;
-
-// Each wallpaper has a light (`cssValue`) and dark (`darkCssValue`) variant.
-// The desktop background picks one based on the current dark-mode state.
-export const wallpapers = [
-  { id: "default",  labelKey: "wpDefault",  cssValue: `url('${roomUrl}')`,                                                         darkCssValue: `url('${roomDarkUrl}')` },
-  { id: "aurora",   labelKey: "wpAurora",   cssValue: "linear-gradient(135deg, #1a1a3e 0%, #4a2c7a 55%, #c43c8a 100%)",            darkCssValue: "linear-gradient(135deg, #0a0a1d 0%, #1f1238 55%, #5a1c40 100%)" },
-  { id: "sunset",   labelKey: "wpSunset",   cssValue: "linear-gradient(135deg, #ff7e5f 0%, #feb47b 100%)",                         darkCssValue: "linear-gradient(135deg, #4a2218 0%, #5a3a26 100%)" },
-  { id: "ocean",    labelKey: "wpOcean",    cssValue: "linear-gradient(135deg, #2e3192 0%, #1bffff 100%)",                         darkCssValue: "linear-gradient(135deg, #0c0e3a 0%, #0a4f5a 100%)" },
-  { id: "forest",   labelKey: "wpForest",   cssValue: "linear-gradient(135deg, #134e5e 0%, #71b280 100%)",                         darkCssValue: "linear-gradient(135deg, #061f26 0%, #1f3d2a 100%)" },
-  { id: "midnight", labelKey: "wpMidnight", cssValue: "linear-gradient(135deg, #0f0c29 0%, #302b63 55%, #24243e 100%)",            darkCssValue: "linear-gradient(135deg, #050414 0%, #16142e 55%, #0f0f1c 100%)" },
-];
-
 const listeners = new Set();
 
-export function getCurrentId() {
+// Reactive: reads the content store, so computed properties using it update
+// when the admin's wallpaper list arrives from the server.
+export function getWallpapers() {
+  return wallpaperList();
+}
+
+export function wallpaperLabel(wp) {
+  return itemText(wp.label, wp.labelKey, wp.id);
+}
+
+function storedId() {
   try {
-    const v = localStorage.getItem(STORAGE_KEY);
-    return v && wallpapers.some((w) => w.id === v) ? v : "default";
+    return localStorage.getItem(STORAGE_KEY);
   } catch (_) {
-    return "default";
+    return null;
   }
 }
 
+export function getCurrentId() {
+  const list = getWallpapers();
+  const picked = storedId();
+  if (picked && list.some((w) => w.id === picked)) return picked;
+  const fallback = defaultWallpaper();
+  if (list.some((w) => w.id === fallback)) return fallback;
+  return list[0]?.id || "default";
+}
+
 export function getCurrent() {
+  const list = getWallpapers();
   const id = getCurrentId();
-  return wallpapers.find((w) => w.id === id) || wallpapers[0];
+  return list.find((w) => w.id === id) || list[0] || { id: "default", cssValue: "none", darkCssValue: "none" };
 }
 
 export function setCurrent(id) {
-  const next = wallpapers.find((w) => w.id === id);
+  const next = getWallpapers().find((w) => w.id === id);
   if (!next) return null;
   try { localStorage.setItem(STORAGE_KEY, id); } catch (_) {}
   for (const fn of listeners) {

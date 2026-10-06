@@ -53,8 +53,8 @@
             class="ctx-wallpaper-thumb"
             :class="{ active: getCurrentWallpaperId() === wp.id }"
             :style="{ backgroundImage: wp.cssValue }"
-            :title="$t(wp.labelKey)"
-            :aria-label="$t(wp.labelKey)"
+            :title="wallpaperLabel(wp)"
+            :aria-label="wallpaperLabel(wp)"
             @click="pickWallpaper(wp.id)"
           ></button>
         </div>
@@ -68,7 +68,7 @@ import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import InfoCard from "./InfoCard.vue";
 import { getDesktopNodes, getDesktopDefaultCells, identityOf, findNodeByIdentity } from "../filesystem";
 import { getPositions, setPosition, provideSnapshot, onChange as onLayoutChange } from "../desktopLayout";
-import { wallpapers, getCurrentId as getCurrentWallpaperId, setCurrent as setWallpaper } from "../wallpapers";
+import { getWallpapers, wallpaperLabel, getCurrentId as getCurrentWallpaperId, setCurrent as setWallpaper } from "../wallpapers";
 import { getState as getDesktopIconsState, toggleDesktop, resetDesktop, onChange as onDesktopIconsChange } from "../desktopIcons";
 
 // Larger cells than the icons themselves so dragged icons get breathing room.
@@ -110,7 +110,6 @@ export default {
       // Right-click-on-empty-desktop menu: null when hidden, else {x, y}.
       desktopMenu: null,
       wallpaperPickerOpen: false,
-      wallpapers,
       // Viewport size (drives the default auto-grid; reflows on resize).
       vw: window.innerWidth,
       vh: window.innerHeight,
@@ -206,6 +205,9 @@ export default {
       }
       return map;
     },
+    wallpapers() {
+      return getWallpapers();
+    },
     nodeIdsKey() {
       return this.nodes.map((n) => n.id).join("|");
     },
@@ -229,6 +231,7 @@ export default {
   },
   methods: {
     getCurrentWallpaperId,
+    wallpaperLabel,
     // Where every icon currently sits, as grid cells keyed by node id - used
     // by the admin panel's "use my current desktop as the default".
     snapshotCells() {

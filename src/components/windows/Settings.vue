@@ -56,8 +56,8 @@
           class="wallpaper-thumb"
           :class="{ active: selectedWallpaper === wp.id }"
           :style="{ backgroundImage: wp.cssValue }"
-          :title="$t(wp.labelKey)"
-          :aria-label="$t(wp.labelKey)"
+          :title="wallpaperLabel(wp)"
+          :aria-label="wallpaperLabel(wp)"
           @click="pickWallpaper(wp.id)"
         ></button>
       </div>
@@ -69,7 +69,7 @@
 import { sounds } from "../../sounds";
 import { haptics } from "../../haptics";
 import { unlock as unlockAchievement } from "../../achievements";
-import { wallpapers, setCurrent as setWallpaper } from "../../wallpapers";
+import { getWallpapers, wallpaperLabel, setCurrent as setWallpaper } from "../../wallpapers";
 
 export default {
   props: {
@@ -93,10 +93,15 @@ export default {
       volumePercent: Math.round(sounds.getVolume() * 100),
       hapticsEnabled: haptics.isEnabled(),
       selectedWallpaper: this.currentWallpaperId,
-      wallpapers,
     };
   },
+  computed: {
+    wallpapers() {
+      return getWallpapers();
+    },
+  },
   methods: {
+    wallpaperLabel,
     toggleDarkMode() {
       this.$emit("update:darkMode", !this.darkMode); // Emit the updated value to App.vue
       unlockAchievement("night-owl");

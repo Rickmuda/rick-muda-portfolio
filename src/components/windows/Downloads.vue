@@ -10,14 +10,14 @@
       >
         <!-- Thumbnail -->
         <div class="card-thumb">
-          <img :src="item.thumbnail" :alt="$t(item.titleKey)" class="card-thumb-img" loading="lazy" decoding="async" />
+          <img :src="item.thumbnail" :alt="titleOf(item)" class="card-thumb-img" loading="lazy" decoding="async" />
           <span v-if="isComingSoon(item)" class="coming-soon-ribbon">{{ $t('comingSoon') }}</span>
         </div>
 
         <!-- Body -->
         <div class="card-body">
-          <h3 class="card-title">{{ $t(item.titleKey) }}</h3>
-          <p class="card-desc">{{ $t(item.descKey) }}</p>
+          <h3 class="card-title">{{ titleOf(item) }}</h3>
+          <p class="card-desc">{{ descOf(item) }}</p>
 
           <!-- Meta: version · size, with a lock indicator when protected -->
           <div class="card-meta">
@@ -118,6 +118,7 @@
 
 <script>
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
+import { visibleDownloads, itemText } from "../../contentStore";
 
 export default {
   name: "Downloads",
@@ -126,89 +127,18 @@ export default {
   },
   data() {
     return {
-      downloads: [
-        {
-          id: "portfolio-fotografie",
-          titleKey: "dlPhotoTitle",
-          descKey: "dlPhotoDesc",
-          version: "v1.0",
-          // Leave empty until the real size is known; it's hidden when blank.
-          size: "",
-          thumbnail: new URL("@/assets/img/downloads/fotoport.webp", import.meta.url).href,
-          // Password-protected: the file is streamed by the backend only after a
-          // correct password. The file is NOT served from a public URL, so it
-          // cannot be reached by guessing/altering a URL.
-          protected: true,
-          // Flip to true once the file is on the server (protected-files/) and the
-          // password is set. Until then the card shows "Coming soon".
-          available: true,
-          // Not meant for mobile: hidden on phones (<=768px). Set false for
-          // downloads that work fine on mobile.
-          mobileUnavailable: true,
-          // For unprotected downloads instead use: file: { url, name }
-        },
-        {
-          id: "stickyreminders",
-          titleKey: "dlStickyTitle",
-          descKey: "dlStickyDesc",
-          version: "v1.0",
-          size: "",
-          thumbnail: new URL("@/assets/img/downloads/sticky-icon.webp", import.meta.url).href,
-          protected: true,
-          available: true,
-          // It's an Android APK: only installable on mobile, so it's hidden
-          // on desktop.
-          desktopUnavailable: true,
-        },
-        {
-          id: "lunarhome",
-          titleKey: "dlLunarTitle",
-          descKey: "dlLunarDesc",
-          version: "v1.0",
-          size: "",
-          thumbnail: new URL("@/assets/img/downloads/lunarhome_icon.webp", import.meta.url).href,
-          protected: true,
-          available: true,
-          // Android APK: only installable on mobile, so it's hidden on desktop.
-          desktopUnavailable: true,
-        },
-        {
-          id: "playdeck",
-        titleKey: "dlPlaydeckTitle",
-          descKey: "dlPlaydeckDesc",
-          // Populated at runtime from /version.php, which reads the version
-          // straight out of the uploaded filename (see autoVersion below) -
-          // no hardcoding, no redeploy needed when a new build is uploaded.
-          version: "",
-          size: "",
-          autoVersion: true,
-          thumbnail: new URL("@/assets/img/downloads/playdeck_icon.webp", import.meta.url).href,
-          // Lives outside the web root (protected-files/) and is streamed via
-          // public/download.php like the protected downloads, but no
-          // password is required to fetch it.
-          gated: true,
-          available: true,
-          // It's a Windows .exe: only runnable on desktop, so it's hidden on mobile.
-          mobileUnavailable: true,
-        },
-      ],
       passwords: {},
       errors: {},
       loadingIds: {},
       revealedIds: {},
+      // { [id]: { version, size } } read from /version.php for autoVersion items.
+      autoVersions: {},
       isMobile: false,
     };
   },
   created() {
     // Plain (non-reactive) store for input DOM refs.
     this.inputRefs = {};
-    // Pre-initialise per-item state so v-model bindings stay reactive.
-    this.downloads.forEach((item) => {
-      this.passwords[item.id] = "";
-      this.errors[item.id] = "";
-      this.loadingIds[item.id] = false;
-      this.revealedIds[item.id] = false;
-    });
   },
   mounted() {
     this.mq = window.matchMedia("(max-width: 768px)");
@@ -218,27 +148,57 @@ export default {
     };
     this.mq.addEventListener("change", this.onMqChange);
 
-    this.downloads.forEach((item) => {
-      if (item.autoVersion) this.fetchVersion(item);
-    });
+    this.fetchAutoVersions();
   },
   beforeUnmount() {
     if (this.mq) this.mq.removeEventListener("change", this.onMqChange);
   },
   computed: {
+    // Download cards live in src/downloadsData.js / the admin panel (via
+    // src/contentStore.js). Each item's mode decides how it is fetched:
+    // "password" (protected) or "gated" (no password, still via download.php).
+    downloads() {
+      return visibleDownloads().map((item) => ({
+        ...item,
+        protected: item.mode === "password",
+        gated: item.mode === "gated",
+        version: this.autoVersions[item.id]?.version || item.version,
+        size: this.autoVersions[item.id]?.size || item.size,
+      }));
+    },
     // Only show downloads that make sense on the current device: mobile-only
     // downloads (e.g. an APK) are hidden on desktop and vice versa.
     visibleDownloads() {
       return this.downloads.filter((item) => !this.isDeviceUnavailable(item));
     },
+    autoVersionIds() {
+      return this.downloads.filter((d) => d.autoVersion).map((d) => d.id).join(",");
+    },
+  },
+  watch: {
+    // The list can change after mount (server content arrives later).
+    autoVersionIds() {
+      this.fetchAutoVersions();
+    },
   },
   methods: {
+    titleOf(item) {
+      return itemText(item.title, item.titleKey, item.id);
+    },
+    descOf(item) {
+      return itemText(item.description, item.descKey);
+    },
+    fetchAutoVersions() {
+      for (const item of this.downloads) {
+        if (item.autoVersion && !this.autoVersions[item.id]) this.fetchVersion(item);
+      }
+    },
     isComingSoon(item) {
       if (item.protected || item.gated) return !item.available;
       return !item.file;
     },
     isDeviceUnavailable(item) {
-      return this.isMobile ? !!item.mobileUnavailable : !!item.desktopUnavailable;
+      return this.isMobile ? item.devices === "desktop" : item.devices === "mobile";
     },
     metaText(item) {
       return [item.version, item.size].filter(Boolean).join(" · ");
@@ -262,8 +222,13 @@ export default {
         const response = await fetch(`/version.php?id=${encodeURIComponent(item.id)}`);
         if (!response.ok) return;
         const data = await response.json();
-        if (data.version) item.version = `v${data.version}`;
-        if (data.size) item.size = this.formatBytes(data.size);
+        this.autoVersions = {
+          ...this.autoVersions,
+          [item.id]: {
+            version: data.version ? `v${data.version}` : "",
+            size: data.size ? this.formatBytes(data.size) : "",
+          },
+        };
       } catch (error) {
         console.error("Version lookup error:", error);
       }

@@ -19,13 +19,13 @@ if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
 }
 
 $id = isset($_GET['id']) ? (string) $_GET['id'] : '';
-if (!isset($DOWNLOADS[$id])) {
-    http_response_code(404);
-    echo json_encode(['error' => 'Download not found']);
-    exit;
-}
 
-$resolved = resolve_download_entry($DOWNLOADS[$id]);
+// A file uploaded from the admin panel wins over the registry (its version is
+// typed in the admin panel, so only the size comes from here).
+$resolved = cms_download_file($id);
+if ($resolved === null && isset($DOWNLOADS[$id])) {
+    $resolved = resolve_download_entry($DOWNLOADS[$id]);
+}
 if ($resolved === null) {
     http_response_code(404);
     echo json_encode(['error' => 'File not available']);
