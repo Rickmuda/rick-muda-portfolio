@@ -1,34 +1,34 @@
 <template>
-  <div class="ad-window">
+  <div class="cms-window">
     <!-- Checking the session -->
-    <div v-if="checking" class="ad-center">{{ $t('adminLoading') }}</div>
+    <div v-if="checking" class="cms-center">{{ $t('adminLoading') }}</div>
 
     <!-- Login -->
-    <form v-else-if="!admin.loggedIn" class="ad-login" @submit.prevent="doLogin">
-      <font-awesome-icon icon="lock" class="ad-login-icon" />
+    <form v-else-if="!admin.loggedIn" class="cms-login" @submit.prevent="doLogin">
+      <font-awesome-icon icon="lock" class="cms-login-icon" />
       <h2>{{ $t('admin') }}</h2>
       <input
         ref="password"
         v-model="password"
         type="password"
-        class="ad-input"
+        class="cms-input"
         :placeholder="$t('adminPassword')"
         autocomplete="current-password"
       />
-      <button type="submit" class="ad-btn primary" :disabled="loggingIn || !password">
+      <button type="submit" class="cms-btn primary" :disabled="loggingIn || !password">
         {{ $t('adminLogin') }}
       </button>
-      <div v-if="loginError" class="ad-message error">{{ loginError }}</div>
+      <div v-if="loginError" class="cms-message error">{{ loginError }}</div>
     </form>
 
     <!-- Panel -->
     <template v-else>
-      <header class="ad-header">
-        <div class="ad-tabs" role="tablist">
+      <header class="cms-header">
+        <div class="cms-tabs" role="tablist">
           <button
             v-for="t in tabs"
             :key="t.key"
-            class="ad-tab"
+            class="cms-tab"
             :class="{ active: tab === t.key }"
             role="tab"
             :aria-selected="tab === t.key"
@@ -37,38 +37,38 @@
             {{ $t(t.labelKey) }}
           </button>
         </div>
-        <div class="ad-actions">
-          <span v-if="dirty" class="ad-dirty">{{ $t('adminUnsaved') }}</span>
-          <span v-if="message" class="ad-message" :class="message.type">{{ message.text }}</span>
-          <button v-if="dirty" class="ad-btn" @click="discard">{{ $t('adminDiscard') }}</button>
-          <button class="ad-btn primary" :disabled="!draft || saving || (!dirty && !isDefault)" @click="save">
+        <div class="cms-actions">
+          <span v-if="dirty" class="cms-dirty">{{ $t('adminUnsaved') }}</span>
+          <span v-if="message" class="cms-message" :class="message.type">{{ message.text }}</span>
+          <button v-if="dirty" class="cms-btn" @click="discard">{{ $t('adminDiscard') }}</button>
+          <button class="cms-btn primary" :disabled="!draft || saving || (!dirty && !isDefault)" @click="save">
             <font-awesome-icon icon="floppy-disk" /> {{ saving ? $t('adminSaving') : $t('adminSave') }}
           </button>
-          <button class="ad-btn" :title="$t('adminLogout')" @click="doLogout">
+          <button class="cms-btn" :title="$t('adminLogout')" @click="doLogout">
             <font-awesome-icon icon="right-from-bracket" />
           </button>
         </div>
       </header>
 
-      <div v-if="!draft" class="ad-center">{{ loadError || $t('adminLoading') }}</div>
+      <div v-if="!draft" class="cms-center">{{ loadError || $t('adminLoading') }}</div>
 
-      <div v-else class="ad-body">
-        <p v-if="isDefault && tab !== 'scores'" class="ad-note">{{ $t('adminFallbackNote') }}</p>
+      <div v-else class="cms-body">
+        <p v-if="isDefault && tab !== 'scores'" class="cms-note">{{ $t('adminFallbackNote') }}</p>
 
         <!-- Projects -->
-        <section v-if="tab === 'projects'" class="ad-projects">
-          <div class="ad-list-col">
-            <div class="ad-toolbar">
-              <button class="ad-btn primary" @click="addProject">
+        <section v-if="tab === 'projects'" class="cms-projects">
+          <div class="cms-list-col">
+            <div class="cms-toolbar">
+              <button class="cms-btn primary" @click="addProject">
                 <font-awesome-icon icon="plus" /> {{ $t('adminNewProject') }}
               </button>
-              <span class="ad-hint">{{ $t('adminDragHint') }}</span>
+              <span class="cms-hint">{{ $t('adminDragHint') }}</span>
             </div>
-            <ul class="ad-list">
+            <ul class="cms-list">
               <li
                 v-for="(p, i) in draft.projects"
                 :key="p.id"
-                class="ad-row"
+                class="cms-row"
                 :class="{ active: editingId === p.id, hidden: p.hidden, dragging: isDragging(draft.projects, i) }"
                 draggable="true"
                 @dragstart="dragStart(draft.projects, i, $event)"
@@ -76,98 +76,98 @@
                 @dragend="dragEnd"
                 @drop.prevent="dragEnd"
               >
-                <font-awesome-icon icon="grip-vertical" class="ad-grip" />
-                <img v-if="p.images.length" :src="resolveImage(p.images[0])" class="ad-row-thumb" alt="" />
-                <span v-else class="ad-row-thumb empty"></span>
-                <span class="ad-row-title">
+                <font-awesome-icon icon="grip-vertical" class="cms-grip" />
+                <img v-if="p.images.length" :src="resolveImage(p.images[0])" class="cms-row-thumb" alt="" />
+                <span v-else class="cms-row-thumb empty"></span>
+                <span class="cms-row-title">
                   {{ titleOf(p) }}
                   <small>{{ p.type }}<template v-if="p.status"> - {{ p.status }}</template></small>
                 </span>
-                <span v-if="p.hidden" class="ad-badge">{{ $t('adminHidden') }}</span>
-                <div class="ad-row-buttons">
-                  <button class="ad-icon-btn" :title="p.hidden ? $t('adminShow') : $t('adminHide')" @click="p.hidden = !p.hidden">
+                <span v-if="p.hidden" class="cms-badge">{{ $t('adminHidden') }}</span>
+                <div class="cms-row-buttons">
+                  <button class="cms-icon-btn" :title="p.hidden ? $t('adminShow') : $t('adminHide')" @click="p.hidden = !p.hidden">
                     <font-awesome-icon :icon="p.hidden ? 'eye-slash' : 'eye'" />
                   </button>
-                  <button class="ad-icon-btn" :title="$t('adminEdit')" @click="editingId = editingId === p.id ? null : p.id">
+                  <button class="cms-icon-btn" :title="$t('adminEdit')" @click="editingId = editingId === p.id ? null : p.id">
                     <font-awesome-icon icon="pen" />
                   </button>
                   <template v-if="confirmDeleteId === p.id">
-                    <button class="ad-btn danger small" @click="removeProject(i)">{{ $t('adminYes') }}</button>
-                    <button class="ad-btn small" @click="confirmDeleteId = null">{{ $t('adminCancel') }}</button>
+                    <button class="cms-btn danger small" @click="removeProject(i)">{{ $t('adminYes') }}</button>
+                    <button class="cms-btn small" @click="confirmDeleteId = null">{{ $t('adminCancel') }}</button>
                   </template>
-                  <button v-else class="ad-icon-btn danger" :title="$t('adminDelete')" @click="confirmDeleteId = p.id">
+                  <button v-else class="cms-icon-btn danger" :title="$t('adminDelete')" @click="confirmDeleteId = p.id">
                     <font-awesome-icon icon="trash" />
                   </button>
-                  <span class="ad-move">
-                    <button class="ad-icon-btn" :disabled="i === 0" aria-label="Up" @click="move(draft.projects, i, -1)">&#9650;</button>
-                    <button class="ad-icon-btn" :disabled="i === draft.projects.length - 1" aria-label="Down" @click="move(draft.projects, i, 1)">&#9660;</button>
+                  <span class="cms-move">
+                    <button class="cms-icon-btn" :disabled="i === 0" aria-label="Up" @click="move(draft.projects, i, -1)">&#9650;</button>
+                    <button class="cms-icon-btn" :disabled="i === draft.projects.length - 1" aria-label="Down" @click="move(draft.projects, i, 1)">&#9660;</button>
                   </span>
                 </div>
               </li>
             </ul>
           </div>
 
-          <div v-if="editingProject" class="ad-edit-col">
-            <div class="ad-edit-head">
+          <div v-if="editingProject" class="cms-edit-col">
+            <div class="cms-edit-head">
               <h3>{{ titleOf(editingProject) }}</h3>
-              <button class="ad-btn" @click="editingId = null">{{ $t('adminDone') }}</button>
+              <button class="cms-btn" @click="editingId = null">{{ $t('adminDone') }}</button>
             </div>
-            <div class="ad-grid2">
-              <label v-for="lang in langs" :key="'t' + lang" class="ad-field">
+            <div class="cms-grid2">
+              <label v-for="lang in langs" :key="'t' + lang" class="cms-field">
                 <span>{{ $t('adminTitle') }} ({{ lang.toUpperCase() }})</span>
                 <input
                   v-model="editingProject.title[lang]"
-                  class="ad-input"
+                  class="cms-input"
                   :placeholder="defaultTranslation(lang, editingProject.titleKey)"
                 />
               </label>
-              <label v-for="lang in langs" :key="'d' + lang" class="ad-field">
+              <label v-for="lang in langs" :key="'d' + lang" class="cms-field">
                 <span>{{ $t('adminDescription') }} ({{ lang.toUpperCase() }})</span>
                 <textarea
                   v-model="editingProject.description[lang]"
-                  class="ad-input"
+                  class="cms-input"
                   rows="6"
                   :placeholder="defaultTranslation(lang, editingProject.descKey)"
                 ></textarea>
               </label>
-              <label class="ad-field">
+              <label class="cms-field">
                 <span>{{ $t('adminType') }}</span>
-                <input v-model="editingProject.type" class="ad-input" list="ad-types" />
+                <input v-model="editingProject.type" class="cms-input" list="cms-types" />
               </label>
-              <label class="ad-field">
+              <label class="cms-field">
                 <span>{{ $t('adminDate') }}</span>
-                <input v-model="editingProject.dateCreated" type="date" class="ad-input" />
+                <input v-model="editingProject.dateCreated" type="date" class="cms-input" />
               </label>
-              <label class="ad-field">
+              <label class="cms-field">
                 <span>{{ $t('adminLink') }}</span>
-                <input v-model="editingProject.link" type="url" class="ad-input" />
+                <input v-model="editingProject.link" type="url" class="cms-input" />
               </label>
-              <label class="ad-field">
+              <label class="cms-field">
                 <span>{{ $t('adminRepository') }}</span>
-                <input v-model="editingProject.repository" type="url" class="ad-input" />
+                <input v-model="editingProject.repository" type="url" class="cms-input" />
               </label>
-              <label class="ad-field">
+              <label class="cms-field">
                 <span>{{ $t('adminStatus') }}</span>
-                <input v-model="editingProject.status" class="ad-input" list="ad-statuses" :placeholder="$t('adminStatusNone')" />
+                <input v-model="editingProject.status" class="cms-input" list="cms-statuses" :placeholder="$t('adminStatusNone')" />
               </label>
-              <label class="ad-field ad-check">
+              <label class="cms-field cms-check">
                 <input v-model="editingProject.disabled" type="checkbox" />
                 <span>{{ $t('adminDisabled') }}</span>
               </label>
             </div>
-            <datalist id="ad-types">
+            <datalist id="cms-types">
               <option v-for="t in knownTypes" :key="t" :value="t" />
             </datalist>
-            <datalist id="ad-statuses">
+            <datalist id="cms-statuses">
               <option v-for="s in knownStatuses" :key="s" :value="s" />
             </datalist>
 
             <h4>{{ $t('adminPhotos') }}</h4>
-            <div class="ad-photos">
+            <div class="cms-photos">
               <div
                 v-for="(img, i) in editingProject.images"
                 :key="img"
-                class="ad-photo"
+                class="cms-photo"
                 :class="{ dragging: isDragging(editingProject.images, i) }"
                 draggable="true"
                 @dragstart="dragStart(editingProject.images, i, $event)"
@@ -176,13 +176,13 @@
                 @drop.prevent="dragEnd"
               >
                 <img :src="resolveImage(img)" alt="" />
-                <button class="ad-photo-remove" :title="$t('adminDelete')" @click="editingProject.images.splice(i, 1)">
+                <button class="cms-photo-remove" :title="$t('adminDelete')" @click="editingProject.images.splice(i, 1)">
                   <font-awesome-icon icon="xmark" />
                 </button>
               </div>
-              <span v-if="!editingProject.images.length" class="ad-hint">{{ $t('adminNoPhotos') }}</span>
+              <span v-if="!editingProject.images.length" class="cms-hint">{{ $t('adminNoPhotos') }}</span>
             </div>
-            <label class="ad-btn upload" :class="{ disabled: uploading }">
+            <label class="cms-btn upload" :class="{ disabled: uploading }">
               <font-awesome-icon icon="upload" /> {{ uploading ? $t('adminUploading') : $t('adminUpload') }}
               <input type="file" accept="image/webp,image/jpeg,image/png,image/gif" multiple hidden :disabled="uploading" @change="uploadProjectImages" />
             </label>
@@ -191,18 +191,18 @@
 
         <!-- Art gallery -->
         <section v-else-if="tab === 'art'">
-          <div class="ad-toolbar">
-            <label class="ad-btn primary upload" :class="{ disabled: uploading }">
+          <div class="cms-toolbar">
+            <label class="cms-btn primary upload" :class="{ disabled: uploading }">
               <font-awesome-icon icon="upload" /> {{ uploading ? $t('adminUploading') : $t('adminUpload') }}
               <input type="file" accept="image/webp,image/jpeg,image/png,image/gif" multiple hidden :disabled="uploading" @change="uploadArt" />
             </label>
-            <span class="ad-hint">{{ $t('adminDragHint') }}</span>
+            <span class="cms-hint">{{ $t('adminDragHint') }}</span>
           </div>
-          <div class="ad-art-grid">
+          <div class="cms-art-grid">
             <div
               v-for="(a, i) in draft.art"
               :key="a.id"
-              class="ad-art"
+              class="cms-art"
               :class="{ hidden: a.hidden, dragging: isDragging(draft.art, i) }"
               draggable="true"
               @dragstart="dragStart(draft.art, i, $event)"
@@ -211,18 +211,18 @@
               @drop.prevent="dragEnd"
             >
               <img :src="resolveImage(a.src)" alt="" />
-              <input v-model="a.name" class="ad-input" :aria-label="$t('adminPhotoName')" />
-              <div class="ad-row-buttons">
-                <button class="ad-icon-btn" :title="a.hidden ? $t('adminShow') : $t('adminHide')" @click="a.hidden = !a.hidden">
+              <input v-model="a.name" class="cms-input" :aria-label="$t('adminPhotoName')" />
+              <div class="cms-row-buttons">
+                <button class="cms-icon-btn" :title="a.hidden ? $t('adminShow') : $t('adminHide')" @click="a.hidden = !a.hidden">
                   <font-awesome-icon :icon="a.hidden ? 'eye-slash' : 'eye'" />
                 </button>
-                <button class="ad-icon-btn" :disabled="i === 0" aria-label="Left" @click="move(draft.art, i, -1)">&#9664;</button>
-                <button class="ad-icon-btn" :disabled="i === draft.art.length - 1" aria-label="Right" @click="move(draft.art, i, 1)">&#9654;</button>
+                <button class="cms-icon-btn" :disabled="i === 0" aria-label="Left" @click="move(draft.art, i, -1)">&#9664;</button>
+                <button class="cms-icon-btn" :disabled="i === draft.art.length - 1" aria-label="Right" @click="move(draft.art, i, 1)">&#9654;</button>
                 <template v-if="confirmDeleteId === a.id">
-                  <button class="ad-btn danger small" @click="draft.art.splice(i, 1); confirmDeleteId = null">{{ $t('adminYes') }}</button>
-                  <button class="ad-btn small" @click="confirmDeleteId = null">{{ $t('adminCancel') }}</button>
+                  <button class="cms-btn danger small" @click="draft.art.splice(i, 1); confirmDeleteId = null">{{ $t('adminYes') }}</button>
+                  <button class="cms-btn small" @click="confirmDeleteId = null">{{ $t('adminCancel') }}</button>
                 </template>
-                <button v-else class="ad-icon-btn danger" :title="$t('adminDelete')" @click="confirmDeleteId = a.id">
+                <button v-else class="cms-icon-btn danger" :title="$t('adminDelete')" @click="confirmDeleteId = a.id">
                   <font-awesome-icon icon="trash" />
                 </button>
               </div>
@@ -231,30 +231,30 @@
         </section>
 
         <!-- Texts -->
-        <section v-else-if="tab === 'texts'" class="ad-texts">
-          <div class="ad-toolbar">
-            <input v-model="textSearch" class="ad-input grow" :placeholder="$t('adminTextsSearch')" />
-            <label class="ad-check">
+        <section v-else-if="tab === 'texts'" class="cms-texts">
+          <div class="cms-toolbar">
+            <input v-model="textSearch" class="cms-input grow" :placeholder="$t('adminTextsSearch')" />
+            <label class="cms-check">
               <input v-model="onlyChangedTexts" type="checkbox" />
               <span>{{ $t('adminTextsOnlyChanged') }}</span>
             </label>
           </div>
-          <p class="ad-hint">
+          <p class="cms-hint">
             {{ $t('adminTextsHint', { example: '{name}', at: "{'@'}", open: "{'{'}", close: "{'}'}" }) }}
           </p>
-          <div v-for="key in shownTextKeys" :key="key" class="ad-text-row" :class="{ changed: isTextChanged(key) }">
-            <div class="ad-text-key">
+          <div v-for="key in shownTextKeys" :key="key" class="cms-text-row" :class="{ changed: isTextChanged(key) }">
+            <div class="cms-text-key">
               <code>{{ key }}</code>
               <template v-if="isTextChanged(key)">
-                <span class="ad-badge">{{ $t('adminTextsChanged') }}</span>
-                <button class="ad-btn small" @click="resetText(key)">{{ $t('adminReset') }}</button>
+                <span class="cms-badge">{{ $t('adminTextsChanged') }}</span>
+                <button class="cms-btn small" @click="resetText(key)">{{ $t('adminReset') }}</button>
               </template>
             </div>
-            <div class="ad-grid2">
+            <div class="cms-grid2">
               <textarea
                 v-for="lang in langs"
                 :key="lang"
-                class="ad-input"
+                class="cms-input"
                 :rows="textRows(key)"
                 :value="textValue(lang, key)"
                 :aria-label="`${key} (${lang})`"
@@ -262,18 +262,18 @@
               ></textarea>
             </div>
           </div>
-          <p v-if="filteredTextKeys.length > shownTextKeys.length" class="ad-hint">
+          <p v-if="filteredTextKeys.length > shownTextKeys.length" class="cms-hint">
             {{ shownTextKeys.length }} / {{ filteredTextKeys.length }}
           </p>
         </section>
 
         <!-- Scoreboards -->
         <section v-else-if="tab === 'scores'">
-          <div class="ad-toolbar">
+          <div class="cms-toolbar">
             <button
               v-for="g in GAMES"
               :key="g.key"
-              class="ad-tab"
+              class="cms-tab"
               :class="{ active: scoreGame === g.key }"
               @click="scoreGame = g.key"
             >
@@ -283,30 +283,30 @@
               <button
                 v-for="d in DIFFICULTIES"
                 :key="d"
-                class="ad-tab small"
+                class="cms-tab small"
                 :class="{ active: scoreVariant === d }"
                 @click="scoreVariant = d"
               >
                 {{ $t('mine' + d.charAt(0).toUpperCase() + d.slice(1)) }}
               </button>
             </template>
-            <button class="ad-btn" @click="loadScores">{{ $t('adminScoresRefresh') }}</button>
+            <button class="cms-btn" @click="loadScores">{{ $t('adminScoresRefresh') }}</button>
           </div>
-          <div v-if="scoresLoading" class="ad-hint">{{ $t('adminLoading') }}</div>
-          <div v-else-if="scoresError" class="ad-message error">{{ $t('adminScoresError') }}</div>
-          <div v-else-if="!scores.length" class="ad-hint">{{ $t('adminScoresEmpty') }}</div>
-          <table v-else class="ad-table">
+          <div v-if="scoresLoading" class="cms-hint">{{ $t('adminLoading') }}</div>
+          <div v-else-if="scoresError" class="cms-message error">{{ $t('adminScoresError') }}</div>
+          <div v-else-if="!scores.length" class="cms-hint">{{ $t('adminScoresEmpty') }}</div>
+          <table v-else class="cms-table">
             <tbody>
               <tr v-for="s in scores" :key="s.id">
                 <td>{{ s.player_name }}</td>
                 <td>{{ s.value }}<template v-if="s.metric === 'time_seconds'">s</template></td>
                 <td>{{ formatDate(s.created_at) }}</td>
-                <td class="ad-table-actions">
+                <td class="cms-table-actions">
                   <template v-if="confirmDeleteId === s.id">
-                    <button class="ad-btn danger small" @click="removeScore(s.id)">{{ $t('adminYes') }}</button>
-                    <button class="ad-btn small" @click="confirmDeleteId = null">{{ $t('adminCancel') }}</button>
+                    <button class="cms-btn danger small" @click="removeScore(s.id)">{{ $t('adminYes') }}</button>
+                    <button class="cms-btn small" @click="confirmDeleteId = null">{{ $t('adminCancel') }}</button>
                   </template>
-                  <button v-else class="ad-icon-btn danger" :title="$t('adminDelete')" @click="confirmDeleteId = s.id">
+                  <button v-else class="cms-icon-btn danger" :title="$t('adminDelete')" @click="confirmDeleteId = s.id">
                     <font-awesome-icon icon="trash" />
                   </button>
                 </td>
@@ -661,7 +661,7 @@ export default {
 </script>
 
 <style scoped>
-.ad-window {
+.cms-window {
   height: 100%;
   background: #1a1a24;
   color: #fff;
@@ -672,7 +672,7 @@ export default {
   font-size: 14px;
 }
 
-.ad-center {
+.cms-center {
   margin: auto;
   color: #c0b8cc;
   padding: 24px;
@@ -680,7 +680,7 @@ export default {
 }
 
 /* Login */
-.ad-login {
+.cms-login {
   margin: auto;
   width: min(320px, 90%);
   display: flex;
@@ -689,17 +689,17 @@ export default {
   align-items: stretch;
   text-align: center;
 }
-.ad-login h2 {
+.cms-login h2 {
   margin: 0;
 }
-.ad-login-icon {
+.cms-login-icon {
   font-size: 36px;
   color: #c637e6;
   align-self: center;
 }
 
 /* Header */
-.ad-header {
+.cms-header {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -709,22 +709,22 @@ export default {
   background: linear-gradient(180deg, #2a2a35, #1f1f2d);
   border-bottom: 2px solid #4f115d;
 }
-.ad-tabs,
-.ad-actions,
-.ad-toolbar,
-.ad-row-buttons {
+.cms-tabs,
+.cms-actions,
+.cms-toolbar,
+.cms-row-buttons {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   gap: 6px;
 }
-.ad-toolbar {
+.cms-toolbar {
   margin-bottom: 10px;
 }
 
-.ad-tab,
-.ad-btn,
-.ad-icon-btn {
+.cms-tab,
+.cms-btn,
+.cms-icon-btn {
   font: inherit;
   color: #fff;
   border: 1px solid #4f115d;
@@ -736,71 +736,71 @@ export default {
   align-items: center;
   gap: 6px;
 }
-.ad-tab {
+.cms-tab {
   background: transparent;
   color: #c0b8cc;
 }
-.ad-tab:hover,
-.ad-btn:hover,
-.ad-icon-btn:hover {
+.cms-tab:hover,
+.cms-btn:hover,
+.cms-icon-btn:hover {
   background: rgba(155, 32, 183, 0.25);
 }
-.ad-tab.active,
-.ad-btn.primary {
+.cms-tab.active,
+.cms-btn.primary {
   background: #9b20b7;
   border-color: #c637e6;
   color: #fff;
 }
-.ad-btn.danger,
-.ad-icon-btn.danger:hover {
+.cms-btn.danger,
+.cms-icon-btn.danger:hover {
   background: #a3263a;
   border-color: #d64560;
 }
-.ad-btn.small,
-.ad-tab.small {
+.cms-btn.small,
+.cms-tab.small {
   padding: 3px 8px;
   font-size: 12px;
 }
-.ad-icon-btn {
+.cms-icon-btn {
   padding: 5px 8px;
   background: transparent;
 }
-.ad-btn:disabled,
-.ad-icon-btn:disabled,
-.ad-btn.disabled {
+.cms-btn:disabled,
+.cms-icon-btn:disabled,
+.cms-btn.disabled {
   opacity: 0.45;
   cursor: default;
   pointer-events: none;
 }
-.ad-btn.upload {
+.cms-btn.upload {
   position: relative;
 }
 
-.ad-dirty {
+.cms-dirty {
   color: #f0c060;
   font-size: 12px;
 }
-.ad-message {
+.cms-message {
   font-size: 13px;
 }
-.ad-message.error {
+.cms-message.error {
   color: #ff7b8a;
 }
-.ad-message.success {
+.cms-message.success {
   color: #7be08a;
 }
-.ad-hint {
+.cms-hint {
   color: #8c849c;
   font-size: 12px;
 }
-.ad-note {
+.cms-note {
   margin: 0 0 12px;
   padding: 8px 12px;
   border-left: 3px solid #c637e6;
   background: rgba(155, 32, 183, 0.12);
   color: #d4c8e0;
 }
-.ad-badge {
+.cms-badge {
   font-size: 11px;
   padding: 1px 6px;
   border-radius: 3px;
@@ -810,7 +810,7 @@ export default {
 }
 
 /* Inputs */
-.ad-input {
+.cms-input {
   font: inherit;
   color: #fff;
   background: #252535;
@@ -821,26 +821,26 @@ export default {
   box-sizing: border-box;
   resize: vertical;
 }
-.ad-input:focus {
+.cms-input:focus {
   outline: none;
   border-color: #c637e6;
 }
-.ad-input::placeholder {
+.cms-input::placeholder {
   color: #6a647a;
 }
-.ad-input.grow {
+.cms-input.grow {
   flex: 1;
   min-width: 160px;
   width: auto;
 }
-.ad-field {
+.cms-field {
   display: flex;
   flex-direction: column;
   gap: 4px;
   font-size: 12px;
   color: #c0b8cc;
 }
-.ad-check {
+.cms-check {
   display: flex;
   flex-direction: row;
   align-items: center;
@@ -848,32 +848,32 @@ export default {
   font-size: 13px;
   color: #c0b8cc;
 }
-.ad-check input {
+.cms-check input {
   accent-color: #9b20b7;
 }
-.ad-grid2 {
+.cms-grid2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 10px;
 }
 
 /* Body */
-.ad-body {
+.cms-body {
   flex: 1;
   overflow: auto;
   padding: 12px;
 }
 
 /* Projects */
-.ad-projects {
+.cms-projects {
   display: grid;
   grid-template-columns: minmax(0, 1fr);
   gap: 16px;
 }
-.ad-projects:has(.ad-edit-col) {
+.cms-projects:has(.cms-edit-col) {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr);
 }
-.ad-list {
+.cms-list {
   list-style: none;
   margin: 0;
   padding: 0;
@@ -881,7 +881,7 @@ export default {
   flex-direction: column;
   gap: 4px;
 }
-.ad-row {
+.cms-row {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -891,92 +891,92 @@ export default {
   background: #1f1f2d;
   cursor: grab;
 }
-.ad-row.active {
+.cms-row.active {
   border-color: #c637e6;
 }
-.ad-row.hidden,
-.ad-art.hidden {
+.cms-row.hidden,
+.cms-art.hidden {
   opacity: 0.55;
 }
-.ad-row.dragging,
-.ad-art.dragging,
-.ad-photo.dragging {
+.cms-row.dragging,
+.cms-art.dragging,
+.cms-photo.dragging {
   outline: 2px dashed #c637e6;
 }
-.ad-grip {
+.cms-grip {
   color: #6a647a;
 }
-.ad-row-thumb {
+.cms-row-thumb {
   width: 48px;
   height: 32px;
   object-fit: cover;
   border-radius: 3px;
   flex-shrink: 0;
 }
-.ad-row-thumb.empty {
+.cms-row-thumb.empty {
   background: #2c2c3c;
 }
-.ad-row-title {
+.cms-row-title {
   flex: 1;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.ad-row-title small {
+.cms-row-title small {
   display: block;
   color: #8c849c;
 }
-.ad-move {
+.cms-move {
   display: inline-flex;
   flex-direction: column;
 }
-.ad-move .ad-icon-btn {
+.cms-move .cms-icon-btn {
   padding: 0 6px;
   font-size: 9px;
 }
 
-.ad-edit-col {
+.cms-edit-col {
   border: 1px solid #2c2c3c;
   border-radius: 6px;
   padding: 12px;
   background: #1f1f2d;
   align-self: start;
 }
-.ad-edit-head {
+.cms-edit-head {
   display: flex;
   justify-content: space-between;
   align-items: center;
   gap: 8px;
   margin-bottom: 10px;
 }
-.ad-edit-head h3,
-.ad-edit-col h4 {
+.cms-edit-head h3,
+.cms-edit-col h4 {
   margin: 0;
 }
-.ad-edit-col h4 {
+.cms-edit-col h4 {
   margin: 16px 0 8px;
 }
 
-.ad-photos {
+.cms-photos {
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 10px;
 }
-.ad-photo {
+.cms-photo {
   position: relative;
   width: 120px;
   height: 80px;
   cursor: grab;
 }
-.ad-photo img {
+.cms-photo img {
   width: 100%;
   height: 100%;
   object-fit: cover;
   border-radius: 4px;
 }
-.ad-photo-remove {
+.cms-photo-remove {
   position: absolute;
   top: 4px;
   right: 4px;
@@ -988,17 +988,17 @@ export default {
   color: #fff;
   cursor: pointer;
 }
-.ad-photo-remove:hover {
+.cms-photo-remove:hover {
   background: #a3263a;
 }
 
 /* Art */
-.ad-art-grid {
+.cms-art-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 10px;
 }
-.ad-art {
+.cms-art {
   display: flex;
   flex-direction: column;
   gap: 6px;
@@ -1008,7 +1008,7 @@ export default {
   background: #1f1f2d;
   cursor: grab;
 }
-.ad-art img {
+.cms-art img {
   width: 100%;
   aspect-ratio: 4 / 3;
   object-fit: cover;
@@ -1016,41 +1016,41 @@ export default {
 }
 
 /* Texts */
-.ad-text-row {
+.cms-text-row {
   padding: 8px 0;
   border-bottom: 1px solid #2c2c3c;
 }
-.ad-text-row.changed code {
+.cms-text-row.changed code {
   color: #f0c060;
 }
-.ad-text-key {
+.cms-text-key {
   display: flex;
   align-items: center;
   gap: 8px;
   margin-bottom: 6px;
 }
-.ad-text-key code {
+.cms-text-key code {
   color: #d4a8e8;
   font-size: 12px;
 }
 
 /* Scores */
-.ad-table {
+.cms-table {
   width: 100%;
   border-collapse: collapse;
 }
-.ad-table td {
+.cms-table td {
   padding: 6px 8px;
   border-bottom: 1px solid #2c2c3c;
 }
-.ad-table-actions {
+.cms-table-actions {
   text-align: right;
   white-space: nowrap;
 }
 
 @media (max-width: 760px) {
-  .ad-projects:has(.ad-edit-col),
-  .ad-grid2 {
+  .cms-projects:has(.cms-edit-col),
+  .cms-grid2 {
     grid-template-columns: minmax(0, 1fr);
   }
 }

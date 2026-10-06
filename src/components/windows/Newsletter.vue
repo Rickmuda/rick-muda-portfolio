@@ -9,19 +9,19 @@
       <span class="fake-go-btn">Go</span>
     </div>
 
-    <div class="ad-content">
-      <div class="ad-badge">{{ $t("newsletterPopupBadge") }}</div>
-      <h2 class="ad-headline">{{ $t("newsletterPopupHeadline") }}</h2>
-      <p class="ad-sub">{{ $t("newsletterIntro") }}</p>
+    <div class="nlp-content">
+      <div class="nlp-badge">{{ $t("newsletterPopupBadge") }}</div>
+      <h2 class="nlp-headline">{{ $t("newsletterPopupHeadline") }}</h2>
+      <p class="nlp-sub">{{ $t("newsletterIntro") }}</p>
 
-      <div class="ad-form">
+      <div class="nlp-form">
         <input
           type="email"
           v-model="email"
           :placeholder="$t('enterEmail')"
           :disabled="status === 'loading'"
           @keyup.enter="submit"
-          class="ad-input"
+          class="nlp-input"
         />
 
         <!-- Honeypot: hidden from real visitors, only a bot would fill this in. -->
@@ -34,20 +34,20 @@
           aria-hidden="true"
         />
 
-        <button @click="submit" :disabled="status === 'loading'" class="ad-cta">
+        <button @click="submit" :disabled="status === 'loading'" class="nlp-cta">
           {{ status === "loading" ? $t("newsletterSubscribing") : $t("newsletterSubscribe") }}
         </button>
       </div>
 
       <p
         v-if="statusMessage"
-        class="ad-status"
+        class="nlp-status"
         :class="{ 'is-error': status === 'error' }"
       >
         {{ statusMessage }}
       </p>
 
-      <p class="ad-disclaimer">{{ $t("newsletterPopupDisclaimer") }}</p>
+      <p class="nlp-disclaimer">{{ $t("newsletterPopupDisclaimer") }}</p>
 
       <div class="hit-counter" aria-hidden="true">
         <span class="hit-counter-label">{{ $t("newsletterPopupCounter") }}</span>
@@ -182,7 +182,7 @@ export default {
 }
 
 /* The "ad" itself - now the main body of the window */
-.ad-content {
+.nlp-content {
   flex: 1;
   min-height: 0;
   background: linear-gradient(160deg, #fff200, #ffb300);
@@ -196,7 +196,7 @@ export default {
   overflow-y: auto;
 }
 
-.ad-badge {
+.nlp-badge {
   background: #cc0000;
   color: #ffe600;
   font-weight: 900;
@@ -207,10 +207,10 @@ export default {
   border-radius: 2px;
   transform: rotate(-3deg);
   box-shadow: 2px 2px 0 rgba(0, 0, 0, 0.25);
-  animation: ad-blink 1s steps(1) infinite;
+  animation: nlp-blink 1s steps(1) infinite;
 }
 
-.ad-headline {
+.nlp-headline {
   font-family: Impact, "Arial Narrow Bold", Tahoma, sans-serif;
   font-size: clamp(24px, 6.5vw, 32px);
   line-height: 1.2;
@@ -218,10 +218,10 @@ export default {
   text-shadow: 2px 2px 0 rgba(0, 0, 0, 0.2);
   text-transform: uppercase;
   margin: 0;
-  animation: ad-pulse 1.4s ease-in-out infinite;
+  animation: nlp-pulse 1.4s ease-in-out infinite;
 }
 
-.ad-sub {
+.nlp-sub {
   font-family: Tahoma, Verdana, sans-serif;
   font-weight: 700;
   color: #1a1a6e;
@@ -231,7 +231,7 @@ export default {
   margin: 0;
 }
 
-.ad-disclaimer {
+.nlp-disclaimer {
   font-family: Tahoma, Verdana, sans-serif;
   font-weight: 700;
   text-transform: uppercase;
@@ -241,7 +241,7 @@ export default {
   margin: 0;
 }
 
-.ad-form {
+.nlp-form {
   display: flex;
   flex-direction: column;
   gap: 12px;
@@ -250,7 +250,7 @@ export default {
   margin-top: 6px;
 }
 
-.ad-input {
+.nlp-input {
   width: 100%;
   box-sizing: border-box;
   padding: 12px 10px;
@@ -267,11 +267,11 @@ export default {
   color: #000;
 }
 
-.ad-input::placeholder {
+.nlp-input::placeholder {
   color: #777;
 }
 
-.ad-input:focus {
+.nlp-input:focus {
   outline: 2px dotted #1a1a6e;
   outline-offset: 1px;
 }
@@ -284,7 +284,7 @@ export default {
   opacity: 0;
 }
 
-.ad-cta {
+.nlp-cta {
   background: linear-gradient(180deg, #f4f4f4, #c0c0c0);
   border-width: 2px;
   border-style: solid;
@@ -302,15 +302,15 @@ export default {
   cursor: pointer;
 }
 
-.ad-cta::after {
+.nlp-cta::after {
   content: "!";
 }
 
-.ad-cta:hover:not(:disabled) {
+.nlp-cta:hover:not(:disabled) {
   background: linear-gradient(180deg, #ffffff, #d6d6d6);
 }
 
-.ad-cta:active:not(:disabled) {
+.nlp-cta:active:not(:disabled) {
   border-top-color: #555;
   border-left-color: #555;
   border-bottom-color: #fff;
@@ -318,12 +318,12 @@ export default {
   transform: translateY(1px);
 }
 
-.ad-cta:disabled {
+.nlp-cta:disabled {
   opacity: 0.6;
   cursor: not-allowed;
 }
 
-.ad-status {
+.nlp-status {
   font-family: Tahoma, sans-serif;
   font-weight: 700;
   font-size: 13px;
@@ -334,7 +334,7 @@ export default {
   margin: 0;
 }
 
-.ad-status.is-error {
+.nlp-status.is-error {
   color: #b00000;
 }
 
@@ -389,13 +389,13 @@ export default {
   color: #000;
 }
 
-@keyframes ad-blink {
+@keyframes nlp-blink {
   50% {
     opacity: 0;
   }
 }
 
-@keyframes ad-pulse {
+@keyframes nlp-pulse {
   0%,
   100% {
     transform: scale(1);
@@ -406,22 +406,22 @@ export default {
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .ad-badge {
+  .nlp-badge {
     animation: none;
   }
 
-  .ad-headline {
+  .nlp-headline {
     animation: none;
   }
 }
 
 @media (max-width: 768px) {
-  .ad-content {
+  .nlp-content {
     padding: 22px 16px;
   }
 
-  .ad-input,
-  .ad-cta {
+  .nlp-input,
+  .nlp-cta {
     min-height: 44px;
   }
 }
