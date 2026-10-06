@@ -22,6 +22,7 @@
 
 import { defineAsyncComponent } from "vue";
 import { minigames } from "./minigames";
+import { content } from "./contentStore";
 
 const lazy = (loader) => defineAsyncComponent(loader);
 
@@ -141,8 +142,58 @@ function collectDesktopNodes(node, acc) {
   return acc;
 }
 
-export function getDesktopNodes() {
+function getBuiltinDesktopNodes() {
   return collectDesktopNodes(vfsRoot, []);
+}
+
+// Everything the admin panel can place on the desktop: the built-in desktop
+// set plus the other root-level apps/folders (vinyl, pictures, downloads, ...),
+// one node per identity so the flat "*Desktop" duplicates don't show up twice.
+export function getDesktopCandidates() {
+  const builtin = getBuiltinDesktopNodes();
+  const seen = new Set(builtin.map(identityOf));
+  const extra = [];
+  for (const node of vfsRoot.children) {
+    const identity = identityOf(node);
+    if (seen.has(identity)) continue;
+    seen.add(identity);
+    extra.push(node);
+  }
+  return [...builtin, ...extra];
+}
+
+// Desktop layout saved from the admin panel (see src/contentStore.js), or null.
+// Shape: { items: [{ id, hidden }], positions: { [nodeId]: { col, row } } }
+export function getDesktopLayout() {
+  const layout = content.server?.layout?.desktop;
+  return layout && Array.isArray(layout.items) ? layout : null;
+}
+
+// The default desktop icon set (before any visitor customization), in order.
+// Follows the admin layout when there is one; candidates the layout doesn't
+// know about yet (added to the code later) fall back to their `desktop` flag.
+export function getDesktopNodes() {
+  const layout = getDesktopLayout();
+  if (!layout) return getBuiltinDesktopNodes();
+  const candidates = getDesktopCandidates();
+  const byId = new Map(candidates.map((n) => [n.id, n]));
+  const seen = new Set();
+  const out = [];
+  for (const item of layout.items) {
+    const node = byId.get(item.id);
+    if (!node || seen.has(node.id)) continue;
+    seen.add(node.id);
+    if (!item.hidden) out.push(node);
+  }
+  for (const node of candidates) {
+    if (!seen.has(node.id) && node.desktop) out.push(node);
+  }
+  return out;
+}
+
+// Admin-chosen default grid cell per desktop node id ({ col, row }).
+export function getDesktopDefaultCells() {
+  return getDesktopLayout()?.positions || {};
 }
 
 // Walk from the root following an array of ids; return the node or null.

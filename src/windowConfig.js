@@ -1,5 +1,6 @@
 import { defineAsyncComponent } from "vue";
 import { minigamesFolder } from "./minigames";
+import { content } from "./contentStore";
 
 // Each window is code-split into its own chunk. The loader is held in a map so
 // we can both lazy-render through defineAsyncComponent AND warm-preload every
@@ -108,6 +109,27 @@ export const appList = [
   { name: "camera",          icon: "camera",       labelKey: "camera" },
   { name: "downloads",       icon: "download",     labelKey: "downloads" },
 ];
+
+// Mobile home screen apps: appList in the order/visibility saved from the admin
+// panel (layout.mobile = { items: [{ id: appName, hidden }] }). Apps the saved
+// layout doesn't know about yet are appended, visible.
+export function getMobileApps() {
+  const layout = content.server?.layout?.mobile;
+  if (!layout || !Array.isArray(layout.items)) return appList;
+  const byName = new Map(appList.map((a) => [a.name, a]));
+  const seen = new Set();
+  const out = [];
+  for (const item of layout.items) {
+    const app = byName.get(item.id);
+    if (!app || seen.has(app.name)) continue;
+    seen.add(app.name);
+    if (!item.hidden) out.push(app);
+  }
+  for (const app of appList) {
+    if (!seen.has(app.name)) out.push(app);
+  }
+  return out;
+}
 
 // Subset of appList pinned to the desktop taskbar, in taskbar order.
 export const taskbarPinned = appList.filter((a) => a.pinned);

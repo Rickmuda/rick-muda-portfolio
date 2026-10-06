@@ -34,6 +34,23 @@ export function setPosition(id, pos) {
   }
 }
 
+// Desktop.vue registers a function returning where every icon currently sits
+// ({ [nodeId]: { col, row } }), so the admin panel can save the admin's own
+// arrangement as the default layout for all visitors.
+let snapshotProvider = null;
+
+export function provideSnapshot(fn) {
+  snapshotProvider = fn;
+  return () => {
+    if (snapshotProvider === fn) snapshotProvider = null;
+  };
+}
+
+// null when no desktop is mounted (e.g. on the mobile layout).
+export function snapshotCells() {
+  return snapshotProvider ? snapshotProvider() : null;
+}
+
 export function onChange(fn) {
   listeners.add(fn);
   return () => listeners.delete(fn);

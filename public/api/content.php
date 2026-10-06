@@ -78,6 +78,10 @@ function keep_maps_as_objects($content)
     foreach (['en', 'nl'] as $lang) {
         $content['texts'][$lang] = (object) (isset($content['texts'][$lang]) ? $content['texts'][$lang] : []);
     }
+    if (isset($content['layout']['desktop'])) {
+        $content['layout']['desktop']['positions'] = (object) (isset($content['layout']['desktop']['positions'])
+            ? $content['layout']['desktop']['positions'] : []);
+    }
     return $content;
 }
 
@@ -219,7 +223,7 @@ function sanitize_content($input)
         }
     }
 
-    return [
+    $result = [
         'version'   => 1,
         'updatedAt' => gmdate('c'),
         'projects'  => array_slice($projects, 0, 200),
@@ -227,6 +231,60 @@ function sanitize_content($input)
         // (object) keeps empty maps as {} instead of [] in the JSON.
         'texts'     => ['en' => (object) $texts['en'], 'nl' => (object) $texts['nl']],
     ];
+    $layout = sanitize_layout(isset($input['layout']) ? $input['layout'] : null);
+    if ($layout !== null) {
+        $result['layout'] = $layout;
+    }
+    return $result;
+}
+
+// Default app placement: order + visibility for the desktop and the mobile
+// home screen, plus optional fixed desktop grid cells. Either part may be
+// missing (= use the defaults from the code).
+function sanitize_layout($input)
+{
+    if (!is_array($input)) {
+        return null;
+    }
+    $out = [];
+    foreach (['desktop', 'mobile'] as $surface) {
+        if (!isset($input[$surface]['items']) || !is_array($input[$surface]['items'])) {
+            continue;
+        }
+        $items = [];
+        $seen = [];
+        foreach ($input[$surface]['items'] as $item) {
+            $id = id_field(is_array($item) && isset($item['id']) ? $item['id'] : '');
+            if ($id === '' || isset($seen[$id])) {
+                continue;
+            }
+            $seen[$id] = true;
+            $items[] = ['id' => $id, 'hidden' => !empty($item['hidden'])];
+        }
+        $out[$surface] = ['items' => array_slice($items, 0, 100)];
+    }
+    if (isset($out['desktop'])) {
+        $positions = [];
+        $inputPositions = isset($input['desktop']['positions']) && is_array($input['desktop']['positions'])
+            ? $input['desktop']['positions'] : [];
+        foreach ($inputPositions as $id => $cell) {
+            $id = id_field($id);
+            if ($id === '' || !is_array($cell) || !isset($cell['col'], $cell['row'])) {
+                continue;
+            }
+            $col = (int) $cell['col'];
+            $row = (int) $cell['row'];
+            if ($col < 0 || $col > 50 || $row < 0 || $row > 50) {
+                continue;
+            }
+            $positions[$id] = ['col' => $col, 'row' => $row];
+            if (count($positions) >= 100) {
+                break;
+            }
+        }
+        $out['desktop']['positions'] = (object) $positions;
+    }
+    return $out ? $out : null;
 }
 
 function backup_content()

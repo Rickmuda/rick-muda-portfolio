@@ -66,8 +66,8 @@
 <script>
 import { FontAwesomeIcon } from "@fortawesome/vue-fontawesome";
 import InfoCard from "./InfoCard.vue";
-import { getDesktopNodes, identityOf, findNodeByIdentity } from "../filesystem";
-import { getPositions, setPosition, onChange as onLayoutChange } from "../desktopLayout";
+import { getDesktopNodes, getDesktopDefaultCells, identityOf, findNodeByIdentity } from "../filesystem";
+import { getPositions, setPosition, provideSnapshot, onChange as onLayoutChange } from "../desktopLayout";
 import { wallpapers, getCurrentId as getCurrentWallpaperId, setCurrent as setWallpaper } from "../wallpapers";
 import { getState as getDesktopIconsState, toggleDesktop, resetDesktop, onChange as onDesktopIconsChange } from "../desktopIcons";
 
@@ -115,6 +115,7 @@ export default {
       vw: window.innerWidth,
       vh: window.innerHeight,
       layoutUnsub: null,
+      snapshotUnsub: null,
       // User-customized desktop icon set (removed defaults / added extras).
       desktopIconsState: getDesktopIconsState(),
       desktopIconsUnsub: null,
@@ -130,8 +131,15 @@ export default {
         descKey: "descFileExplorer",
       };
       const removedSet = new Set(this.desktopIconsState.removed);
-      const defaultIcons = getDesktopNodes().filter((n) => !removedSet.has(identityOf(n)));
-      const addedNodes = this.desktopIconsState.added.map((id) => findNodeByIdentity(id)).filter(Boolean);
+      const defaultNodes = getDesktopNodes();
+      const defaultIdentities = new Set(defaultNodes.map(identityOf));
+      const defaultIcons = defaultNodes.filter((n) => !removedSet.has(identityOf(n)));
+      // A visitor may have pinned something the admin layout later made a
+      // default: skip it here so it doesn't show up twice.
+      const addedNodes = this.desktopIconsState.added
+        .filter((id) => !defaultIdentities.has(id))
+        .map((id) => findNodeByIdentity(id))
+        .filter(Boolean);
       const eggs = this.easterEggApps.map((name) => ({
         id: name,
         type: "app",
@@ -152,10 +160,12 @@ export default {
     gridRows() {
       return Math.max(1, Math.floor((this.vh - TASKBAR_H - ORIGIN_Y) / CELL_H));
     },
-    // Auto-grid fallback position for every node without a dragged/persisted
-    // position. Cells already taken by a persisted position are reserved first
-    // so a newly-added node can never default onto a cell someone dragged an
-    // icon to - that was letting icons land on top of each other at startup.
+    // Default position for every node without a dragged/persisted position:
+    // the cell chosen in the admin panel when there is one (and it's free and
+    // on-screen), otherwise the auto-grid. Cells already taken by a persisted
+    // position are reserved first so a newly-added node can never default onto
+    // a cell someone dragged an icon to - that was letting icons land on top of
+    // each other at startup.
     defaultPositions() {
       const cols = this.gridCols;
       const rows = this.gridRows;
@@ -168,9 +178,18 @@ export default {
         occupied.add(col + "," + row);
       }
       const map = {};
+      const adminCells = getDesktopDefaultCells();
+      for (const node of this.nodes) {
+        const cell = adminCells[node.id];
+        if (this.positions[node.id] || !cell) continue;
+        const key = cell.col + "," + cell.row;
+        if (cell.col >= cols || cell.row >= rows || occupied.has(key)) continue;
+        occupied.add(key);
+        map[node.id] = this.posFromCell(cell.col, cell.row);
+      }
       let cursor = 0;
       for (const node of this.nodes) {
-        if (this.positions[node.id]) continue;
+        if (this.positions[node.id] || map[node.id]) continue;
         let steps = 0;
         while (steps <= totalCells) {
           const col = cursor % cols;
@@ -187,6 +206,9 @@ export default {
       }
       return map;
     },
+    nodeIdsKey() {
+      return this.nodes.map((n) => n.id).join("|");
+    },
     // Clamped so the menu never renders partly off-screen, mirroring InfoCard's
     // own cardStyle clamping.
     ctxMenuStyle() {
@@ -198,8 +220,26 @@ export default {
       return { left: left + "px", top: top + "px" };
     },
   },
+  watch: {
+    // The default icon set can change after mount (admin layout arrives from
+    // the server): re-filter stored positions against the new set.
+    nodeIdsKey() {
+      this.loadPositions();
+    },
+  },
   methods: {
     getCurrentWallpaperId,
+    // Where every icon currently sits, as grid cells keyed by node id - used
+    // by the admin panel's "use my current desktop as the default".
+    snapshotCells() {
+      const out = {};
+      for (const node of this.nodes) {
+        if (node.labelKey === "easterEgg") continue;
+        const p = this.effectivePos(node);
+        out[node.id] = this.cellFromPos(p.x, p.y);
+      }
+      return out;
+    },
     effectivePos(node) {
       return this.positions[node.id] || this.defaultPositions[node.id] || { x: ORIGIN_X, y: ORIGIN_Y };
     },
@@ -389,6 +429,7 @@ export default {
   mounted() {
     this.loadPositions();
     this.layoutUnsub = onLayoutChange(() => this.loadPositions());
+    this.snapshotUnsub = provideSnapshot(() => this.snapshotCells());
     this.desktopIconsUnsub = onDesktopIconsChange((s) => { this.desktopIconsState = s; });
     window.addEventListener("resize", this.onResize);
     document.addEventListener("mousedown", this.onDocMouseDownForMenu);
@@ -401,6 +442,7 @@ export default {
     document.removeEventListener("mousedown", this.onDocMouseDownForMenu);
     document.removeEventListener("keydown", this.onKeydownForMenu);
     if (this.layoutUnsub) this.layoutUnsub();
+    if (this.snapshotUnsub) this.snapshotUnsub();
     if (this.desktopIconsUnsub) this.desktopIconsUnsub();
   },
 };

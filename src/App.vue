@@ -111,7 +111,7 @@ import Taskbar from "./components/Taskbar.vue";
 import AppWindow from "./components/AppWindow.vue";
 import BootScreen from "./components/BootScreen.vue";
 import AchievementToast from "./components/AchievementToast.vue";
-import { windowConfig, appList, preloadAllWindows } from "./windowConfig";
+import { windowConfig, appList, getMobileApps, preloadAllWindows } from "./windowConfig";
 import { findNodePath } from "./filesystem";
 import { sounds } from "./sounds";
 import { unlock as unlockAchievement } from "./achievements";
@@ -228,7 +228,7 @@ export default {
         icon: "egg",
         labelKey: "easterEgg",
       }));
-      return [...appList, ...eggs];
+      return [...getMobileApps(), ...eggs];
     },
   },
   watch: {

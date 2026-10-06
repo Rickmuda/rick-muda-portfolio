@@ -230,6 +230,89 @@
           </div>
         </section>
 
+        <!-- Layout: default app placement on desktop + mobile -->
+        <section v-else-if="tab === 'layout'" class="cms-layout">
+          <div class="cms-layout-col">
+            <h3>{{ $t('adminLayoutDesktop') }}</h3>
+            <p class="cms-hint">{{ $t('adminLayoutDesktopHint') }}</p>
+            <div class="cms-toolbar">
+              <button class="cms-btn primary" :disabled="!canSnapshot" @click="useCurrentDesktop">
+                {{ $t('adminLayoutUseCurrent') }}
+              </button>
+              <button v-if="fixedPositionCount" class="cms-btn" @click="clearDesktopPositions">
+                {{ $t('adminLayoutClearPositions') }}
+              </button>
+            </div>
+            <p class="cms-hint">
+              <template v-if="!canSnapshot">{{ $t('adminLayoutNoDesktop') }}</template>
+              <template v-else-if="fixedPositionCount">{{ $t('adminLayoutFixedCount', { n: fixedPositionCount }) }}</template>
+              <template v-else>{{ $t('adminLayoutAutoGrid') }}</template>
+            </p>
+            <ul class="cms-list">
+              <li
+                v-for="(item, i) in draft.layout.desktop.items"
+                :key="item.id"
+                class="cms-row"
+                :class="{ hidden: item.hidden, dragging: isDragging(draft.layout.desktop.items, i) }"
+                draggable="true"
+                @dragstart="dragStart(draft.layout.desktop.items, i, $event)"
+                @dragover.prevent="dragOver(draft.layout.desktop.items, i)"
+                @dragend="dragEnd"
+                @drop.prevent="dragEnd"
+              >
+                <font-awesome-icon icon="grip-vertical" class="cms-grip" />
+                <font-awesome-icon :icon="desktopMeta(item.id).icon" class="cms-layout-icon" />
+                <span class="cms-row-title">{{ desktopMeta(item.id).label }}</span>
+                <span v-if="item.hidden" class="cms-badge">{{ $t('adminHidden') }}</span>
+                <div class="cms-row-buttons">
+                  <button class="cms-icon-btn" :title="item.hidden ? $t('adminShow') : $t('adminHide')" @click="item.hidden = !item.hidden">
+                    <font-awesome-icon :icon="item.hidden ? 'eye-slash' : 'eye'" />
+                  </button>
+                  <span class="cms-move">
+                    <button class="cms-icon-btn" :disabled="i === 0" aria-label="Up" @click="move(draft.layout.desktop.items, i, -1)">&#9650;</button>
+                    <button class="cms-icon-btn" :disabled="i === draft.layout.desktop.items.length - 1" aria-label="Down" @click="move(draft.layout.desktop.items, i, 1)">&#9660;</button>
+                  </span>
+                </div>
+              </li>
+            </ul>
+          </div>
+
+          <div class="cms-layout-col">
+            <h3>{{ $t('adminLayoutMobile') }}</h3>
+            <p class="cms-hint">{{ $t('adminLayoutMobileHint') }}</p>
+            <ul class="cms-list">
+              <li
+                v-for="(item, i) in draft.layout.mobile.items"
+                :key="item.id"
+                class="cms-row"
+                :class="{ hidden: item.hidden, dragging: isDragging(draft.layout.mobile.items, i) }"
+                draggable="true"
+                @dragstart="dragStart(draft.layout.mobile.items, i, $event)"
+                @dragover.prevent="dragOver(draft.layout.mobile.items, i)"
+                @dragend="dragEnd"
+                @drop.prevent="dragEnd"
+              >
+                <font-awesome-icon icon="grip-vertical" class="cms-grip" />
+                <font-awesome-icon :icon="mobileMeta(item.id).icon" class="cms-layout-icon" />
+                <span class="cms-row-title">
+                  {{ mobileMeta(item.id).label }}
+                  <small v-if="mobilePage(i) !== null">{{ $t('adminLayoutPage', { n: mobilePage(i) }) }}</small>
+                </span>
+                <span v-if="item.hidden" class="cms-badge">{{ $t('adminHidden') }}</span>
+                <div class="cms-row-buttons">
+                  <button class="cms-icon-btn" :title="item.hidden ? $t('adminShow') : $t('adminHide')" @click="item.hidden = !item.hidden">
+                    <font-awesome-icon :icon="item.hidden ? 'eye-slash' : 'eye'" />
+                  </button>
+                  <span class="cms-move">
+                    <button class="cms-icon-btn" :disabled="i === 0" aria-label="Up" @click="move(draft.layout.mobile.items, i, -1)">&#9650;</button>
+                    <button class="cms-icon-btn" :disabled="i === draft.layout.mobile.items.length - 1" aria-label="Down" @click="move(draft.layout.mobile.items, i, 1)">&#9660;</button>
+                  </span>
+                </div>
+              </li>
+            </ul>
+          </div>
+        </section>
+
         <!-- Texts -->
         <section v-else-if="tab === 'texts'" class="cms-texts">
           <div class="cms-toolbar">
@@ -335,6 +418,12 @@ import {
   defaultText,
   textKeys,
 } from "../../contentStore";
+import { getDesktopCandidates, getDesktopNodes, getDesktopDefaultCells } from "../../filesystem";
+import { appList, getMobileApps } from "../../windowConfig";
+import { snapshotCells } from "../../desktopLayout";
+
+// Mirrors MobileHome.vue: the home screen shows this many apps per page.
+const MOBILE_APPS_PER_PAGE = 6;
 
 const GAMES = [
   { key: "minesweeper", labelKey: "minesweeper" },
@@ -359,6 +448,7 @@ export default {
       tabs: [
         { key: "projects", labelKey: "adminTabProjects" },
         { key: "art", labelKey: "adminTabArt" },
+        { key: "layout", labelKey: "adminTabLayout" },
         { key: "texts", labelKey: "adminTabTexts" },
         { key: "scores", labelKey: "adminTabScores" },
       ],
@@ -413,6 +503,13 @@ export default {
           this.langs.some((lang) => (this.textValue(lang, key) || "").toLowerCase().includes(q))
         );
       });
+    },
+    fixedPositionCount() {
+      return Object.keys(this.draft?.layout?.desktop?.positions || {}).length;
+    },
+    canSnapshot() {
+      // Depends on `tab` so it is re-checked each time the tab is opened.
+      return this.tab === "layout" && snapshotCells() !== null;
     },
     shownTextKeys() {
       return this.filteredTextKeys.slice(0, MAX_SHOWN_TEXTS);
@@ -500,8 +597,44 @@ export default {
         if (!p.description || Array.isArray(p.description)) p.description = {};
         if (!Array.isArray(p.images)) p.images = [];
       }
+      data.layout = this.normalizedLayout(data.layout);
       this.draft = data;
       this.savedSnapshot = JSON.stringify(data);
+    },
+    // Fill in the layout from what the site currently shows, and append any
+    // app/folder the saved layout doesn't know about yet, so the editor always
+    // lists everything.
+    normalizedLayout(layout) {
+      const out = layout && typeof layout === "object" && !Array.isArray(layout) ? layout : {};
+      const candidates = getDesktopCandidates();
+      const candidateIds = new Set(candidates.map((n) => n.id));
+      if (!out.desktop || !Array.isArray(out.desktop.items)) {
+        const current = getDesktopNodes();
+        const visible = new Set(current.map((n) => n.id));
+        const order = [...current, ...candidates.filter((n) => !visible.has(n.id))];
+        out.desktop = { items: order.map((n) => ({ id: n.id, hidden: !visible.has(n.id) })), positions: getDesktopDefaultCells() };
+      }
+      const positions = out.desktop.positions;
+      out.desktop.positions = positions && !Array.isArray(positions) ? { ...positions } : {};
+      const knownDesktop = new Set(out.desktop.items.map((i) => i.id));
+      for (const n of candidates) {
+        if (!knownDesktop.has(n.id)) out.desktop.items.push({ id: n.id, hidden: !n.desktop });
+      }
+      out.desktop.items = out.desktop.items.filter((i) => candidateIds.has(i.id));
+
+      const appNames = new Set(appList.map((a) => a.name));
+      if (!out.mobile || !Array.isArray(out.mobile.items)) {
+        const current = getMobileApps();
+        const visible = new Set(current.map((a) => a.name));
+        const order = [...current, ...appList.filter((a) => !visible.has(a.name))];
+        out.mobile = { items: order.map((a) => ({ id: a.name, hidden: !visible.has(a.name) })) };
+      }
+      const knownMobile = new Set(out.mobile.items.map((i) => i.id));
+      for (const a of appList) {
+        if (!knownMobile.has(a.name)) out.mobile.items.push({ id: a.name, hidden: false });
+      }
+      out.mobile.items = out.mobile.items.filter((i) => appNames.has(i.id));
+      return out;
     },
     discard() {
       this.setDraft(JSON.parse(this.savedSnapshot));
@@ -608,6 +741,38 @@ export default {
       if (target < 0 || target >= list.length) return;
       const [item] = list.splice(index, 1);
       list.splice(target, 0, item);
+    },
+
+    // --- layout -----------------------------------------------------------
+    desktopMeta(id) {
+      const node = getDesktopCandidates().find((n) => n.id === id);
+      return { icon: node?.icon || "folder", label: node ? node.name || this.$t(node.labelKey) : id };
+    },
+    mobileMeta(id) {
+      const app = appList.find((a) => a.name === id);
+      return { icon: app?.folder ? "folder" : app?.icon || "folder", label: app ? this.$t(app.labelKey) : id };
+    },
+    // Home-screen page number (1-based) an app lands on, or null when hidden.
+    mobilePage(index) {
+      const items = this.draft.layout.mobile.items;
+      if (items[index].hidden) return null;
+      const visibleBefore = items.slice(0, index).filter((i) => !i.hidden).length;
+      return Math.floor(visibleBefore / MOBILE_APPS_PER_PAGE) + 1;
+    },
+    useCurrentDesktop() {
+      const cells = snapshotCells();
+      if (!cells) return;
+      this.draft.layout.desktop.positions = cells;
+      // Icons the admin currently sees on their own desktop become visible by
+      // default; the rest stay as set in the list.
+      const shown = new Set(Object.keys(cells));
+      for (const item of this.draft.layout.desktop.items) {
+        if (shown.has(item.id)) item.hidden = false;
+      }
+      this.flash("success", "adminLayoutCaptured");
+    },
+    clearDesktopPositions() {
+      this.draft.layout.desktop.positions = {};
     },
 
     // --- texts ------------------------------------------------------------
@@ -1016,6 +1181,20 @@ export default {
 }
 
 /* Texts */
+/* Layout */
+.cms-layout {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 20px;
+}
+.cms-layout h3 {
+  margin: 0 0 4px;
+}
+.cms-layout-icon {
+  width: 20px;
+  color: #d4a8e8;
+}
+
 .cms-text-row {
   padding: 8px 0;
   border-bottom: 1px solid #2c2c3c;
@@ -1050,6 +1229,7 @@ export default {
 
 @media (max-width: 760px) {
   .cms-projects:has(.cms-edit-col),
+  .cms-layout,
   .cms-grid2 {
     grid-template-columns: minmax(0, 1fr);
   }
