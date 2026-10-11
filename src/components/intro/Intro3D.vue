@@ -1,9 +1,19 @@
 <template>
-  <div class="intro3d" :class="{ leaving }">
+  <div class="intro3d" :class="{ leaving, shutdown: mode === 'shutdown', ready }">
     <canvas ref="canvas" class="intro3d-canvas" :class="{ ready }" aria-hidden="true"></canvas>
-    <button class="intro3d-skip" @click="skip">
+    <button v-if="mode === 'intro'" class="intro3d-skip" @click="skip">
       {{ skipLabel }} <kbd>Esc</kbd>
     </button>
+    <!-- Shown in the room after shutting down. -->
+    <Transition name="intro3d-off">
+      <div v-if="offVisible" class="intro3d-off" role="dialog" :aria-label="t.off">
+        <p class="intro3d-off-title">{{ t.off }}</p>
+        <button ref="powerBtn" class="intro3d-power" @click="powerOn">
+          <span class="intro3d-power-icon" aria-hidden="true">⏻</span> {{ t.powerOn }}
+        </button>
+        <p class="intro3d-off-hint">{{ t.anyKey }}</p>
+      </div>
+    </Transition>
   </div>
 </template>
 
@@ -11,6 +21,12 @@
 // 3D intro: shows the room, flies the camera into the middle monitor and hands
 // over to the real BootScreen. The monitor shows a pixel-matched copy of the
 // BootScreen's first frame, so the swap from WebGL to DOM is invisible.
+//
+// Modes:
+//   intro    - fly from the room into the screen (first visit).
+//   shutdown - start on the screen showing a snapshot of the desktop, fly back
+//              out, switch the screen off and wait in the room until the
+//              visitor powers on again; then fly back in and reboot.
 //
 // Events:
 //   screen - the camera has filled the viewport with the monitor; mount the
@@ -22,6 +38,10 @@ import { loadRoom } from "./room";
 const IDLE_MS = 2200;   // look at the room before moving
 const ZOOM_MS = 5000;   // camera flight into the screen
 const FADE_MS = 350;    // crossfade onto the DOM BootScreen
+const REVERSE_MS = 3600;      // shutdown: camera flight back into the room
+const SCREEN_OFF_AT = 0.3;    // ...the screen switches off this far into it
+const SCREEN_OFF_MS = 450;    // ...over this long
+const POWER_ON_IDLE_MS = 450; // pause after "power on" before flying in
 const FOV = 45;          // landscape viewports
 const FOV_PORTRAIT = 62; // wider lens on phones so the room still fits
 
@@ -126,19 +146,42 @@ async function drawBootFrame(canvas, version) {
   ctx.beginPath(); ctx.arc(cx, sy, 12.5, -Math.PI * 0.75, -Math.PI * 0.25); ctx.stroke();
 }
 
+// Draws a snapshot of the desktop (from html2canvas) with the same cover-crop
+// as drawBootFrame, so it lines up exactly with what was on screen.
+function drawSnapshot(canvas, snap) {
+  const ctx = canvas.getContext("2d");
+  const tw = canvas.width, th = canvas.height;
+  const vw = window.innerWidth, vh = window.innerHeight;
+  const k = Math.max(vw / tw, vh / th);
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, tw, th);
+  ctx.setTransform(1 / k, 0, 0, 1 / k, tw / 2 - vw / 2 / k, th / 2 - vh / 2 / k);
+  ctx.drawImage(snap, 0, 0, vw, vh);
+}
+
 export default {
   name: "Intro3D",
   props: {
     // "monitor" for the desktop intro, "phone" for the mobile one.
     target: { type: String, default: "monitor" },
+    // "intro" or "shutdown" (see top of file).
+    mode: { type: String, default: "intro" },
+    // Shutdown: canvas with a snapshot of the desktop to show on the screen.
+    snapshot: { type: Object, default: null },
   },
   emits: ["screen", "done"],
   data() {
-    return { leaving: false, ready: false };
+    return { leaving: false, ready: false, offVisible: false };
   },
   computed: {
     skipLabel() {
       return this.$i18n?.locale === "nl" ? "Intro overslaan" : "Skip intro";
+    },
+    t() {
+      return this.$i18n?.locale === "nl"
+        ? { off: "MudaOS is uitgeschakeld", powerOn: "Aanzetten", anyKey: "of druk op een toets" }
+        : { off: "MudaOS is shut down", powerOn: "Power on", anyKey: "or press any key" };
     },
   },
   async mounted() {
@@ -199,10 +242,24 @@ export default {
       this.bootCanvas.height = aspect >= 1 ? Math.round(2048 / aspect) : 2048;
       await drawBootFrame(this.bootCanvas, __COMMIT_SUMMARY__);
       if (this.finishing) return;
-      const tex = new THREE.CanvasTexture(this.bootCanvas);
-      tex.colorSpace = THREE.SRGBColorSpace;
-      tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
-      this.screen.mesh.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, fog: false });
+      const makeTex = (canvas) => {
+        const tex = new THREE.CanvasTexture(canvas);
+        tex.colorSpace = THREE.SRGBColorSpace;
+        tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+        return tex;
+      };
+      this.bootTex = makeTex(this.bootCanvas);
+      // Shutdown starts on a picture of the desktop as it was.
+      if (this.mode === "shutdown" && this.snapshot) {
+        this.snapCanvas = document.createElement("canvas");
+        this.snapCanvas.width = this.bootCanvas.width;
+        this.snapCanvas.height = this.bootCanvas.height;
+        drawSnapshot(this.snapCanvas, this.snapshot);
+        this.snapTex = makeTex(this.snapCanvas);
+      }
+      this.screen.mesh.material = new THREE.MeshBasicMaterial({
+        map: this.snapTex || this.bootTex, toneMapped: false, fog: false,
+      });
 
       // Low-res render target + fullscreen pass that upscales and dithers.
       this.rt = new THREE.WebGLRenderTarget(1, 1, {
@@ -237,6 +294,8 @@ export default {
       // tabs don't come back to a finished intro.
       this.elapsed = 0;
       this.last = performance.now();
+      if (this.mode === "shutdown") this.setPhase("reverse");
+      else this.setPhase("forward", IDLE_MS);
       this.tick();
       this.ready = true; // fade the canvas in now that the first frame exists
     },
@@ -267,10 +326,14 @@ export default {
       this.lookFrom = new THREE.Vector3(...flight.lookFrom);
       this.lookTo = c.clone();
       // Re-crop the boot frame for the new viewport shape.
-      if (this.bootCanvas && this.screen.mesh.material.map) {
+      if (this.bootTex) {
         drawBootFrame(this.bootCanvas, __COMMIT_SUMMARY__).then(() => {
-          if (this.room) this.screen.mesh.material.map.needsUpdate = true;
+          if (this.bootTex) this.bootTex.needsUpdate = true;
         });
+      }
+      if (this.snapTex) {
+        drawSnapshot(this.snapCanvas, this.snapshot);
+        this.snapTex.needsUpdate = true;
       }
     },
     tick() {
@@ -291,8 +354,22 @@ export default {
       this.elapsed += Math.min(now - this.last, 1000);
       this.last = now;
       const elapsed = this.elapsed;
-      const sway = Math.max(0, 1 - elapsed / IDLE_MS);
-      const raw = Math.min(1, Math.max(0, (elapsed - IDLE_MS) / ZOOM_MS));
+      const e = elapsed - this.phaseStart; // time in the current phase
+      const clamp01 = (v) => Math.min(1, Math.max(0, v));
+      let raw, sway;
+      if (this.phase === "forward") {
+        raw = clamp01((e - this.idleMs) / ZOOM_MS);
+        sway = this.idleMs ? Math.max(0, 1 - e / this.idleMs) : 0;
+      } else if (this.phase === "reverse") {
+        raw = clamp01(1 - e / REVERSE_MS);
+        sway = 1 - raw;
+        // Switch the screen off on the way out (fade to almost black).
+        const off = clamp01((e - REVERSE_MS * SCREEN_OFF_AT) / SCREEN_OFF_MS);
+        this.screen.mesh.material.color.setScalar(1 - off * 0.94);
+      } else {
+        raw = 0; // "off": waiting in the room
+        sway = 1;
+      }
       const t = easeInOutCubic(raw);
 
       const pos = this.path.getPointAt(t);
@@ -307,7 +384,27 @@ export default {
       this.room.animate(elapsed);
       this.renderRetro(raw);
 
-      if (raw >= 1) this.finish(false);
+      if (this.phase === "forward" && raw >= 1) this.finish(false);
+      if (this.phase === "reverse" && raw <= 0) this.setPhase("off");
+    },
+    setPhase(phase, idleMs = 0) {
+      this.phase = phase;
+      this.phaseStart = this.elapsed;
+      this.idleMs = idleMs;
+      if (phase === "off") {
+        this.offVisible = true;
+        this.$nextTick(() => this.$refs.powerBtn?.focus());
+      }
+    },
+    // Power on from the room: screen comes back with the boot frame and the
+    // camera flies in again.
+    powerOn() {
+      if (this.phase !== "off") return;
+      this.offVisible = false;
+      this.screen.mesh.material.map = this.bootTex;
+      this.screen.mesh.material.color.setScalar(1);
+      this.screen.mesh.material.needsUpdate = true;
+      this.setPhase("forward", POWER_ON_IDLE_MS);
     },
     // Renders the scene into the low-res target, then upscales it to the
     // canvas with hard pixels and dithering.
@@ -338,7 +435,9 @@ export default {
       if (this.finishing) return;
       this.finishing = true;
       // Returning visitors go straight to the boot screen next time.
-      try { localStorage.setItem("introSeen", "1"); } catch (_) {}
+      if (this.mode === "intro") {
+        try { localStorage.setItem("introSeen", "1"); } catch (_) {}
+      }
       this.$emit("screen");
       this.leaving = true;
       setTimeout(() => {
@@ -354,9 +453,22 @@ export default {
       if (document.visibilityState === "visible") this.last = performance.now();
     },
     onKey(e) {
+      if (this.phase === "off") {
+        // Any key powers on (modifier keys alone don't count).
+        if (["Shift", "Control", "Alt", "Meta", "Tab"].includes(e.key)) return;
+        e.preventDefault();
+        this.powerOn();
+        return;
+      }
       if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        this.skip();
+        // During shutdown, Esc jumps straight to the room.
+        if (this.phase === "reverse") {
+          this.screen.mesh.material.color.setScalar(0.06);
+          this.setPhase("off");
+        } else {
+          this.skip();
+        }
       }
     },
   },
@@ -370,6 +482,78 @@ export default {
   z-index: 100000; /* above BootScreen (99999) so we can fade onto it */
   background: #1a1a24;
   transition: opacity 0.35s ease;
+}
+/* Shutdown: keep the desktop visible until the first 3D frame is drawn
+   (that frame looks exactly like the desktop), then switch instantly. */
+.intro3d.shutdown:not(.ready) {
+  background: transparent;
+  cursor: progress;
+}
+.intro3d.shutdown .intro3d-canvas {
+  transition: none;
+}
+.intro3d-off {
+  position: absolute;
+  left: 50%;
+  bottom: calc(12vh + env(safe-area-inset-bottom));
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  padding: 18px 26px;
+  border: 1px solid rgba(198, 55, 230, 0.5);
+  border-radius: 10px;
+  background: rgba(16, 12, 24, 0.78);
+  color: #d4a8e8;
+  font-family: "PortfolioFont", monospace;
+  text-align: center;
+  text-shadow: 0 0 8px rgba(155, 32, 183, 0.5);
+}
+.intro3d-off-title {
+  margin: 0;
+  font-size: 15px;
+  letter-spacing: 1px;
+}
+.intro3d-off-hint {
+  margin: 0;
+  font-size: 11px;
+  opacity: 0.7;
+}
+.intro3d-power {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 22px;
+  border: 1px solid #c637e6;
+  border-radius: 6px;
+  background: #9b20b7;
+  color: #fff;
+  font: inherit;
+  font-size: 15px;
+  cursor: pointer;
+}
+.intro3d-power:hover,
+.intro3d-power:focus-visible {
+  background: #c637e6;
+  outline: 2px solid #fff;
+  outline-offset: 2px;
+}
+.intro3d-power-icon {
+  font-size: 18px;
+  line-height: 1;
+}
+.intro3d-off-enter-active,
+.intro3d-off-leave-active {
+  transition: opacity 0.3s ease, transform 0.3s ease;
+}
+.intro3d-off-enter-from,
+.intro3d-off-leave-to {
+  opacity: 0;
+  transform: translate(-50%, 8px);
+}
+@media (hover: none) {
+  .intro3d-off-hint { display: none; }
 }
 .intro3d.leaving {
   opacity: 0;

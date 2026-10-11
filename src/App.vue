@@ -97,11 +97,14 @@
 
       <!-- 3D intro: camera flies into the middle monitor, then hands over to
            the boot screen. Desktop only, first visit per session. -->
-      <Intro3D
+      <component
+        :is="introComponent"
         v-if="introPlaying"
         :target="introTarget"
-        @screen="introCovering = false"
-        @done="introPlaying = false"
+        :mode="introMode"
+        :snapshot="introSnapshot"
+        @screen="onIntroScreen"
+        @done="onIntroDone"
       />
 
       <!-- Boot screen (first visit per session) -->
@@ -119,7 +122,7 @@ import MobileHome from "./components/MobileHome.vue";
 import Taskbar from "./components/Taskbar.vue";
 import AppWindow from "./components/AppWindow.vue";
 import BootScreen from "./components/BootScreen.vue";
-import { defineAsyncComponent, h } from "vue";
+import { defineAsyncComponent, h, markRaw } from "vue";
 import AchievementToast from "./components/AchievementToast.vue";
 import { windowConfig, appList, getMobileApps, preloadAllWindows } from "./windowConfig";
 import { findNodePath } from "./filesystem";
@@ -173,6 +176,12 @@ export default {
       // introPlaying: the 3D intro is mounted. introCovering: it still hides
       // the screen, so the BootScreen waits underneath until the hand-off.
       introPlaying: showIntro,
+      // "intro" on first visit, "shutdown" after the start menu's power button.
+      introMode: "intro",
+      introSnapshot: null,
+      // The intro component once its chunk is loaded; used directly for the
+      // shutdown so the async loader's cover never flashes over the desktop.
+      introLoaded: null,
       // Phones fly into the phone on the desk, everything else into the monitor.
       introTarget: typeof window !== "undefined" && window.innerWidth <= 768 ? "phone" : "monitor",
       introCovering: showIntro,
@@ -230,6 +239,9 @@ export default {
     };
   },
   computed: {
+    introComponent() {
+      return this.introLoaded || "Intro3D";
+    },
     windowConfig() {
       return windowConfig;
     },
@@ -492,6 +504,50 @@ export default {
       this.minimizedWindows = { ...this.minimizedWindows, [appName]: true };
       sounds.play("minimize");
     },
+    onIntroScreen() {
+      this.introCovering = false;
+      // Powering back on after a shutdown: run the boot sequence again.
+      if (this.introMode === "shutdown") this.booting = true;
+    },
+    onIntroDone() {
+      this.introPlaying = false;
+      this.introMode = "intro";
+      this.introSnapshot = null;
+    },
+    // Start menu power button: photograph the desktop, then let the intro fly
+    // back out into the room with that picture on the monitor.
+    async powerOff() {
+      if (this.introPlaying || this.booting) return;
+      const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      if (reduceMotion) {
+        this.booting = true; // simple reboot, no camera flight
+        return;
+      }
+      document.body.style.cursor = "progress";
+      let snapshot = null;
+      try {
+        const [html2canvas, introMod] = await Promise.all([
+          this.html2canvas || import("html2canvas").then((m) => (this.html2canvas = m.default)),
+          import("./components/intro/Intro3D.vue"),
+          new Promise((r) => setTimeout(r, 200)), // let the start menu close first
+        ]);
+        this.introLoaded = markRaw(introMod.default);
+        snapshot = await html2canvas(document.getElementById("app"), {
+          scale: Math.min(1, 1600 / window.innerWidth),
+          logging: false,
+          useCORS: true,
+          backgroundColor: "#1a1a24",
+        });
+      } catch (_) {
+        // No snapshot: the monitor shows the boot frame instead.
+      }
+      document.body.style.cursor = "";
+      this.introSnapshot = snapshot ? markRaw(snapshot) : null;
+      this.introTarget = this.isMobile ? "phone" : "monitor";
+      this.introMode = "shutdown";
+      this.introCovering = false;
+      this.introPlaying = true;
+    },
     onBootDone() {
       this.booting = false;
       try { sessionStorage.setItem("booted", "1"); } catch (_) {}
@@ -738,10 +794,13 @@ export default {
 
     // Lets a window open another one (the terminal's `admin` command).
     window.addEventListener("open-app", this.handleOpenAppEvent);
+    // Start menu power button.
+    window.addEventListener("power-off", this.powerOff);
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.checkMobile);
     window.removeEventListener("open-app", this.handleOpenAppEvent);
+    window.removeEventListener("power-off", this.powerOff);
     if (this.keydownListenerAdded) {
       window.removeEventListener("keydown", this.handleKeydown);
       this.keydownListenerAdded = false;
