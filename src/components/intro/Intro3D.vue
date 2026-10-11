@@ -22,7 +22,23 @@ import { loadRoom } from "./room";
 const IDLE_MS = 2200;   // look at the room before moving
 const ZOOM_MS = 5000;   // camera flight into the screen
 const FADE_MS = 350;    // crossfade onto the DOM BootScreen
-const FOV = 45;
+const FOV = 45;          // landscape viewports
+const FOV_PORTRAIT = 62; // wider lens on phones so the room still fits
+
+// Camera flights per target screen: start point, a point along the way, and
+// where the camera looks at the start.
+const FLIGHTS = {
+  monitor: {
+    from: [1.5, 1.65, 1.9],   // near the door
+    via: [0.45, 1.32, -0.15], // over the chair
+    lookFrom: [-0.1, 1.2, -1.4],
+  },
+  phone: {
+    from: [1.35, 1.6, 1.7],
+    via: [0.75, 1.15, -0.55],  // down past the chair to the desk
+    lookFrom: [0.0, 1.05, -1.45],
+  },
+};
 
 // Retro look: the scene renders at LOW_LINES vertical pixels (N64 = 240) and
 // is scaled up with hard nearest-neighbour pixels, quantized to 15-bit color
@@ -112,6 +128,10 @@ async function drawBootFrame(canvas, version) {
 
 export default {
   name: "Intro3D",
+  props: {
+    // "monitor" for the desktop intro, "phone" for the mobile one.
+    target: { type: String, default: "monitor" },
+  },
   emits: ["screen", "done"],
   data() {
     return { leaving: false, ready: false };
@@ -122,72 +142,14 @@ export default {
     },
   },
   async mounted() {
-    this.finished = false;
-    window.addEventListener("keydown", this.onKey);
+    // Whatever goes wrong while setting up, never leave the visitor stuck on
+    // the intro: fall straight through to the boot screen.
     try {
-      this.renderer = new THREE.WebGLRenderer({ canvas: this.$refs.canvas, antialias: true });
-    } catch (_) {
-      this.finish(true); // no WebGL: go straight to the boot screen
-      return;
-    }
-    this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    this.renderer.outputColorSpace = THREE.SRGBColorSpace;
-
-    try {
-      this.room = await loadRoom();
+      await this.setup();
     } catch (err) {
-      console.warn("[Intro3D] room failed to load", err);
+      console.warn("[Intro3D] intro failed, skipping it", err);
       this.finish(true);
-      return;
     }
-    if (this.finishing) return; // skipped while loading
-
-    // Boot frame texture on the main monitor.
-    this.bootCanvas = document.createElement("canvas");
-    this.bootCanvas.width = 2048;
-    this.bootCanvas.height = Math.round(2048 * (this.room.screenHeight / this.room.screenWidth));
-    await drawBootFrame(this.bootCanvas, __COMMIT_SUMMARY__);
-    if (this.finishing) return;
-    const tex = new THREE.CanvasTexture(this.bootCanvas);
-    tex.colorSpace = THREE.SRGBColorSpace;
-    tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
-    this.room.screen.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, fog: false });
-
-    // Low-res render target + fullscreen pass that upscales and dithers.
-    this.target = new THREE.WebGLRenderTarget(1, 1, {
-      minFilter: THREE.NearestFilter,
-      magFilter: THREE.NearestFilter,
-      // Half float: an 8-bit linear buffer bands badly in dark gradients.
-      type: THREE.HalfFloatType,
-      depthBuffer: true,
-    });
-    this.post = new THREE.ShaderMaterial({
-      uniforms: {
-        tScene: { value: this.target.texture },
-        lowRes: { value: new THREE.Vector2(1, 1) },
-        dither: { value: 1 },
-        levels: { value: COLOR_LEVELS },
-      },
-      vertexShader: POST_VERT,
-      fragmentShader: POST_FRAG,
-      depthTest: false,
-      depthWrite: false,
-    });
-    this.postScene = new THREE.Scene();
-    this.postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.post));
-    this.postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
-    this.lines = LOW_LINES;
-
-    this.camera = new THREE.PerspectiveCamera(FOV, 1, 0.01, 50);
-    this.onResize();
-    window.addEventListener("resize", this.onResize);
-
-    // Own clock: only advances while the tab is visible, and a long frame
-    // (hitch, tab switch) can't make the camera jump ahead.
-    this.elapsed = 0;
-    this.last = performance.now();
-    this.tick();
-    this.ready = true; // fade the canvas in now that the first frame exists
   },
   beforeUnmount() {
     this.finished = true;
@@ -199,11 +161,83 @@ export default {
       const mats = Array.isArray(o.material) ? o.material : [o.material];
       mats.forEach((m) => { m?.map?.dispose(); m?.dispose?.(); });
     });
-    this.target?.dispose();
+    this.rt?.dispose();
     this.post?.dispose();
     this.renderer?.dispose();
   },
   methods: {
+    // Builds the renderer, room and camera, then starts the animation.
+    async setup() {
+      this.finished = false;
+      window.addEventListener("keydown", this.onKey);
+      try {
+        this.renderer = new THREE.WebGLRenderer({ canvas: this.$refs.canvas, antialias: true });
+      } catch (_) {
+        this.finish(true); // no WebGL: go straight to the boot screen
+        return;
+      }
+      this.renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+      this.renderer.outputColorSpace = THREE.SRGBColorSpace;
+
+      try {
+        this.room = await loadRoom();
+      } catch (err) {
+        console.warn("[Intro3D] room failed to load", err);
+        this.finish(true);
+        return;
+      }
+      if (this.finishing) return; // skipped while loading
+      this.screen = this.room.screens[this.target] || this.room.screens.monitor;
+
+      // Boot frame texture on the main monitor.
+      this.bootCanvas = document.createElement("canvas");
+      // Longest side 2048 px, in the target screen's aspect ratio.
+      const aspect = this.screen.width / this.screen.height;
+      this.bootCanvas.width = aspect >= 1 ? 2048 : Math.round(2048 * aspect);
+      this.bootCanvas.height = aspect >= 1 ? Math.round(2048 / aspect) : 2048;
+      await drawBootFrame(this.bootCanvas, __COMMIT_SUMMARY__);
+      if (this.finishing) return;
+      const tex = new THREE.CanvasTexture(this.bootCanvas);
+      tex.colorSpace = THREE.SRGBColorSpace;
+      tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
+      this.screen.mesh.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, fog: false });
+
+      // Low-res render target + fullscreen pass that upscales and dithers.
+      this.rt = new THREE.WebGLRenderTarget(1, 1, {
+        minFilter: THREE.NearestFilter,
+        magFilter: THREE.NearestFilter,
+        // Half float: an 8-bit linear buffer bands badly in dark gradients.
+        type: THREE.HalfFloatType,
+        depthBuffer: true,
+      });
+      this.post = new THREE.ShaderMaterial({
+        uniforms: {
+          tScene: { value: this.rt.texture },
+          lowRes: { value: new THREE.Vector2(1, 1) },
+          dither: { value: 1 },
+          levels: { value: COLOR_LEVELS },
+        },
+        vertexShader: POST_VERT,
+        fragmentShader: POST_FRAG,
+        depthTest: false,
+        depthWrite: false,
+      });
+      this.postScene = new THREE.Scene();
+      this.postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.post));
+      this.postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+      this.lines = LOW_LINES;
+
+      this.camera = new THREE.PerspectiveCamera(FOV, 1, 0.005, 50);
+      this.onResize();
+      window.addEventListener("resize", this.onResize);
+
+      // Own clock: only advances while the tab is visible, and a long frame
+      // (hitch, tab switch) can't make the camera jump ahead.
+      this.elapsed = 0;
+      this.last = performance.now();
+      this.tick();
+      this.ready = true; // fade the canvas in now that the first frame exists
+    },
     // Builds the camera flight. The end point is the distance at which the
     // monitor exactly covers the viewport, so it depends on the aspect ratio.
     onResize() {
@@ -211,33 +245,49 @@ export default {
       this.renderer.setSize(w, h, false);
       this.lines = null; // force the render target to resize
       this.camera.aspect = w / h;
+      this.camera.fov = w < h ? FOV_PORTRAIT : FOV;
       this.camera.updateProjectionMatrix();
 
-      const { screenCenter: c, screenNormal: n, screenWidth: sw, screenHeight: sh } = this.room;
-      const tan = Math.tan(THREE.MathUtils.degToRad(FOV / 2));
+      const { center: c, normal: n, width: sw, height: sh } = this.screen;
+      const tan = Math.tan(THREE.MathUtils.degToRad(this.camera.fov / 2));
       const dist = Math.min(sh / 2 / tan, sw / 2 / (tan * this.camera.aspect)) * 0.995;
       const end = c.clone().addScaledVector(n, dist);
 
+      const flight = FLIGHTS[this.target] || FLIGHTS.monitor;
+      // Line up in front of the screen; closer for the small phone.
+      const lineUp = Math.max(sw, sh) < 0.3 ? 0.18 : 0.35;
       this.path = new THREE.CatmullRomCurve3([
-        new THREE.Vector3(1.5, 1.65, 1.9),        // near the door
-        new THREE.Vector3(0.45, 1.32, -0.15),     // over the chair
-        c.clone().addScaledVector(n, 0.35),       // lining up with the screen
+        new THREE.Vector3(...flight.from),
+        new THREE.Vector3(...flight.via),
+        c.clone().addScaledVector(n, lineUp),
         end,
       ], false, "centripetal");
-      this.lookFrom = new THREE.Vector3(-0.1, 1.2, -1.4);
+      this.lookFrom = new THREE.Vector3(...flight.lookFrom);
       this.lookTo = c.clone();
       // Re-crop the boot frame for the new viewport shape.
-      if (this.bootCanvas && this.room.screen.material.map) {
+      if (this.bootCanvas && this.screen.mesh.material.map) {
         drawBootFrame(this.bootCanvas, __COMMIT_SUMMARY__).then(() => {
-          if (this.room) this.room.screen.material.map.needsUpdate = true;
+          if (this.room) this.screen.mesh.material.map.needsUpdate = true;
         });
       }
     },
     tick() {
       if (this.finished) return;
       this.raf = requestAnimationFrame(this.tick);
+      try {
+        this.frame();
+      } catch (err) {
+        console.warn("[Intro3D] render error, skipping intro", err);
+        cancelAnimationFrame(this.raf);
+        this.finish(true);
+      }
+    },
+    frame() {
       const now = performance.now();
-      this.elapsed += Math.min(now - this.last, 50);
+      const dt = now - this.last;
+      // Real time, even on slow devices; a gap over 250 ms (tab hidden, big
+      // hitch) counts as one frame so the camera doesn't jump ahead.
+      this.elapsed += dt > 250 ? 16 : dt;
       this.last = now;
       const elapsed = this.elapsed;
       const sway = Math.max(0, 1 - elapsed / IDLE_MS);
@@ -271,14 +321,14 @@ export default {
         this.lines = lines;
         const lh = Math.min(lines, size.y);
         const lw = Math.round(lh * (size.x / size.y));
-        this.target.setSize(lw, lh);
+        this.rt.setSize(lw, lh);
         this.post.uniforms.lowRes.value.set(lw, lh);
         // Color depth climbs with each step too (31 -> 63 -> 127 levels) and
         // dithering is off at native resolution, so the last frame is clean.
         this.post.uniforms.levels.value = (COLOR_LEVELS + 1) * 2 ** step - 1;
         this.post.uniforms.dither.value = RES_STEPS[step] ? 1 : 0;
       }
-      this.renderer.setRenderTarget(this.target);
+      this.renderer.setRenderTarget(this.rt);
       this.renderer.render(this.room.scene, this.camera);
       this.renderer.setRenderTarget(null);
       this.renderer.render(this.postScene, this.postCamera);
@@ -334,8 +384,8 @@ export default {
 .intro3d-skip {
   animation: intro3d-skip-in 0.4s ease 0.6s both;
   position: absolute;
-  right: 20px;
-  bottom: 20px;
+  right: calc(20px + env(safe-area-inset-right));
+  bottom: calc(20px + env(safe-area-inset-bottom));
   padding: 8px 14px;
   border: 1px solid rgba(198, 55, 230, 0.6);
   border-radius: 6px;
@@ -360,6 +410,11 @@ export default {
 }
 @media (prefers-reduced-motion: reduce) {
   .intro3d-skip { animation: none; }
+}
+/* Touch screens: no keyboard hint, and a bigger tap target. */
+@media (hover: none) {
+  .intro3d-skip kbd { display: none; }
+  .intro3d-skip { padding: 12px 18px; font-size: 14px; }
 }
 .intro3d-skip:hover,
 .intro3d-skip:focus-visible {

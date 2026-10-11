@@ -577,6 +577,35 @@ function terrarium(scene, L, pal) {
   };
 }
 
+// Phone standing in a little desk stand: the mobile intro flies into this
+// screen instead of the monitor. Portrait, ~7 x 15 cm display.
+function phoneOnStand(scene, L, pal, [x, y, z], rotY) {
+  const g = new THREE.Group();
+  g.position.set(x, y, z);
+  g.rotation.y = rotY;
+  scene.add(g);
+  // Stand: base plate and a back support.
+  box(g, L.plastic, 0x2a2830, [0.09, 0.012, 0.08], [0, 0.006, 0]);
+  const back = box(g, L.plastic, 0x2a2830, [0.07, 0.11, 0.01], [0, 0.06, -0.02]);
+  back.rotation.x = -0.28;
+  box(g, L.plastic, 0x2a2830, [0.085, 0.012, 0.012], [0, 0.018, 0.022]); // lip
+  // Phone, leaning back against the support.
+  const phone = new THREE.Group();
+  phone.position.set(0, 0.095, 0.0);
+  phone.rotation.x = -0.28;
+  g.add(phone);
+  const W = 0.071, H = 0.153;
+  box(phone, L.plastic, 0x15141a, [W + 0.008, H + 0.012, 0.008], [0, 0, 0]);
+  const screen = new THREE.Mesh(
+    new THREE.PlaneGeometry(W, H),
+    new THREE.MeshBasicMaterial({ color: 0x140c1c, fog: false }),
+  );
+  screen.position.set(0, 0, 0.0041);
+  screen.name = "Screen_Phone";
+  phone.add(screen);
+  return screen;
+}
+
 function buildGreybox(pal) {
   const scene = new THREE.Scene();
   const T = makeTextures();
@@ -632,6 +661,8 @@ function buildGreybox(pal) {
   const m2 = monitor(scene, L, pal, { x: 0, y: 1.29, z: -1.65, rotY: 0, w: W, h: H });
   const m3 = monitor(scene, L, pal, { x: 0.5, y: 1.2, z: -1.57, rotY: -0.38, w: H, h: W, glow: 0x24152e });
   const screen = m2.screen;
+  // Phone on a stand to the right of the keyboard (target of the mobile intro).
+  const phoneScreen = phoneOnStand(scene, L, pal, [0.43, DESK, -1.38], -0.35);
 
   // Toy figures on top of screens 1 and 3.
   const figColors = [
@@ -667,7 +698,7 @@ function buildGreybox(pal) {
   const chameleon = terrarium(scene, L, pal);
   const animate = (t) => { birds(t); chameleon(t); };
 
-  return { scene, screen, animate };
+  return { scene, screen, phoneScreen, animate };
 }
 
 async function buildFromModel(url) {
@@ -677,7 +708,9 @@ async function buildFromModel(url) {
   scene.add(gltf.scene);
   const screen = gltf.scene.getObjectByName("Screen_Main");
   if (!screen) throw new Error("room.glb has no object named Screen_Main");
-  return { scene, screen };
+  // Optional: name the phone's display "Screen_Phone" for the mobile intro.
+  const phoneScreen = gltf.scene.getObjectByName("Screen_Phone") || null;
+  return { scene, screen, phoneScreen };
 }
 
 function addLights(scene, pal) {
@@ -701,8 +734,6 @@ export async function loadRoom() {
   pendingImages = [];
   const room = ROOM_MODEL_URL ? await buildFromModel(ROOM_MODEL_URL) : buildGreybox(pal);
   addLights(room.scene, pal);
-  // The monitor's display ignores fog and light so it stays bright.
-  room.screen.material.fog = false;
   room.scene.updateMatrixWorld(true);
   // Give posters and game covers up to 1.5 s to arrive before we start.
   await Promise.race([
@@ -710,24 +741,30 @@ export async function loadRoom() {
     new Promise((r) => setTimeout(r, 1500)),
   ]);
 
-  const { screen } = room;
-  screen.geometry.computeBoundingBox();
-  const size = new THREE.Vector3();
-  screen.geometry.boundingBox.getSize(size);
-  const scale = new THREE.Vector3();
-  screen.matrixWorld.decompose(new THREE.Vector3(), new THREE.Quaternion(), scale);
-  const center = new THREE.Vector3();
-  screen.geometry.boundingBox.getCenter(center);
-  screen.localToWorld(center);
-  const normal = new THREE.Vector3(0, 0, 1).transformDirection(screen.matrixWorld);
-
+  const monitor = screenInfo(room.screen);
   return {
     scene: room.scene,
     animate: room.animate || (() => {}),
-    screen,
-    screenCenter: center,
-    screenNormal: normal,
-    screenWidth: size.x * scale.x,
-    screenHeight: size.y * scale.y,
+    // Camera targets: the middle monitor (desktop intro) and the phone
+    // (mobile intro; falls back to the monitor if the model has no phone).
+    screens: {
+      monitor,
+      phone: room.phoneScreen ? screenInfo(room.phoneScreen) : monitor,
+    },
   };
+}
+
+// World-space center, facing direction and size of a screen plane, used to
+// land the camera exactly in front of it.
+function screenInfo(mesh) {
+  mesh.geometry.computeBoundingBox();
+  const size = new THREE.Vector3();
+  mesh.geometry.boundingBox.getSize(size);
+  const scale = new THREE.Vector3();
+  mesh.matrixWorld.decompose(new THREE.Vector3(), new THREE.Quaternion(), scale);
+  const center = new THREE.Vector3();
+  mesh.geometry.boundingBox.getCenter(center);
+  mesh.localToWorld(center);
+  const normal = new THREE.Vector3(0, 0, 1).transformDirection(mesh.matrixWorld);
+  return { mesh, center, normal, width: size.x * scale.x, height: size.y * scale.y };
 }

@@ -99,6 +99,7 @@
            the boot screen. Desktop only, first visit per session. -->
       <Intro3D
         v-if="introPlaying"
+        :target="introTarget"
         @screen="introCovering = false"
         @done="introPlaying = false"
       />
@@ -130,15 +131,15 @@ import { getChromeState, setChromeState } from "./windowState";
 import { trackVisit, trackOpen } from "./stats";
 import { getDeviceTier } from "./deviceTier";
 
-// The 3D intro plays on a visitor's first visit (desktop and tablet), unless
-// they prefer reduced motion. Returning visitors go straight to the boot
+// The 3D intro plays on a visitor's first visit (desktop, tablet and phone),
+// unless they prefer reduced motion. Returning visitors go straight to the boot
 // screen. ?intro=1 forces it (handy while building), ?intro=0 turns it off.
 function shouldShowIntro(booting) {
   if (typeof window === "undefined") return false;
   const param = new URLSearchParams(window.location.search).get("intro");
   if (param === "1") return true;
   if (param === "0") return false;
-  if (!booting || window.innerWidth <= 768) return false;
+  if (!booting) return false;
   try { if (localStorage.getItem("introSeen") === "1") return false; } catch (_) {}
   return !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 }
@@ -172,6 +173,8 @@ export default {
       // introPlaying: the 3D intro is mounted. introCovering: it still hides
       // the screen, so the BootScreen waits underneath until the hand-off.
       introPlaying: showIntro,
+      // Phones fly into the phone on the desk, everything else into the monitor.
+      introTarget: typeof window !== "undefined" && window.innerWidth <= 768 ? "phone" : "monitor",
       introCovering: showIntro,
       openWindows: [],
       minimizedWindows: {},
