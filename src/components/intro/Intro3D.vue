@@ -22,6 +22,41 @@ const ZOOM_MS = 3200;   // camera flight into the screen
 const FADE_MS = 350;    // crossfade onto the DOM BootScreen
 const FOV = 45;
 
+// Retro look: the scene renders at LOW_LINES vertical pixels (N64 = 240) and
+// is scaled up with hard nearest-neighbour pixels, quantized to 15-bit color
+// with ordered dithering. In the last part of the zoom the resolution steps
+// up (like a console switching video mode) so the hand-off to the sharp DOM
+// BootScreen stays seamless.
+const LOW_LINES = 240;
+const RES_STEPS = [240, 360, 540, 0]; // 0 = native resolution
+const RES_UP_FROM = 0.72;              // zoom progress where stepping starts
+const COLOR_LEVELS = 31;               // 31 = 15-bit N64 color, 63 = smoother
+
+const POST_VERT = `
+varying vec2 vUv;
+void main() { vUv = uv; gl_Position = vec4(position.xy, 0.0, 1.0); }
+`;
+const POST_FRAG = `
+uniform sampler2D tScene;
+uniform vec2 lowRes;
+uniform float dither;
+uniform float levels;
+varying vec2 vUv;
+float bayer4(vec2 p) {
+  int x = int(mod(p.x, 4.0)), y = int(mod(p.y, 4.0));
+  int i = x + y * 4;
+  int m[16] = int[16](0, 8, 2, 10, 12, 4, 14, 6, 3, 11, 1, 9, 15, 7, 13, 5);
+  return (float(m[i]) + 0.5) / 16.0;
+}
+void main() {
+  vec4 c = linearToOutputTexel(texture2D(tScene, vUv));
+  // Reduced color depth (31 levels = 5 bits per channel) with a 4x4 ordered dither, N64 style.
+  float b = bayer4(floor(vUv * lowRes)) - 0.5;
+  vec3 q = floor((c.rgb + b / levels) * levels + 0.5) / levels;
+  gl_FragColor = vec4(mix(c.rgb, q, dither), 1.0);
+}
+`;
+
 const easeInOutCubic = (t) => (t < 0.5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2);
 
 // Draws the BootScreen's first frame (logo, version, spinner on its gradient)
@@ -113,7 +148,30 @@ export default {
     const tex = new THREE.CanvasTexture(this.bootCanvas);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
-    this.room.screen.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false });
+    this.room.screen.material = new THREE.MeshBasicMaterial({ map: tex, toneMapped: false, fog: false });
+
+    // Low-res render target + fullscreen pass that upscales and dithers.
+    this.target = new THREE.WebGLRenderTarget(1, 1, {
+      minFilter: THREE.NearestFilter,
+      magFilter: THREE.NearestFilter,
+      depthBuffer: true,
+    });
+    this.post = new THREE.ShaderMaterial({
+      uniforms: {
+        tScene: { value: this.target.texture },
+        lowRes: { value: new THREE.Vector2(1, 1) },
+        dither: { value: 1 },
+        levels: { value: COLOR_LEVELS },
+      },
+      vertexShader: POST_VERT,
+      fragmentShader: POST_FRAG,
+      depthTest: false,
+      depthWrite: false,
+    });
+    this.postScene = new THREE.Scene();
+    this.postScene.add(new THREE.Mesh(new THREE.PlaneGeometry(2, 2), this.post));
+    this.postCamera = new THREE.OrthographicCamera(-1, 1, 1, -1, 0, 1);
+    this.lines = LOW_LINES;
 
     this.camera = new THREE.PerspectiveCamera(FOV, 1, 0.01, 50);
     this.onResize();
@@ -132,6 +190,8 @@ export default {
       const mats = Array.isArray(o.material) ? o.material : [o.material];
       mats.forEach((m) => { m?.map?.dispose(); m?.dispose?.(); });
     });
+    this.target?.dispose();
+    this.post?.dispose();
     this.renderer?.dispose();
   },
   methods: {
@@ -140,6 +200,7 @@ export default {
     onResize() {
       const w = window.innerWidth, h = window.innerHeight;
       this.renderer.setSize(w, h, false);
+      this.lines = null; // force the render target to resize
       this.camera.aspect = w / h;
       this.camera.updateProjectionMatrix();
 
@@ -180,9 +241,32 @@ export default {
       const look = this.lookFrom.clone().lerp(this.lookTo, Math.min(1, t * 1.6));
       this.camera.up.set(0, 1, 0);
       this.camera.lookAt(look);
-      this.renderer.render(this.room.scene, this.camera);
+      this.renderRetro(raw);
 
       if (raw >= 1) this.finish(false);
+    },
+    // Renders the scene into the low-res target, then upscales it to the
+    // canvas with hard pixels and dithering.
+    renderRetro(progress) {
+      const step = progress < RES_UP_FROM
+        ? 0
+        : Math.min(RES_STEPS.length - 1,
+            Math.floor(((progress - RES_UP_FROM) / (1 - RES_UP_FROM)) * RES_STEPS.length));
+      const size = this.renderer.getDrawingBufferSize(new THREE.Vector2());
+      const lines = RES_STEPS[step] || size.y;
+      if (lines !== this.lines) {
+        this.lines = lines;
+        const lh = Math.min(lines, size.y);
+        const lw = Math.round(lh * (size.x / size.y));
+        this.target.setSize(lw, lh);
+        this.post.uniforms.lowRes.value.set(lw, lh);
+        // Dithering fades out with the last step so the final frame is clean.
+        this.post.uniforms.dither.value = RES_STEPS[step] ? 1 : 0;
+      }
+      this.renderer.setRenderTarget(this.target);
+      this.renderer.render(this.room.scene, this.camera);
+      this.renderer.setRenderTarget(null);
+      this.renderer.render(this.postScene, this.postCamera);
     },
     finish(instant) {
       if (this.finishing) return;
@@ -218,6 +302,7 @@ export default {
 }
 .intro3d-canvas {
   display: block;
+  image-rendering: pixelated;
   width: 100%;
   height: 100%;
 }
