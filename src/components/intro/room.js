@@ -276,6 +276,124 @@ function poster(parent, L, pal, def, i, [x, y, z]) {
   parent.add(art);
 }
 
+// ---- Bird cage with two pineapple green-cheeked conures -----------------
+// Cage on a rolling stand against the right wall. Bars are one instanced
+// mesh so the many thin rods stay cheap.
+
+// Pineapple green-cheeked conure colors.
+const CONURE = {
+  body: 0x9cc65a,   // light, slightly yellow green
+  wing: 0x7fae44,
+  breast: 0xe0c85a, // yellow-washed chest
+  belly: 0xc8463a,  // red belly patch
+  tail: 0xa83a2e,   // maroon-red tail
+  head: 0x9a8a72,   // grey-brown/tan cap
+  cheek: 0xa8cf6a,
+  beak: 0x4a4650,
+  eyeRing: 0xf2f0ea,
+};
+
+function conure(parent, L, [x, y, z], rotY) {
+  const bird = new THREE.Group();
+  bird.position.set(x, y, z);
+  bird.rotation.y = rotY;
+  parent.add(bird);
+  const P = L.plastic;
+  // Body leans slightly forward like a perched parrot.
+  const body = shape(bird, P, CONURE.body, new THREE.IcosahedronGeometry(0.03, 0), [0, 0.045, 0]);
+  body.scale.set(0.85, 1.35, 0.9);
+  shape(bird, P, CONURE.breast, new THREE.IcosahedronGeometry(0.022, 0), [0, 0.055, 0.016]).scale.set(0.9, 1, 0.6);
+  shape(bird, P, CONURE.belly, new THREE.IcosahedronGeometry(0.018, 0), [0, 0.03, 0.016]).scale.set(0.9, 0.9, 0.6);
+  // Wings along the sides.
+  box(bird, P, CONURE.wing, [0.008, 0.05, 0.04], [-0.024, 0.045, -0.004]);
+  box(bird, P, CONURE.wing, [0.008, 0.05, 0.04], [0.024, 0.045, -0.004]);
+  // Long tail pointing down and back.
+  const tail = box(bird, P, CONURE.tail, [0.018, 0.075, 0.008], [0, -0.005, -0.02]);
+  tail.rotation.x = -0.35;
+  // Head: pivot so it can bob and tilt.
+  const head = new THREE.Group();
+  head.position.set(0, 0.092, 0.006);
+  bird.add(head);
+  shape(head, P, CONURE.head, new THREE.IcosahedronGeometry(0.021, 0), [0, 0.006, 0]);
+  shape(head, P, CONURE.cheek, new THREE.IcosahedronGeometry(0.014, 0), [0, -0.004, 0.009]).scale.set(1.3, 0.8, 0.8);
+  shape(head, P, CONURE.beak, new THREE.ConeGeometry(0.007, 0.016, 5), [0, -0.002, 0.024], [Math.PI / 2 + 0.5, 0, 0]);
+  for (const side of [-1, 1]) {
+    shape(head, P, CONURE.eyeRing, new THREE.IcosahedronGeometry(0.005, 0), [side * 0.016, 0.006, 0.01]);
+    shape(head, P, 0x111111, new THREE.IcosahedronGeometry(0.0028, 0), [side * 0.019, 0.006, 0.011]);
+  }
+  // Feet gripping the perch.
+  box(bird, P, 0x7a6a70, [0.02, 0.006, 0.012], [0, 0.002, 0.004]);
+  return { bird, head };
+}
+
+function birdcage(scene, L, pal) {
+  const cage = new THREE.Group();
+  cage.position.set(1.8, 0, -1.45);
+  cage.rotation.y = -0.35; // front turned towards the door / camera
+  scene.add(cage);
+  const metal = 0xe6e2da;
+  const W = 0.6, D = 0.45, H = 0.75, BASE = 0.78; // cage size, stand height
+
+  // Stand: four legs on little wheels, plus a lower shelf.
+  for (const [lx, lz] of [[-W / 2 + 0.03, -D / 2 + 0.03], [W / 2 - 0.03, -D / 2 + 0.03],
+    [-W / 2 + 0.03, D / 2 - 0.03], [W / 2 - 0.03, D / 2 - 0.03]]) {
+    box(cage, L.plastic, metal, [0.025, BASE, 0.025], [lx, BASE / 2 + 0.03, lz]);
+    shape(cage, L.plastic, 0x2a2830, new THREE.CylinderGeometry(0.02, 0.02, 0.02, 6), [lx, 0.015, lz], [0, 0, Math.PI / 2]);
+  }
+  box(cage, L.plastic, metal, [W - 0.04, 0.015, D - 0.04], [0, 0.3, 0]);
+  // Cage floor tray and roof.
+  box(cage, L.plastic, 0xd8d2c6, [W + 0.03, 0.06, D + 0.03], [0, BASE + 0.03, 0]);
+  box(cage, L.plastic, metal, [W + 0.01, 0.02, D + 0.01], [0, BASE + H, 0]);
+  // Horizontal rails at a few heights.
+  for (const ry of [0.06, H * 0.5, H - 0.02]) {
+    box(cage, L.plastic, metal, [W, 0.008, 0.008], [0, BASE + ry, D / 2]);
+    box(cage, L.plastic, metal, [W, 0.008, 0.008], [0, BASE + ry, -D / 2]);
+    box(cage, L.plastic, metal, [0.008, 0.008, D], [W / 2, BASE + ry, 0]);
+    box(cage, L.plastic, metal, [0.008, 0.008, D], [-W / 2, BASE + ry, 0]);
+  }
+
+  // Vertical bars: one instanced mesh around all four sides.
+  const gap = 0.03;
+  const spots = [];
+  for (let bx = -W / 2; bx <= W / 2 + 1e-6; bx += gap) spots.push([bx, D / 2], [bx, -D / 2]);
+  for (let bz = -D / 2 + gap; bz < D / 2 - 1e-6; bz += gap) spots.push([W / 2, bz], [-W / 2, bz]);
+  const bars = new THREE.InstancedMesh(
+    new THREE.BoxGeometry(0.004, H, 0.004),
+    // Slightly darker than the frame so the thin bars don't drown the birds
+    // at 240 lines.
+    new THREE.MeshLambertMaterial({ color: 0xa8a39c }),
+    spots.length,
+  );
+  const m = new THREE.Matrix4();
+  spots.forEach(([bx, bz], i) => bars.setMatrixAt(i, m.makeTranslation(bx, BASE + H / 2, bz)));
+  cage.add(bars);
+
+  // Inside: wooden perch, food and water bowls, a hanging toy.
+  const perchY = BASE + 0.32;
+  shape(cage, L.wood, 0x8a6a48, new THREE.CylinderGeometry(0.008, 0.008, W - 0.02, 6), [0, perchY, 0], [0, 0, Math.PI / 2]);
+  shape(cage, L.plastic, 0xd8d8d8, new THREE.CylinderGeometry(0.035, 0.028, 0.03, 8), [-0.2, BASE + 0.2, D / 2 - 0.04]);
+  shape(cage, L.plastic, 0x5a8ac8, new THREE.CylinderGeometry(0.035, 0.028, 0.03, 8), [0.2, BASE + 0.2, D / 2 - 0.04]);
+  box(cage, L.plastic, 0x8a6a48, [0.004, 0.18, 0.004], [0.18, BASE + H - 0.1, -0.05]);
+  [0xe23b3b, 0xf0c419, 0x3a8ac8, 0x6ac84a].forEach((c, i) =>
+    box(cage, L.wood, c, [0.025, 0.025, 0.025], [0.18, BASE + H - 0.2 - i * 0.03, -0.05], i * 0.4));
+
+  // The two conures, sitting close together on the perch.
+  const birds = [
+    conure(cage, L, [-0.06, perchY + 0.008, 0], 0.15),
+    conure(cage, L, [0.03, perchY + 0.008, 0], -0.25),
+  ];
+
+  // Small idle motion: head bobs and tilts, like they're watching the camera.
+  return (t) => {
+    birds.forEach(({ head, bird }, i) => {
+      const p = t * 0.0025 + i * 1.7;
+      head.rotation.z = Math.sin(p) * 0.25;
+      head.rotation.y = Math.sin(p * 0.6 + i) * 0.5;
+      bird.position.y = perchY + 0.008 + Math.max(0, Math.sin(p * 1.3)) * 0.004;
+    });
+  };
+}
+
 function buildGreybox(pal) {
   const scene = new THREE.Scene();
   const T = makeTextures();
@@ -356,13 +474,14 @@ function buildGreybox(pal) {
   box(scene, L.fabric, pal.dark, [0.5, 0.6, 0.06], [0.1, 0.85, -0.3]);
   box(scene, L.plastic, pal.dark, [0.06, 0.46, 0.06], [0.1, 0.23, -0.55]);
 
-  // Bed along the left wall, rug, shelf on the right.
+  // Bed along the left wall and the rug.
   box(scene, L.fabric, pal.bed, [1.0, 0.4, 2.0], [-1.65, 0.2, 1.2]);
   box(scene, L.fabric, pal.sheet, [1.0, 0.12, 1.5], [-1.65, 0.46, 1.45]);
   box(scene, L.fabric, pal.rug, [1.4, 0.02, 1.0], [0.2, 0.01, 0.5]);
-  box(scene, L.wood, pal.shelf, [0.5, 1.8, 0.35], [1.9, 0.9, -1.2]);
+  // Bird cage on the right with the two conures.
+  const animate = birdcage(scene, L, pal);
 
-  return { scene, screen };
+  return { scene, screen, animate };
 }
 
 async function buildFromModel(url) {
@@ -412,6 +531,7 @@ export async function loadRoom() {
 
   return {
     scene: room.scene,
+    animate: room.animate || (() => {}),
     screen,
     screenCenter: center,
     screenNormal: normal,

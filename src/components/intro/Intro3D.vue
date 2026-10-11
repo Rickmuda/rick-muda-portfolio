@@ -243,6 +243,7 @@ export default {
       const look = this.lookFrom.clone().lerp(this.lookTo, Math.min(1, t * 1.6));
       this.camera.up.set(0, 1, 0);
       this.camera.lookAt(look);
+      this.room.animate(elapsed);
       this.renderRetro(raw);
 
       if (raw >= 1) this.finish(false);
