@@ -95,8 +95,16 @@
         </div>
       </div>
 
+      <!-- 3D intro: camera flies into the middle monitor, then hands over to
+           the boot screen. Desktop only, first visit per session. -->
+      <Intro3D
+        v-if="introPlaying"
+        @screen="introCovering = false"
+        @done="introPlaying = false"
+      />
+
       <!-- Boot screen (first visit per session) -->
-      <BootScreen v-if="booting" @done="onBootDone" />
+      <BootScreen v-if="booting && !introCovering" @done="onBootDone" />
 
       <!-- Achievement unlock popup -->
       <AchievementToast />
@@ -110,6 +118,7 @@ import MobileHome from "./components/MobileHome.vue";
 import Taskbar from "./components/Taskbar.vue";
 import AppWindow from "./components/AppWindow.vue";
 import BootScreen from "./components/BootScreen.vue";
+import { defineAsyncComponent } from "vue";
 import AchievementToast from "./components/AchievementToast.vue";
 import { windowConfig, appList, getMobileApps, preloadAllWindows } from "./windowConfig";
 import { findNodePath } from "./filesystem";
@@ -121,6 +130,18 @@ import { getChromeState, setChromeState } from "./windowState";
 import { trackVisit, trackOpen } from "./stats";
 import { getDeviceTier } from "./deviceTier";
 
+// The 3D intro runs with the boot sequence on desktop and tablet, unless the
+// visitor prefers reduced motion. ?intro=1 forces it (handy while building),
+// ?intro=0 turns it off.
+function shouldShowIntro(booting) {
+  if (typeof window === "undefined") return false;
+  const param = new URLSearchParams(window.location.search).get("intro");
+  if (param === "1") return true;
+  if (param === "0") return false;
+  if (!booting || window.innerWidth <= 768) return false;
+  return !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+}
+
 export default {
   name: 'App',
   components: {
@@ -130,9 +151,17 @@ export default {
     AppWindow,
     BootScreen,
     AchievementToast,
+    // Lazy: three.js only loads for visitors who actually see the intro.
+    Intro3D: defineAsyncComponent(() => import("./components/intro/Intro3D.vue")),
   },
   data() {
+    const booting = typeof sessionStorage !== "undefined" && sessionStorage.getItem("booted") !== "1";
+    const showIntro = shouldShowIntro(booting);
     return {
+      // introPlaying: the 3D intro is mounted. introCovering: it still hides
+      // the screen, so the BootScreen waits underneath until the hand-off.
+      introPlaying: showIntro,
+      introCovering: showIntro,
       openWindows: [],
       minimizedWindows: {},
       darkMode: false,
@@ -155,7 +184,7 @@ export default {
       easterEggApps: [],
       isMobile: false,
       deviceTier: "desktop", // "mobile" | "tablet" | "desktop" - see deviceTier.js
-      booting: typeof sessionStorage !== "undefined" && sessionStorage.getItem("booted") !== "1",
+      booting: booting || showIntro,
       openedAppsEver: new Set(),
       windowThumbnails: {},
       // Bumped when the visitor picks a wallpaper (the pick itself lives in
