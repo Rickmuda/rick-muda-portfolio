@@ -30,6 +30,7 @@ const gameDesc = {
   miniGame: "descSolitaire",
   minesweeper: "descMinesweeper",
   tetris: "descTetris",
+  gamemuda: "descGamemuda",
   flappyRick: "descFlappy",
 };
 

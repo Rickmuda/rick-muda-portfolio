@@ -16,10 +16,12 @@
     "@fortawesome/free-solid-svg-icons": "^6.7.2",
     "@fortawesome/vue-fontawesome": "^3.0.8",
     "html2canvas": "^1.4.1",
+    "three": "^0.186.1",
     "vue": "^3.5.13",
     "vue-i18n": "^11.1.3",
     "vue-router": "^4.5.0",
-    "vue3-draggable-resizable": "^1.6.5"
+    "vue3-draggable-resizable": "^1.6.5",
+    "wasmboy": "^0.7.1"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^5.2.3",

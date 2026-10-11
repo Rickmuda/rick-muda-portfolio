@@ -78,6 +78,9 @@ import {
   faFloppyDisk,
   faLink,
   faChartColumn,
+  faVolumeHigh,
+  faVolumeLow,
+  faVolumeXmark,
 } from "@fortawesome/free-solid-svg-icons";
 import {
   faTwitter,
@@ -166,7 +169,10 @@ library.add(
   faRightFromBracket,
   faFloppyDisk,
   faLink,
-  faChartColumn
+  faChartColumn,
+  faVolumeHigh,
+  faVolumeLow,
+  faVolumeXmark
 );
 library.add(faTwitter, faInstagram, faLinkedin, faGithub, faYoutube, faTiktok, faSpotify, faSteam);
 // Extra brands the About Me social links can use (see socialIcons in src/aboutData.js).
