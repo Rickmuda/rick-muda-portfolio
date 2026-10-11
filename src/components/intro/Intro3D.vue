@@ -17,8 +17,8 @@
 import * as THREE from "three";
 import { loadRoom } from "./room";
 
-const IDLE_MS = 1300;   // look at the room before moving
-const ZOOM_MS = 3200;   // camera flight into the screen
+const IDLE_MS = 2200;   // look at the room before moving
+const ZOOM_MS = 5000;   // camera flight into the screen
 const FADE_MS = 350;    // crossfade onto the DOM BootScreen
 const FOV = 45;
 
