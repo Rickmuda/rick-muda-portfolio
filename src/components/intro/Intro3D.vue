@@ -22,10 +22,10 @@
 // Modes:
 //   intro    - fly from the room into the screen (first visit).
 //   sleep    - start on the screen showing a snapshot of the desktop, put the
-//              PC to sleep (screens fade out, "no signal" OSD, LEDs pulse
-//              amber), fly back out and wait in the room. Any input wakes it:
-//              the screens come back with the desktop and the camera flies
-//              back in - no reboot.
+//              PC to sleep (screens fade out, LEDs pulse amber) while the
+//              camera pulls back into the room, then wait. Any input wakes
+//              it: the screens come back (desktop in the middle, video site
+//              left, chat app right) and the camera flies back in - no reboot.
 //
 // Events:
 //   screen - the camera has filled the viewport with the monitor; mount the
@@ -33,17 +33,16 @@
 //   done   - the intro has faded out; unmount it.
 import * as THREE from "three";
 import { loadRoom } from "./room";
+import { drawVideoSite, drawChatApp, paintSideScreen } from "./sideScreens";
 
 const IDLE_MS = 2200;   // look at the room before moving
 const ZOOM_MS = 5000;   // camera flight into the screen
 const FADE_MS = 350;    // crossfade onto the DOM BootScreen
-// Sleep timeline (ms from the click), camera still in front of the screen:
-const SLEEP_FADE_AT = 150;   // desktop fades to black...
-const SLEEP_FADE_MS = 450;   //   ...over this long (side screens + glow too)
-const OSD_AT = 750;          // all monitors show the "no signal" box
-const OSD_MS = 1500;         //   for this long, then black + amber LEDs
-const ZOOM_OUT_AT = 2500;    // then the camera flies back into the room
-const REVERSE_MS = 3600;     //   over this long
+// Sleep timeline (ms from the click):
+const SLEEP_FADE_AT = 100;   // screens start fading to black...
+const SLEEP_FADE_MS = 700;   //   ...over this long (side screens + glow too)
+const ZOOM_OUT_AT = 450;     // camera starts pulling back while they fade
+const REVERSE_MS = 3600;     //   and flies back into the room over this long
 const WAKE_MS = 400;         // waking: screens fade back in
 const WAKE_IDLE_MS = 600;    //   and the camera waits this long before flying in
 const FOV = 45;          // landscape viewports
@@ -172,32 +171,6 @@ function drawSnapshot(canvas, snap) {
   ctx.drawImage(snap, 0, 0, vw, vh);
 }
 
-// The monitor's own "no signal" message, drawn centred on a black screen.
-// Uses the canvas' own aspect ratio, so it works for portrait screens too.
-function drawNoSignal(canvas, lines) {
-  const ctx = canvas.getContext("2d");
-  const W = canvas.width, H = canvas.height;
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = "#000";
-  ctx.fillRect(0, 0, W, H);
-  const u = Math.min(W, H) / 100; // 1% of the short side
-  const bw = Math.min(W * 0.8, u * 92), bh = u * 30;
-  const bx = (W - bw) / 2, by = (H - bh) / 2;
-  ctx.fillStyle = "#151520";
-  ctx.fillRect(bx, by, bw, bh);
-  ctx.strokeStyle = "#5a5a6a";
-  ctx.lineWidth = Math.max(1, u * 0.6);
-  ctx.strokeRect(bx, by, bw, bh);
-  ctx.textAlign = "center";
-  ctx.textBaseline = "middle";
-  ctx.fillStyle = "#e8e8f0";
-  ctx.font = `bold ${Math.round(u * 8)}px "PortfolioFont", monospace`;
-  ctx.fillText(lines[0], W / 2, by + bh * 0.36);
-  ctx.fillStyle = "#a0a0b4";
-  ctx.font = `${Math.round(u * 5)}px "PortfolioFont", monospace`;
-  ctx.fillText(lines[1], W / 2, by + bh * 0.7);
-}
-
 export default {
   name: "Intro3D",
   props: {
@@ -218,8 +191,8 @@ export default {
     },
     t() {
       return this.$i18n?.locale === "nl"
-        ? { back: "Druk op iets om terug te gaan", noSignal: ["GEEN SIGNAAL", "Energiebesparingsmodus"] }
-        : { back: "Press anything to go back", noSignal: ["NO SIGNAL", "Entering power saving mode"] };
+        ? { back: "Druk op iets om terug te gaan" }
+        : { back: "Press anything to go back" };
     },
   },
   async mounted() {
@@ -287,19 +260,26 @@ export default {
         return tex;
       };
       this.bootTex = makeTex(this.bootCanvas);
-      // Sleep: every monitor's "no signal" message (in its own aspect ratio).
+      // Sleep: what the side monitors show while awake - a video site on the
+      // left and a chat app on the right (or the visitor's own screenshots).
       if (this.mode === "sleep") {
-        const osdTex = (w, h) => {
-          const c = document.createElement("canvas");
-          c.width = w; c.height = h;
-          drawNoSignal(c, this.t.noSignal);
-          return makeTex(c);
-        };
-        this.osdTex = osdTex(this.bootCanvas.width, this.bootCanvas.height);
-        this.sideOsd = this.room.sideScreens.map((m) => {
+        const sides = [
+          { base: "/intro/screens/left", draw: drawVideoSite },
+          { base: "/intro/screens/right", draw: drawChatApp },
+        ];
+        const painted = [];
+        this.sideTex = this.room.sideScreens.map((m, i) => {
           const { width: sw, height: sh } = m.geometry.parameters;
-          return sw >= sh ? osdTex(512, Math.round(512 * sh / sw)) : osdTex(Math.round(512 * sw / sh), 512);
+          const c = document.createElement("canvas");
+          c.width = sw >= sh ? 768 : Math.round(768 * sw / sh);
+          c.height = sw >= sh ? Math.round(768 * sh / sw) : 768;
+          const side = sides[i] || sides[0];
+          painted.push(paintSideScreen(c, side.base, side.draw));
+          return makeTex(c);
         });
+        // Give screenshots a moment to load; the mock-ups are already drawn.
+        await Promise.race([Promise.all(painted), new Promise((r) => setTimeout(r, 800))]);
+        this.sideTex.forEach((tex) => { tex.needsUpdate = true; });
       }
       // Sleep starts on a picture of the desktop as it was.
       if (this.mode === "sleep" && this.snapshot) {
@@ -447,38 +427,31 @@ export default {
       if (!mat.map !== !map) mat.needsUpdate = true;
       mat.map = map;
     },
-    // Going to sleep, e = ms since the click. Desktop fades out, every monitor
-    // shows its "no signal" box, then all goes dark and the LEDs pulse amber.
+    // Going to sleep, e = ms since the click: all screens and the glow fade
+    // to black, then the monitor LEDs switch to pulsing amber.
     sleepOut(e) {
-      const clamp01 = (v) => Math.min(1, Math.max(0, v));
-      const mat = this.screen.mesh.material;
-      const fade = clamp01((e - SLEEP_FADE_AT) / SLEEP_FADE_MS);
-      const osd = e >= OSD_AT && e < OSD_AT + OSD_MS;
-      this.room.setPowered(e < OSD_AT ? 1 - fade : 0);
-      if (e < OSD_AT) {
-        this.setMap(mat, this.snapTex || this.bootTex);
-        mat.color.setScalar(1 - fade);
-      } else {
-        this.setMap(mat, this.osdTex);
-        mat.color.setScalar(osd ? 1 : 0);
-      }
-      this.room.sideScreens.forEach((m, i) => {
-        this.setMap(m.material, osd ? this.sideOsd[i] : null);
-        if (osd) m.material.color.setScalar(1);
-      });
-      this.room.setSleeping(e >= OSD_AT + OSD_MS);
+      const fade = Math.min(1, Math.max(0, (e - SLEEP_FADE_AT) / SLEEP_FADE_MS));
+      this.showScreens(1 - fade);
+      this.room.setSleeping(fade >= 1);
     },
-    // Waking up, e = ms since the key press: LEDs back on, screens fade in
-    // with the desktop as it was.
+    // Waking up, e = ms since the key press: LEDs back on, screens fade in.
     wakeIn(e) {
       const k = Math.min(1, e / WAKE_MS);
-      const mat = this.screen.mesh.material;
       this.room.setSleeping(false);
-      this.room.sideScreens.forEach((m) => this.setMap(m.material, null));
-      this.room.setPowered(k);
-      this.setMap(mat, this.snapTex || this.bootTex);
-      mat.color.setScalar(k);
+      this.showScreens(k);
       if (k >= 1) this.waking = false;
+    },
+    // Brightness of all three screens and the room glow: the desktop in the
+    // middle, video site left, chat app right.
+    showScreens(level) {
+      const mat = this.screen.mesh.material;
+      this.room.setPowered(level);
+      this.setMap(mat, this.snapTex || this.bootTex);
+      mat.color.setScalar(level);
+      this.room.sideScreens.forEach((m, i) => {
+        this.setMap(m.material, this.sideTex?.[i] || null);
+        if (this.sideTex?.[i]) m.material.color.setScalar(level);
+      });
     },
     setPhase(phase, idleMs = 0) {
       this.phase = phase;
@@ -555,7 +528,7 @@ export default {
         e.preventDefault();
         // While going to sleep, Esc jumps straight to the (sleeping) room.
         if (this.phase === "reverse") {
-          this.sleepOut(OSD_AT + OSD_MS); // everything dark, LEDs amber
+          this.sleepOut(SLEEP_FADE_AT + SLEEP_FADE_MS); // all dark, LEDs amber
           this.setPhase("off");
         } else {
           this.skip();
