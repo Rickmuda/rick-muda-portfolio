@@ -156,6 +156,7 @@ export default {
     cancelAnimationFrame(this.raf);
     window.removeEventListener("resize", this.onResize);
     window.removeEventListener("keydown", this.onKey);
+    document.removeEventListener("visibilitychange", this.onVisibility);
     this.room?.scene.traverse((o) => {
       o.geometry?.dispose();
       const mats = Array.isArray(o.material) ? o.material : [o.material];
@@ -170,6 +171,7 @@ export default {
     async setup() {
       this.finished = false;
       window.addEventListener("keydown", this.onKey);
+      document.addEventListener("visibilitychange", this.onVisibility);
       try {
         this.renderer = new THREE.WebGLRenderer({ canvas: this.$refs.canvas, antialias: true });
       } catch (_) {
@@ -231,8 +233,8 @@ export default {
       this.onResize();
       window.addEventListener("resize", this.onResize);
 
-      // Own clock: only advances while the tab is visible, and a long frame
-      // (hitch, tab switch) can't make the camera jump ahead.
+      // Own clock: pauses while the tab is hidden, so visitors who switch
+      // tabs don't come back to a finished intro.
       this.elapsed = 0;
       this.last = performance.now();
       this.tick();
@@ -284,10 +286,9 @@ export default {
     },
     frame() {
       const now = performance.now();
-      const dt = now - this.last;
-      // Real time, even on slow devices; a gap over 250 ms (tab hidden, big
-      // hitch) counts as one frame so the camera doesn't jump ahead.
-      this.elapsed += dt > 250 ? 16 : dt;
+      // Real time, also on slow devices or throttled background windows.
+      // Time while the tab is hidden is skipped (see onVisibility).
+      this.elapsed += Math.min(now - this.last, 1000);
       this.last = now;
       const elapsed = this.elapsed;
       const sway = Math.max(0, 1 - elapsed / IDLE_MS);
@@ -347,6 +348,10 @@ export default {
     },
     skip() {
       this.finish(false);
+    },
+    onVisibility() {
+      // Coming back to the tab: continue from where we were.
+      if (document.visibilityState === "visible") this.last = performance.now();
     },
     onKey(e) {
       if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
