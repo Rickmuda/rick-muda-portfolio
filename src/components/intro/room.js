@@ -175,16 +175,28 @@ function figure(parent, L, pal, [x, y, z], rotY) {
   shape(g, L.plastic, 0x8a7a70, new THREE.IcosahedronGeometry(0.018, 0), [0, 0.2, 0]);
 }
 
-// Boxed N64 game standing upright (box is ~19 x 13.5 x 3.5 cm).
-function gameBox(parent, L, color, [x, y, z], rotY) {
-  const b = box(parent, L.plastic, color, [0.19, 0.135, 0.035], [x, y + 0.0675, z], rotY);
-  // Lighter "art" panel on the front face.
-  const panel = new THREE.Mesh(
-    new THREE.PlaneGeometry(0.15, 0.09),
-    new THREE.MeshLambertMaterial({ color: 0xd8d0c0 }),
-  );
-  panel.position.set(0.005, -0.008, 0.0176);
-  b.add(panel);
+// Boxed N64 game standing upright, with its cover on the front. Covers load
+// from public/intro/games/<id>.webp (same tiny-texture treatment as posters).
+//   PAL box: landscape, ~19 x 13.5 x 3.5 cm
+//   Japanese box: portrait and narrower, ~13 x 17.8 x 3 cm
+export const GAME_BOXES = {
+  pal: [0.19, 0.135, 0.035],
+  jp: [0.13, 0.178, 0.03],
+};
+
+function gameBox(parent, L, { id, size, color }, [x, y, z], rotY) {
+  const [w, h, d] = GAME_BOXES[size];
+  const b = box(parent, L.plastic, color, [w, h, d], [x, y + h / 2, z], rotY);
+  const tw = size === "pal" ? 64 : 44, th = size === "pal" ? 45 : 60;
+  const tex = smallTexture(tw, th);
+  const ctx = tex.image.getContext("2d");
+  ctx.fillStyle = "#" + color.toString(16).padStart(6, "0");
+  ctx.fillRect(0, 0, tw, th);
+  loadImageInto(tex, `/intro/games/${id}`);
+  const cover = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshLambertMaterial({ map: tex }));
+  cover.position.set(0, 0, d / 2 + 0.0005);
+  cover.name = `Game_${id}`;
+  b.add(cover);
 }
 
 // ---- Posters ------------------------------------------------------------
@@ -199,9 +211,9 @@ export const POSTERS = [
 ];
 const POSTER_W = 48, POSTER_H = 68; // texture size: tiny on purpose
 
-function posterTexture() {
+function smallTexture(w, h) {
   const c = document.createElement("canvas");
-  c.width = POSTER_W; c.height = POSTER_H;
+  c.width = w; c.height = h;
   const tex = new THREE.CanvasTexture(c);
   tex.colorSpace = THREE.SRGBColorSpace;
   tex.magFilter = tex.minFilter = THREE.LinearFilter;
@@ -232,20 +244,22 @@ function drawPlaceholder(tex, palette, seed) {
   tex.needsUpdate = true;
 }
 
-function loadPosterImage(tex, id) {
+// Loads <base>.webp/.jpg/.png and cover-fits it into the tiny canvas texture.
+function loadImageInto(tex, base) {
+  const W = tex.image.width, H = tex.image.height;
   const tryExt = (exts) => {
     if (!exts.length) return;
     const img = new Image();
     img.onload = () => {
       // Cover-fit into the tiny texture.
       const ctx = tex.image.getContext("2d");
-      const k = Math.max(POSTER_W / img.width, POSTER_H / img.height);
+      const k = Math.max(W / img.width, H / img.height);
       const w = img.width * k, h = img.height * k;
-      ctx.drawImage(img, (POSTER_W - w) / 2, (POSTER_H - h) / 2, w, h);
+      ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
       tex.needsUpdate = true;
     };
     img.onerror = () => tryExt(exts.slice(1));
-    img.src = `/intro/posters/${id}.${exts[0]}`;
+    img.src = `${base}.${exts[0]}`;
   };
   tryExt(["webp", "jpg", "png"]);
 }
@@ -253,9 +267,9 @@ function loadPosterImage(tex, id) {
 function poster(parent, L, pal, def, i, [x, y, z]) {
   const w = 0.38, h = 0.54;
   box(parent, L.plastic, 0x1a171e, [w + 0.03, h + 0.03, 0.02], [x, y, z]); // frame
-  const tex = posterTexture();
+  const tex = smallTexture(POSTER_W, POSTER_H);
   drawPlaceholder(tex, def.palette, i + 1);
-  loadPosterImage(tex, def.id);
+  loadImageInto(tex, `/intro/posters/${def.id}`);
   const art = new THREE.Mesh(new THREE.PlaneGeometry(w, h), new THREE.MeshLambertMaterial({ map: tex }));
   art.position.set(x, y, z + 0.011);
   art.name = `Poster_${def.id}`;
@@ -330,8 +344,8 @@ function buildGreybox(pal) {
     minifig(m3.group, L, [fx, 0.3 + 0.015, 0], figColors[(i + 2) % figColors.length]));
 
   // Under the middle screen: two boxed N64 games on the left, figure on the right.
-  gameBox(scene, L, 0x2b2b36, [-0.25, DESK, -1.56], 0.1);
-  gameBox(scene, L, 0x3a3a48, [-0.05, DESK, -1.57], -0.05);
+  gameBox(scene, L, { id: "majoras-mask-pal", size: "pal", color: 0x1f3a24 }, [-0.27, DESK, -1.56], 0.1);
+  gameBox(scene, L, { id: "papermario-jp", size: "jp", color: 0xe8d48a }, [-0.08, DESK, -1.57], -0.05);
   figure(scene, L, pal, [0.17, DESK, -1.55], -0.25);
 
   // Four posters above the desk.
