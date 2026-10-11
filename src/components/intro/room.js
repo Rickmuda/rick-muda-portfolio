@@ -698,7 +698,7 @@ function buildGreybox(pal) {
   const chameleon = terrarium(scene, L, pal);
   const animate = (t) => { birds(t); chameleon(t); };
 
-  return { scene, screen, phoneScreen, animate };
+  return { scene, screen, phoneScreen, animate, sideScreens: [m1.screen, m3.screen] };
 }
 
 async function buildFromModel(url) {
@@ -725,6 +725,7 @@ function addLights(scene, pal) {
   const glow = new THREE.PointLight(0xc637e6, pal.lamp, 3.5, 1.5);
   glow.position.set(0, 1.2, -1.1);
   scene.add(glow);
+  return glow;
 }
 
 // Returns the scene plus the main screen's world-space center, normal and size,
@@ -733,7 +734,18 @@ export async function loadRoom() {
   const pal = isNight() ? NIGHT : DAY;
   pendingImages = [];
   const room = ROOM_MODEL_URL ? await buildFromModel(ROOM_MODEL_URL) : buildGreybox(pal);
-  addLights(room.scene, pal);
+  const glow = addLights(room.scene, pal);
+  // Power state of the whole setup: side screens and the monitor glow go dark
+  // when MudaOS shuts down.
+  const sideScreens = room.sideScreens || [];
+  const sideColors = sideScreens.map((m) => m.material.color.clone());
+  const glowOn = glow.intensity;
+  const setPowered = (level) => {
+    // level: 1 = on, 0 = off (in between while switching)
+    glow.intensity = glowOn * (0.12 + 0.88 * level);
+    sideScreens.forEach((m, i) =>
+      m.material.color.copy(sideColors[i]).multiplyScalar(0.15 + 0.85 * level));
+  };
   room.scene.updateMatrixWorld(true);
   // Give posters and game covers up to 1.5 s to arrive before we start.
   await Promise.race([
@@ -745,6 +757,7 @@ export async function loadRoom() {
   return {
     scene: room.scene,
     animate: room.animate || (() => {}),
+    setPowered,
     // Camera targets: the middle monitor (desktop intro) and the phone
     // (mobile intro; falls back to the monitor if the model has no phone).
     screens: {
