@@ -95,8 +95,31 @@
         </div>
       </div>
 
+      <!-- 3D intro: camera flies into the middle monitor, then hands over to
+           the boot screen. Desktop only, first visit per session. -->
+      <component
+        :is="introComponent"
+        v-if="introPlaying"
+        :target="introTarget"
+        :mode="introMode"
+        :snapshot="introSnapshot"
+        @screen="onIntroScreen"
+        @done="onIntroDone"
+      />
+
+      <!-- Sleep without animation (reduced motion): any input wakes up. -->
+      <button
+        v-if="simpleSleep"
+        ref="simpleSleep"
+        class="simple-sleep"
+        @click="simpleSleep = false"
+        @keydown.prevent="simpleSleep = false"
+      >
+        <span>{{ $i18n.locale === "nl" ? "Druk op iets om terug te gaan" : "Press anything to go back" }}</span>
+      </button>
+
       <!-- Boot screen (first visit per session) -->
-      <BootScreen v-if="booting" @done="onBootDone" />
+      <BootScreen v-if="booting && !introCovering" @done="onBootDone" />
 
       <!-- Achievement unlock popup -->
       <AchievementToast />
@@ -110,6 +133,7 @@ import MobileHome from "./components/MobileHome.vue";
 import Taskbar from "./components/Taskbar.vue";
 import AppWindow from "./components/AppWindow.vue";
 import BootScreen from "./components/BootScreen.vue";
+import { defineAsyncComponent, h, markRaw } from "vue";
 import AchievementToast from "./components/AchievementToast.vue";
 import { windowConfig, appList, getMobileApps, preloadAllWindows } from "./windowConfig";
 import { findNodePath } from "./filesystem";
@@ -121,6 +145,19 @@ import { getChromeState, setChromeState } from "./windowState";
 import { trackVisit, trackOpen } from "./stats";
 import { getDeviceTier } from "./deviceTier";
 
+// The 3D intro plays on a visitor's first visit (desktop, tablet and phone),
+// unless they prefer reduced motion. Returning visitors go straight to the boot
+// screen. ?intro=1 forces it (handy while building), ?intro=0 turns it off.
+function shouldShowIntro(booting) {
+  if (typeof window === "undefined") return false;
+  const param = new URLSearchParams(window.location.search).get("intro");
+  if (param === "1") return true;
+  if (param === "0") return false;
+  if (!booting) return false;
+  try { if (localStorage.getItem("introSeen") === "1") return false; } catch (_) {}
+  return !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+}
+
 export default {
   name: 'App',
   components: {
@@ -130,9 +167,37 @@ export default {
     AppWindow,
     BootScreen,
     AchievementToast,
+    // Lazy: three.js only loads for visitors who actually see the intro.
+    // The loading placeholder covers the desktop right away (same colour as
+    // the intro's background) so the OS never flashes before the intro.
+    Intro3D: defineAsyncComponent({
+      loader: () => import("./components/intro/Intro3D.vue"),
+      loadingComponent: {
+        render: () => h("div", {
+          style: { position: "fixed", inset: 0, zIndex: 100000, background: "#1a1a24" },
+        }),
+      },
+      delay: 0,
+    }),
   },
   data() {
+    const booting = typeof sessionStorage !== "undefined" && sessionStorage.getItem("booted") !== "1";
+    const showIntro = shouldShowIntro(booting);
     return {
+      // introPlaying: the 3D intro is mounted. introCovering: it still hides
+      // the screen, so the BootScreen waits underneath until the hand-off.
+      introPlaying: showIntro,
+      // "intro" on first visit, "sleep" after the start menu's sleep button.
+      introMode: "intro",
+      introSnapshot: null,
+      // The intro component once its chunk is loaded; used directly for the
+      // sleep animation so the async loader's cover never flashes over the desktop.
+      introLoaded: null,
+      // Sleep without the 3D room (prefers-reduced-motion).
+      simpleSleep: false,
+      // Phones fly into the phone on the desk, everything else into the monitor.
+      introTarget: typeof window !== "undefined" && window.innerWidth <= 768 ? "phone" : "monitor",
+      introCovering: showIntro,
       openWindows: [],
       minimizedWindows: {},
       darkMode: false,
@@ -155,7 +220,7 @@ export default {
       easterEggApps: [],
       isMobile: false,
       deviceTier: "desktop", // "mobile" | "tablet" | "desktop" - see deviceTier.js
-      booting: typeof sessionStorage !== "undefined" && sessionStorage.getItem("booted") !== "1",
+      booting: booting || showIntro,
       openedAppsEver: new Set(),
       windowThumbnails: {},
       // Bumped when the visitor picks a wallpaper (the pick itself lives in
@@ -187,6 +252,9 @@ export default {
     };
   },
   computed: {
+    introComponent() {
+      return this.introLoaded || "Intro3D";
+    },
     windowConfig() {
       return windowConfig;
     },
@@ -240,6 +308,9 @@ export default {
     },
   },
   watch: {
+    simpleSleep(on) {
+      if (on) this.$nextTick(() => this.$refs.simpleSleep?.focus());
+    },
     // Persist chrome (open/minimized) state on any change, rather than at each
     // of openApp/ensureOpen/closeApp/minimizeApp individually - this also means
     // any future mutator gets persistence for free with no extra plumbing.
@@ -448,6 +519,52 @@ export default {
       }
       this.minimizedWindows = { ...this.minimizedWindows, [appName]: true };
       sounds.play("minimize");
+    },
+    onIntroScreen() {
+      this.introCovering = false;
+      // Waking from sleep shows the desktop as it was. Only without a snapshot
+      // (html2canvas failed) do we boot, so the hand-off still matches.
+      if (this.introMode === "sleep" && !this.introSnapshot) this.booting = true;
+    },
+    onIntroDone() {
+      this.introPlaying = false;
+      this.introMode = "intro";
+      this.introSnapshot = null;
+    },
+    // Start menu sleep button: photograph the desktop, then let the intro put
+    // the PC to sleep and fly back out into the room.
+    async powerOff() {
+      if (this.introPlaying || this.booting) return;
+      const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+      if (reduceMotion) {
+        // Reduced motion: no camera flight, just a black sleep screen.
+        this.simpleSleep = true;
+        return;
+      }
+      document.body.style.cursor = "progress";
+      let snapshot = null;
+      try {
+        const [html2canvas, introMod] = await Promise.all([
+          this.html2canvas || import("html2canvas").then((m) => (this.html2canvas = m.default)),
+          import("./components/intro/Intro3D.vue"),
+          new Promise((r) => setTimeout(r, 200)), // let the start menu close first
+        ]);
+        this.introLoaded = markRaw(introMod.default);
+        snapshot = await html2canvas(document.getElementById("app"), {
+          scale: Math.min(1, 1600 / window.innerWidth),
+          logging: false,
+          useCORS: true,
+          backgroundColor: "#1a1a24",
+        });
+      } catch (_) {
+        // No snapshot: the monitor shows the boot frame instead.
+      }
+      document.body.style.cursor = "";
+      this.introSnapshot = snapshot ? markRaw(snapshot) : null;
+      this.introTarget = this.isMobile ? "phone" : "monitor";
+      this.introMode = "sleep";
+      this.introCovering = false;
+      this.introPlaying = true;
     },
     onBootDone() {
       this.booting = false;
@@ -695,10 +812,13 @@ export default {
 
     // Lets a window open another one (the terminal's `admin` command).
     window.addEventListener("open-app", this.handleOpenAppEvent);
+    // Start menu power button.
+    window.addEventListener("power-off", this.powerOff);
   },
   beforeUnmount() {
     window.removeEventListener('resize', this.checkMobile);
     window.removeEventListener("open-app", this.handleOpenAppEvent);
+    window.removeEventListener("power-off", this.powerOff);
     if (this.keydownListenerAdded) {
       window.removeEventListener("keydown", this.handleKeydown);
       this.keydownListenerAdded = false;
@@ -825,5 +945,26 @@ export default {
   to   { opacity: 1; }
 }
 
+
+.simple-sleep {
+  position: fixed;
+  inset: 0;
+  z-index: 100001;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 14vh;
+  border: 0;
+  background: #000;
+  color: #f0dcff;
+  font-family: 'PortfolioFont', monospace;
+  font-size: 16px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.simple-sleep:focus-visible {
+  outline: none;
+}
 </style>
 

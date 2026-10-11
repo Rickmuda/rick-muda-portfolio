@@ -344,7 +344,7 @@ const messages = {
     startResults: "Results",
     startNoResults: "No results found.",
     startRecommended: "Recommended",
-    startPower: "Power",
+    startPower: "Sleep",
     // Camera (phone-only)
     camera: "Camera",
     cameraNotice: "Heads up: any photo you take here is sent straight to Rick.",
@@ -901,7 +901,7 @@ const messages = {
     startResults: "Resultaten",
     startNoResults: "Geen resultaten gevonden.",
     startRecommended: "Aanbevolen",
-    startPower: "Aan/uit",
+    startPower: "Slaapstand",
     // Camera (alleen telefoon)
     camera: "Camera",
     cameraNotice: "Let op: elke foto die je hier maakt wordt direct naar Rick gestuurd.",
@@ -1121,4 +1121,4 @@ const i18n = createI18n({
   messages,
 });
 
-export default i18n;
+export default i18n;
