@@ -394,6 +394,141 @@ function birdcage(scene, L, pal) {
   };
 }
 
+// ---- Cabinet with a terrarium and a pygmy chameleon ---------------------
+// Left of the desk against the back wall. Pygmy chameleons are tiny (~6-8 cm),
+// brown/tan, and live low in leaf litter between twigs and plants.
+
+function pygmyChameleon(parent, L, [x, y, z], rotY) {
+  const P = L.plastic;
+  const brown = 0x8a6a4a, light = 0xb89a72, dark = 0x5a4434;
+  const cham = new THREE.Group();
+  cham.position.set(x, y, z);
+  cham.rotation.y = rotY;
+  parent.add(cham);
+  // Body: tall and flattened sideways, with a little dorsal ridge.
+  const body = shape(cham, P, brown, new THREE.IcosahedronGeometry(0.014, 0), [0, 0.014, 0]);
+  body.scale.set(0.55, 0.9, 1.5);
+  box(cham, P, dark, [0.003, 0.004, 0.034], [0, 0.027, 0]);
+  shape(cham, P, light, new THREE.IcosahedronGeometry(0.007, 0), [0.004, 0.011, 0.004]).scale.set(0.5, 1, 1.6);
+  // Head with a pointed casque, and two turret eyes that roam.
+  const head = new THREE.Group();
+  head.position.set(0, 0.018, 0.024);
+  cham.add(head);
+  shape(head, P, brown, new THREE.ConeGeometry(0.009, 0.02, 4), [0, 0, 0.004], [Math.PI / 2, Math.PI / 4, 0]);
+  shape(head, P, dark, new THREE.ConeGeometry(0.004, 0.012, 3), [0, 0.008, -0.002], [-0.6, 0, 0]);
+  const eyes = [-1, 1].map((side) => {
+    const eye = shape(head, P, light, new THREE.IcosahedronGeometry(0.0042, 0), [side * 0.006, 0.002, 0.002]);
+    shape(eye, P, 0x111111, new THREE.IcosahedronGeometry(0.0016, 0), [side * 0.003, 0, 0.002]);
+    return eye;
+  });
+  // Legs gripping the twig.
+  for (const [lx, lz] of [[-1, 0.012], [1, 0.012], [-1, -0.012], [1, -0.012]]) {
+    const leg = box(cham, P, dark, [0.003, 0.014, 0.003], [lx * 0.006, 0.004, lz]);
+    leg.rotation.z = lx * 0.5;
+  }
+  // Curled tail: a partial ring behind the body.
+  shape(cham, P, brown, new THREE.TorusGeometry(0.008, 0.0025, 4, 10, Math.PI * 1.5), [0, 0.006, -0.026], [0, Math.PI / 2, Math.PI]);
+  return { cham, eyes, head, baseY: y };
+}
+
+function terrarium(scene, L, pal) {
+  const g = new THREE.Group();
+  g.position.set(-1.62, 0, -1.5);
+  g.rotation.y = 0.25; // turned a little towards the room
+  scene.add(g);
+
+  // Cabinet: body, two doors with handles, top board.
+  const CW = 0.8, CH = 0.72, CD = 0.45;
+  box(g, L.wood, 0xd9d2c4, [CW, CH, CD], [0, CH / 2, 0]);
+  box(g, L.wood, 0xcfc7b8, [CW / 2 - 0.015, CH - 0.06, 0.01], [-CW / 4, CH / 2, CD / 2 + 0.005]);
+  box(g, L.wood, 0xcfc7b8, [CW / 2 - 0.015, CH - 0.06, 0.01], [CW / 4, CH / 2, CD / 2 + 0.005]);
+  box(g, L.plastic, 0x3a3640, [0.012, 0.06, 0.012], [-0.03, CH / 2 + 0.08, CD / 2 + 0.016]);
+  box(g, L.plastic, 0x3a3640, [0.012, 0.06, 0.012], [0.03, CH / 2 + 0.08, CD / 2 + 0.016]);
+
+  // Terrarium: 45 x 45 x 60 cm glass box with a black frame and mesh lid.
+  const TW = 0.45, TD = 0.45, TH = 0.6, base = CH;
+  const frame = 0x1c1b20;
+  for (const [fx, fz] of [[-1, -1], [1, -1], [-1, 1], [1, 1]]) {
+    box(g, L.plastic, frame, [0.015, TH, 0.015], [fx * TW / 2, base + TH / 2, fz * TD / 2]);
+  }
+  box(g, L.plastic, frame, [TW + 0.02, 0.04, TD + 0.02], [0, base + 0.02, 0]); // bottom rim
+  // Glass panes (front and sides) - see-through.
+  const glass = new THREE.MeshLambertMaterial({
+    color: 0xcfe8e4, transparent: true, opacity: 0.18, depthWrite: false,
+  });
+  const pane = (w, h, px, pz, ry) => {
+    const m = new THREE.Mesh(new THREE.PlaneGeometry(w, h), glass);
+    m.position.set(px, base + 0.04 + h / 2, pz);
+    m.rotation.y = ry;
+    m.renderOrder = 2;
+    g.add(m);
+  };
+  pane(TW, TH - 0.04, 0, TD / 2, 0);
+  pane(TD, TH - 0.04, -TW / 2, 0, -Math.PI / 2);
+  pane(TD, TH - 0.04, TW / 2, 0, Math.PI / 2);
+  // Cork background on the back.
+  box(g, L.fabric, 0x6a4a32, [TW - 0.01, TH - 0.05, 0.02], [0, base + TH / 2, -TD / 2 + 0.012]);
+  // Mesh lid and a warm lamp on top.
+  box(g, L.fabric, 0x2a2830, [TW + 0.02, 0.015, TD + 0.02], [0, base + TH, 0]);
+  box(g, L.plastic, 0x1c1b20, [0.3, 0.035, 0.06], [0, base + TH + 0.025, 0]);
+  const lampGlow = new THREE.Mesh(
+    new THREE.PlaneGeometry(0.26, 0.04),
+    new THREE.MeshBasicMaterial({ color: 0xfff0c8, fog: false }),
+  );
+  lampGlow.rotation.x = Math.PI / 2;
+  lampGlow.position.set(0, base + TH - 0.009, 0);
+  g.add(lampGlow);
+  const lamp = new THREE.PointLight(0xffe2b0, 0.9, 0.9, 1.5);
+  lamp.position.set(0, base + TH - 0.05, 0);
+  g.add(lamp);
+
+  // Inside: substrate, leaf litter, twigs, plants.
+  const soil = base + 0.06; // top of the substrate
+  box(g, L.fabric, 0x4a3426, [TW - 0.02, 0.06, TD - 0.02], [0, base + 0.03, 0]);
+  let s = 7;
+  const rnd = () => ((s = (s * 16807) % 2147483647) / 2147483647);
+  const leafColors = [0x8a5a2a, 0x6a4422, 0xa8743a, 0x5a3a20];
+  for (let i = 0; i < 26; i++) {
+    const leaf = new THREE.Mesh(
+      new THREE.PlaneGeometry(0.035, 0.022),
+      new THREE.MeshLambertMaterial({ color: leafColors[i % 4], side: THREE.DoubleSide }),
+    );
+    leaf.rotation.set(-Math.PI / 2 + (rnd() - 0.5) * 0.4, 0, rnd() * Math.PI);
+    leaf.position.set((rnd() - 0.5) * (TW - 0.06), soil + 0.002 + rnd() * 0.006, (rnd() - 0.5) * (TD - 0.06));
+    g.add(leaf);
+  }
+  const twig = (len, [tx, ty, tz], rot) =>
+    shape(g, L.wood, 0x5a4232, new THREE.CylinderGeometry(0.004, 0.006, len, 5), [tx, ty, tz], rot);
+  twig(0.38, [0, soil + 0.09, 0.02], [0, 0.3, 1.1]);
+  twig(0.3, [-0.08, soil + 0.16, -0.06], [0.2, 0, -0.9]);
+  twig(0.22, [0.12, soil + 0.08, -0.08], [-0.3, 0, 0.5]);
+  // Plants: a few broad-leaf clumps and a taller one in the back corner.
+  const plant = (px, pz, h, color) => {
+    for (let i = 0; i < 5; i++) {
+      const leaf = shape(g, L.fabric, color, new THREE.ConeGeometry(0.018, h, 3),
+        [px + (rnd() - 0.5) * 0.03, soil + h / 2, pz + (rnd() - 0.5) * 0.03],
+        [(rnd() - 0.5) * 0.7, rnd() * Math.PI, (rnd() - 0.5) * 0.7]);
+      leaf.scale.set(1, 1, 0.3);
+    }
+  };
+  plant(-0.15, -0.14, 0.22, 0x3f7a3a);
+  plant(0.15, -0.12, 0.3, 0x4f8a3e);
+  plant(0.16, 0.12, 0.1, 0x5a9a48);
+  plant(-0.17, 0.13, 0.12, 0x3f7a3a);
+
+  // The chameleon, on the low diagonal twig.
+  const c = pygmyChameleon(g, L, [0.02, soil + 0.092, 0.02], -1.1);
+
+  // Slow rocking walk-in-place and independent eye movement.
+  return (t) => {
+    c.cham.rotation.z = Math.sin(t * 0.004) * 0.12;
+    c.cham.position.x = 0.02 + Math.sin(t * 0.004) * 0.002;
+    c.eyes[0].rotation.y = Math.sin(t * 0.0013) * 0.8;
+    c.eyes[1].rotation.y = Math.sin(t * 0.0009 + 2) * 0.8;
+    c.head.rotation.x = Math.sin(t * 0.0011) * 0.1;
+  };
+}
+
 function buildGreybox(pal) {
   const scene = new THREE.Scene();
   const T = makeTextures();
@@ -479,7 +614,10 @@ function buildGreybox(pal) {
   box(scene, L.fabric, pal.sheet, [1.0, 0.12, 1.5], [-1.65, 0.46, 1.45]);
   box(scene, L.fabric, pal.rug, [1.4, 0.02, 1.0], [0.2, 0.01, 0.5]);
   // Bird cage on the right with the two conures.
-  const animate = birdcage(scene, L, pal);
+  const birds = birdcage(scene, L, pal);
+  // Cabinet with the terrarium and pygmy chameleon on the left.
+  const chameleon = terrarium(scene, L, pal);
+  const animate = (t) => { birds(t); chameleon(t); };
 
   return { scene, screen, animate };
 }
