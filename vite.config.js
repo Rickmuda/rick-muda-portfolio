@@ -4,10 +4,20 @@ import vue from "@vitejs/plugin-vue";
 import { VitePWA } from "vite-plugin-pwa";
 import { execSync } from "child_process";
 
-// Get the latest Git commit hash, summary, and description
+// Get the latest Git commit hash, plus the version and changelog shown in the
+// boot screen and start menu. Those come from the most recent commit whose
+// subject is a version number (e.g. "7.7.1"), so work-in-progress commits on a
+// branch never show up as the "version".
 const commitHash = execSync("git rev-parse --short HEAD").toString().trim();
-const commitSummary = execSync("git log -1 --pretty=%s").toString().trim();
-const commitDescription = execSync("git log -1 --pretty=%b").toString().trim(); // Get the commit description
+const VERSION_RE = /^v?\d+(\.\d+)+\s*$/;
+const versionCommit = execSync("git log -200 --pretty=%H%x09%s")
+  .toString()
+  .split("\n")
+  .map((line) => line.split("\t"))
+  .find(([, subject]) => subject && VERSION_RE.test(subject.trim()));
+const versionRef = versionCommit ? versionCommit[0] : "HEAD";
+const commitSummary = execSync(`git log -1 --pretty=%s ${versionRef}`).toString().trim();
+const commitDescription = execSync(`git log -1 --pretty=%b ${versionRef}`).toString().trim(); // Get the commit description
 
 export default defineConfig({
   base: '/',
