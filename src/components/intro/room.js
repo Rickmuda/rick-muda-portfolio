@@ -395,15 +395,19 @@ function birdcage(scene, L, pal) {
 }
 
 // ---- Cabinet with a terrarium and a pygmy chameleon ---------------------
-// Left of the desk against the back wall. Pygmy chameleons are tiny (~6-8 cm),
-// brown/tan, and live low in leaf litter between twigs and plants.
+// Left of the desk against the back wall. A densely planted tank with lots of
+// twigs, the way pygmy chameleons like it.
+
+// Green colouring and drawn ~1.7x real size so it reads at 240 lines.
+const CHAMELEON_SCALE = 1.7;
 
 function pygmyChameleon(parent, L, [x, y, z], rotY) {
   const P = L.plastic;
-  const brown = 0x8a6a4a, light = 0xb89a72, dark = 0x5a4434;
+  const brown = 0x86c843, light = 0xd2e878, dark = 0x4e8a2c; // bright lime so it stands out from the plants
   const cham = new THREE.Group();
   cham.position.set(x, y, z);
   cham.rotation.y = rotY;
+  cham.scale.setScalar(CHAMELEON_SCALE);
   parent.add(cham);
   // Body: tall and flattened sideways, with a little dorsal ridge.
   const body = shape(cham, P, brown, new THREE.IcosahedronGeometry(0.014, 0), [0, 0.014, 0]);
@@ -497,24 +501,61 @@ function terrarium(scene, L, pal) {
     leaf.position.set((rnd() - 0.5) * (TW - 0.06), soil + 0.002 + rnd() * 0.006, (rnd() - 0.5) * (TD - 0.06));
     g.add(leaf);
   }
-  const twig = (len, [tx, ty, tz], rot) =>
-    shape(g, L.wood, 0x5a4232, new THREE.CylinderGeometry(0.004, 0.006, len, 5), [tx, ty, tz], rot);
-  twig(0.38, [0, soil + 0.09, 0.02], [0, 0.3, 1.1]);
-  twig(0.3, [-0.08, soil + 0.16, -0.06], [0.2, 0, -0.9]);
-  twig(0.22, [0.12, soil + 0.08, -0.08], [-0.3, 0, 0.5]);
-  // Plants: a few broad-leaf clumps and a taller one in the back corner.
-  const plant = (px, pz, h, color) => {
-    for (let i = 0; i < 5; i++) {
+  const twig = (len, [tx, ty, tz], rot, r = 0.005) =>
+    shape(g, L.wood, 0x5a4232, new THREE.CylinderGeometry(r * 0.7, r, len, 5), [tx, ty, tz], rot);
+  // Main perch for the chameleon, then a tangle of twigs at all heights.
+  twig(0.38, [0, soil + 0.09, 0.02], [0, 0.3, 1.1], 0.007);
+  const twigs = [
+    [0.3, [-0.08, 0.16, -0.06], [0.2, 0, -0.9]],
+    [0.22, [0.12, 0.08, -0.08], [-0.3, 0, 0.5]],
+    [0.42, [0.06, 0.24, -0.1], [0.1, 0.8, 1.25]],
+    [0.34, [-0.12, 0.3, 0.04], [-0.2, -0.6, -1.0]],
+    [0.28, [0.14, 0.34, 0.06], [0.4, 0.2, 0.7]],
+    [0.46, [-0.02, 0.2, -0.15], [0, 1.4, 1.35]],
+    [0.25, [-0.15, 0.1, 0.1], [0.6, 0, 0.3]],
+    [0.3, [0.16, 0.18, 0.14], [-0.5, 0.4, -0.4]],
+    [0.36, [0.0, 0.4, -0.05], [0.2, -1.0, 1.45]],
+    [0.2, [-0.16, 0.42, -0.12], [0.3, 0, -0.5]],
+    [0.24, [0.08, 0.05, 0.14], [1.2, 0.3, 0.2]],
+    [0.32, [-0.06, 0.06, -0.02], [0.1, 2.2, 1.4]],
+  ];
+  twigs.forEach(([len, [tx, ty, tz], rot]) => twig(len, [tx, soil + ty, tz], rot, 0.003 + rnd() * 0.003));
+
+  // Plants: broad-leaf clumps all over, a few tall ones in the back.
+  const plant = (px, pz, h, color, leaves = 6) => {
+    for (let i = 0; i < leaves; i++) {
       const leaf = shape(g, L.fabric, color, new THREE.ConeGeometry(0.018, h, 3),
-        [px + (rnd() - 0.5) * 0.03, soil + h / 2, pz + (rnd() - 0.5) * 0.03],
-        [(rnd() - 0.5) * 0.7, rnd() * Math.PI, (rnd() - 0.5) * 0.7]);
+        [px + (rnd() - 0.5) * 0.04, soil + h / 2, pz + (rnd() - 0.5) * 0.04],
+        [(rnd() - 0.5) * 0.8, rnd() * Math.PI, (rnd() - 0.5) * 0.8]);
       leaf.scale.set(1, 1, 0.3);
     }
   };
-  plant(-0.15, -0.14, 0.22, 0x3f7a3a);
-  plant(0.15, -0.12, 0.3, 0x4f8a3e);
-  plant(0.16, 0.12, 0.1, 0x5a9a48);
-  plant(-0.17, 0.13, 0.12, 0x3f7a3a);
+  const greens = [0x3f7a3a, 0x4f8a3e, 0x5a9a48, 0x2f6a34, 0x6aa850];
+  [
+    [-0.16, -0.15, 0.32], [0.15, -0.14, 0.38], [0.0, -0.17, 0.26], [-0.08, -0.12, 0.2],
+    [0.16, 0.13, 0.12], [-0.17, 0.14, 0.14], [0.06, 0.16, 0.08], [-0.05, 0.12, 0.1],
+    [0.1, -0.02, 0.16], [-0.17, -0.01, 0.22], [0.17, 0.02, 0.24],
+  ].forEach(([px, pz, h], i) => plant(px, pz, h, greens[i % greens.length], h > 0.2 ? 7 : 5));
+  // Round-leaf plants (pothos-like) between the clumps.
+  for (let i = 0; i < 14; i++) {
+    const leaf = shape(g, L.fabric, greens[i % greens.length], new THREE.CircleGeometry(0.02, 5),
+      [(rnd() - 0.5) * 0.36, soil + 0.02 + rnd() * 0.1, (rnd() - 0.5) * 0.36],
+      [-0.6 - rnd() * 0.6, rnd() * Math.PI * 2, 0]);
+    leaf.material.side = THREE.DoubleSide;
+  }
+  // Moss patches on the ground.
+  for (let i = 0; i < 8; i++) {
+    const moss = shape(g, L.fabric, 0x4a7a32, new THREE.CircleGeometry(0.03 + rnd() * 0.02, 6),
+      [(rnd() - 0.5) * 0.36, soil + 0.003, (rnd() - 0.5) * 0.36], [-Math.PI / 2, 0, rnd() * 3]);
+    moss.material.side = THREE.DoubleSide;
+  }
+  // A trailing plant hanging down from the lid in the back corner.
+  for (let i = 0; i < 9; i++) {
+    const vine = shape(g, L.fabric, greens[(i + 2) % greens.length], new THREE.ConeGeometry(0.012, 0.06, 3),
+      [-0.14 + (rnd() - 0.5) * 0.06, base + TH - 0.05 - i * 0.035, -0.17 + (rnd() - 0.5) * 0.04],
+      [Math.PI + (rnd() - 0.5) * 0.5, rnd() * 3, (rnd() - 0.5) * 0.5]);
+    vine.scale.set(1, 1, 0.35);
+  }
 
   // The chameleon, on the low diagonal twig.
   const c = pygmyChameleon(g, L, [0.02, soil + 0.092, 0.02], -1.1);
