@@ -53,13 +53,13 @@ const FOV_PORTRAIT = 62; // wider lens on phones so the room still fits
 const FLIGHTS = {
   monitor: {
     from: [1.5, 1.65, 1.9],   // near the door
-    via: [0.45, 1.32, -0.15], // over the chair
+    via: [0.45, 1.45, -0.2],  // over the chair, high enough to clear the mic
     lookFrom: [-0.1, 1.2, -1.4],
   },
   phone: {
     from: [1.35, 1.6, 1.7],
-    via: [0.75, 1.15, -0.55],  // down past the chair to the desk
-    lookFrom: [0.0, 1.05, -1.45],
+    via: [-0.12, 1.42, -0.5],  // over the left side of the chair, down to the desk
+    lookFrom: [-0.3, 1.0, -1.45],
   },
 };
 

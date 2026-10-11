@@ -579,8 +579,6 @@ function terrarium(scene, L, pal) {
   // The chameleon, on the low diagonal twig.
   const c = pygmyChameleon(g, L, [0.02, soil + 0.092, 0.02], -1.1);
 
-  // Photo frame on the cabinet, to the right of the terrarium.
-  pictureFrame(g, L, [0.31, CH, 0.08], -0.25);
 
   // Slow rocking walk-in-place and independent eye movement.
   return (t) => {
@@ -632,30 +630,32 @@ function rod(parent, look, color, a, b, r) {
   return mesh;
 }
 
-// Desk clamp at the back-left corner, two-part boom arm with springs, and a
-// mic in a shock mount pointing at the chair.
+// Desk clamp at the front-right corner; the two-part boom arm swings the mic
+// in front of where your face is when you sit in the chair. Kept low enough
+// that the intro camera passes over it.
 function micArm(scene, L, desk) {
   const P = L.plastic, arm = 0x1f1d24, metal = 0x8a8894;
-  const base = [-0.82, desk, -1.72];
+  const base = [0.84, desk, -1.08];
   box(scene, P, arm, [0.06, 0.05, 0.08], [base[0], desk + 0.025, base[2]]);      // clamp
   box(scene, P, arm, [0.06, 0.012, 0.08], [base[0], desk - 0.03, base[2]]);      // clamp jaw
   const pivot = [base[0], desk + 0.16, base[2]];
   rod(scene, P, arm, [base[0], desk + 0.05, base[2]], pivot, 0.012);
-  const elbow = [-0.72, 1.32, -1.5];
-  const end = [-0.5, 1.12, -1.22];
+  const elbow = [0.62, 1.2, -0.98];
+  const end = [0.24, 1.2, -0.84];
   for (const off of [-0.012, 0.012]) {
-    rod(scene, P, arm, [pivot[0] + off, pivot[1], pivot[2]], [elbow[0] + off, elbow[1], elbow[2]], 0.006);
-    rod(scene, P, arm, [elbow[0] + off, elbow[1], elbow[2]], [end[0] + off, end[1], end[2]], 0.006);
+    rod(scene, P, arm, [pivot[0], pivot[1] + off, pivot[2]], [elbow[0], elbow[1] + off, elbow[2]], 0.006);
+    rod(scene, P, arm, [elbow[0], elbow[1] + off, elbow[2]], [end[0], end[1] + off, end[2]], 0.006);
   }
   // Springs along both segments.
-  rod(scene, P, metal, [pivot[0], pivot[1] + 0.04, pivot[2] + 0.02], [elbow[0], elbow[1] - 0.05, elbow[2]], 0.004);
-  rod(scene, P, metal, [elbow[0], elbow[1] - 0.03, elbow[2] + 0.03], [end[0] - 0.05, end[1] + 0.02, end[2] - 0.04], 0.004);
+  rod(scene, P, metal, [pivot[0] - 0.02, pivot[1] + 0.05, pivot[2]], [elbow[0] + 0.04, elbow[1] - 0.04, elbow[2]], 0.004);
+  rod(scene, P, metal, [elbow[0] - 0.05, elbow[1] + 0.025, elbow[2]], [end[0] + 0.06, end[1] + 0.025, end[2]], 0.004);
   box(scene, P, arm, [0.04, 0.04, 0.04], elbow); // elbow joint
 
-  // Mic hanging down from the end of the arm, tilted towards the chair.
+  // Mic at the end of the arm, pointing at the mouth of someone in the chair.
   const mic = new THREE.Group();
-  mic.position.set(end[0], end[1] - 0.03, end[2]);
-  mic.rotation.set(0.9, 0.35, 0);
+  mic.position.set(end[0] - 0.05, end[1] - 0.03, end[2] + 0.03);
+  mic.lookAt(0.1, 1.17, -0.55); // roughly where your mouth is
+  mic.rotateX(Math.PI / 2);      // mic body runs along its local Y axis
   scene.add(mic);
   shape(mic, P, 0x2a2830, new THREE.TorusGeometry(0.042, 0.004, 4, 12), [0, 0, 0], [Math.PI / 2, 0, 0]);
   shape(mic, P, 0x2a2830, new THREE.TorusGeometry(0.042, 0.004, 4, 12), [0, -0.06, 0], [Math.PI / 2, 0, 0]);
@@ -687,10 +687,9 @@ function mousepad(scene, L, desk, [x, z], [w, d]) {
 // ---- Picture frame ----------------------------------------------------------
 // Standing photo frame with a little stand at the back.
 // Photo: public/intro/frame.webp (.jpg/.png also work).
-export const PHOTO_FRAME = { width: 0.13, height: 0.18 }; // portrait 13 x 18 cm
+export const PHOTO_FRAME = { width: 0.18, height: 0.135 }; // landscape 4:3, like the photo
 
-function pictureFrame(parent, L, [x, y, z], rotY) {
-  const { width: w, height: h } = PHOTO_FRAME;
+function pictureFrame(parent, L, [x, y, z], rotY, { width: w, height: h } = PHOTO_FRAME) {
   const g = new THREE.Group();
   g.position.set(x, y, z);
   g.rotation.y = rotY;
@@ -701,7 +700,7 @@ function pictureFrame(parent, L, [x, y, z], rotY) {
   f.rotation.x = tilt;
   g.add(f);
   box(f, L.wood, 0x3a2a22, [w + 0.024, h + 0.024, 0.014], [0, 0, 0]);
-  const tex = smallTexture(Math.round(64 * w / h), 64);
+  const tex = w >= h ? smallTexture(80, Math.round(80 * h / w)) : smallTexture(Math.round(80 * w / h), 80);
   const ctx = tex.image.getContext("2d");
   ctx.fillStyle = "#d8d2c4";
   ctx.fillRect(0, 0, tex.image.width, tex.image.height);
@@ -756,6 +755,8 @@ function buildGreybox(pal) {
   box(scene, L.plastic, 0x3c3846, [0.07, 0.006, 0.115], [0.155, DESK + 0.028, -1.2]);
   shape(scene, L.plastic, pal.dark, new THREE.SphereGeometry(0.03, 6, 4), [0.3, DESK + 0.015, -1.18], [0, 0, 0])
     .scale.set(1, 0.45, 1.7);
+  // Photo frame on the right side of the desk, turned towards the chair.
+  pictureFrame(scene, L, [0.74, DESK, -1.4], -0.6);
   // Desk mat under keyboard and mouse.
   mousepad(scene, L, DESK, [0.08, -1.18], [0.8, 0.3]);
   // Microphone on a boom arm, clamped to the back-left of the desk.
@@ -776,8 +777,9 @@ function buildGreybox(pal) {
   const m2 = monitor(scene, L, pal, { x: 0, y: 1.29, z: -1.65, rotY: 0, w: W, h: H });
   const m3 = monitor(scene, L, pal, { x: 0.5, y: 1.2, z: -1.57, rotY: -0.38, w: H, h: W, glow: 0x24152e });
   const screen = m2.screen;
-  // Phone on a stand to the right of the keyboard (target of the mobile intro).
-  const phoneScreen = phoneOnStand(scene, L, pal, [0.43, DESK, -1.38], -0.35);
+  // Phone on a stand to the left of the keyboard (target of the mobile intro);
+  // on this side the mobile camera flight stays clear of the mic arm.
+  const phoneScreen = phoneOnStand(scene, L, pal, [-0.46, DESK, -1.34], 0.4);
 
   // Toy figures on top of screens 1 and 3.
   const figColors = [
