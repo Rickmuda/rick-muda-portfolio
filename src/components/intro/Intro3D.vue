@@ -1,7 +1,9 @@
 <template>
   <div class="intro3d" :class="{ leaving }">
-    <canvas ref="canvas" class="intro3d-canvas"></canvas>
-    <button class="intro3d-skip" @click="skip">{{ skipLabel }} ›</button>
+    <canvas ref="canvas" class="intro3d-canvas" :class="{ ready }" aria-hidden="true"></canvas>
+    <button class="intro3d-skip" @click="skip">
+      {{ skipLabel }} <kbd>Esc</kbd>
+    </button>
   </div>
 </template>
 
@@ -112,7 +114,7 @@ export default {
   name: "Intro3D",
   emits: ["screen", "done"],
   data() {
-    return { leaving: false };
+    return { leaving: false, ready: false };
   },
   computed: {
     skipLabel() {
@@ -138,13 +140,14 @@ export default {
       this.finish(true);
       return;
     }
-    if (this.finished) return;
+    if (this.finishing) return; // skipped while loading
 
     // Boot frame texture on the main monitor.
     this.bootCanvas = document.createElement("canvas");
     this.bootCanvas.width = 2048;
     this.bootCanvas.height = Math.round(2048 * (this.room.screenHeight / this.room.screenWidth));
     await drawBootFrame(this.bootCanvas, __COMMIT_SUMMARY__);
+    if (this.finishing) return;
     const tex = new THREE.CanvasTexture(this.bootCanvas);
     tex.colorSpace = THREE.SRGBColorSpace;
     tex.anisotropy = this.renderer.capabilities.getMaxAnisotropy();
@@ -179,8 +182,12 @@ export default {
     this.onResize();
     window.addEventListener("resize", this.onResize);
 
-    this.start = performance.now();
+    // Own clock: only advances while the tab is visible, and a long frame
+    // (hitch, tab switch) can't make the camera jump ahead.
+    this.elapsed = 0;
+    this.last = performance.now();
     this.tick();
+    this.ready = true; // fade the canvas in now that the first frame exists
   },
   beforeUnmount() {
     this.finished = true;
@@ -229,7 +236,10 @@ export default {
     tick() {
       if (this.finished) return;
       this.raf = requestAnimationFrame(this.tick);
-      const elapsed = performance.now() - this.start;
+      const now = performance.now();
+      this.elapsed += Math.min(now - this.last, 50);
+      this.last = now;
+      const elapsed = this.elapsed;
       const sway = Math.max(0, 1 - elapsed / IDLE_MS);
       const raw = Math.min(1, Math.max(0, (elapsed - IDLE_MS) / ZOOM_MS));
       const t = easeInOutCubic(raw);
@@ -276,6 +286,8 @@ export default {
     finish(instant) {
       if (this.finishing) return;
       this.finishing = true;
+      // Returning visitors go straight to the boot screen next time.
+      try { localStorage.setItem("introSeen", "1"); } catch (_) {}
       this.$emit("screen");
       this.leaving = true;
       setTimeout(() => {
@@ -287,7 +299,10 @@ export default {
       this.finish(false);
     },
     onKey(e) {
-      if (e.key === "Escape") this.skip();
+      if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        this.skip();
+      }
     },
   },
 };
@@ -307,11 +322,17 @@ export default {
 }
 .intro3d-canvas {
   display: block;
+  opacity: 0;
+  transition: opacity 0.5s ease;
   image-rendering: pixelated;
   width: 100%;
   height: 100%;
 }
+.intro3d-canvas.ready {
+  opacity: 1;
+}
 .intro3d-skip {
+  animation: intro3d-skip-in 0.4s ease 0.6s both;
   position: absolute;
   right: 20px;
   bottom: 20px;
@@ -323,6 +344,22 @@ export default {
   font-family: "PortfolioFont", monospace;
   font-size: 13px;
   cursor: pointer;
+}
+.intro3d-skip kbd {
+  margin-left: 6px;
+  padding: 1px 5px;
+  border: 1px solid rgba(212, 168, 232, 0.4);
+  border-radius: 3px;
+  font: inherit;
+  font-size: 11px;
+  opacity: 0.8;
+}
+@keyframes intro3d-skip-in {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .intro3d-skip { animation: none; }
 }
 .intro3d-skip:hover,
 .intro3d-skip:focus-visible {

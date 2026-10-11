@@ -244,11 +244,17 @@ function drawPlaceholder(tex, palette, seed) {
   tex.needsUpdate = true;
 }
 
+// Images still loading; loadRoom() waits for these (briefly) so posters and
+// covers don't pop in while the camera is already moving.
+let pendingImages = [];
+
 // Loads <base>.webp/.jpg/.png and cover-fits it into the tiny canvas texture.
 function loadImageInto(tex, base) {
   const W = tex.image.width, H = tex.image.height;
+  let done;
+  pendingImages.push(new Promise((r) => { done = r; }));
   const tryExt = (exts) => {
-    if (!exts.length) return;
+    if (!exts.length) { done(); return; }
     const img = new Image();
     img.onload = () => {
       // Cover-fit into the tiny texture.
@@ -257,6 +263,7 @@ function loadImageInto(tex, base) {
       const w = img.width * k, h = img.height * k;
       ctx.drawImage(img, (W - w) / 2, (H - h) / 2, w, h);
       tex.needsUpdate = true;
+      done();
     };
     img.onerror = () => tryExt(exts.slice(1));
     img.src = `${base}.${exts[0]}`;
@@ -691,11 +698,17 @@ function addLights(scene, pal) {
 // which the intro uses to land the camera exactly in front of it.
 export async function loadRoom() {
   const pal = isNight() ? NIGHT : DAY;
+  pendingImages = [];
   const room = ROOM_MODEL_URL ? await buildFromModel(ROOM_MODEL_URL) : buildGreybox(pal);
   addLights(room.scene, pal);
   // The monitor's display ignores fog and light so it stays bright.
   room.screen.material.fog = false;
   room.scene.updateMatrixWorld(true);
+  // Give posters and game covers up to 1.5 s to arrive before we start.
+  await Promise.race([
+    Promise.all(pendingImages),
+    new Promise((r) => setTimeout(r, 1500)),
+  ]);
 
   const { screen } = room;
   screen.geometry.computeBoundingBox();

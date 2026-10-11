@@ -118,7 +118,7 @@ import MobileHome from "./components/MobileHome.vue";
 import Taskbar from "./components/Taskbar.vue";
 import AppWindow from "./components/AppWindow.vue";
 import BootScreen from "./components/BootScreen.vue";
-import { defineAsyncComponent } from "vue";
+import { defineAsyncComponent, h } from "vue";
 import AchievementToast from "./components/AchievementToast.vue";
 import { windowConfig, appList, getMobileApps, preloadAllWindows } from "./windowConfig";
 import { findNodePath } from "./filesystem";
@@ -130,15 +130,16 @@ import { getChromeState, setChromeState } from "./windowState";
 import { trackVisit, trackOpen } from "./stats";
 import { getDeviceTier } from "./deviceTier";
 
-// The 3D intro runs with the boot sequence on desktop and tablet, unless the
-// visitor prefers reduced motion. ?intro=1 forces it (handy while building),
-// ?intro=0 turns it off.
+// The 3D intro plays on a visitor's first visit (desktop and tablet), unless
+// they prefer reduced motion. Returning visitors go straight to the boot
+// screen. ?intro=1 forces it (handy while building), ?intro=0 turns it off.
 function shouldShowIntro(booting) {
   if (typeof window === "undefined") return false;
   const param = new URLSearchParams(window.location.search).get("intro");
   if (param === "1") return true;
   if (param === "0") return false;
   if (!booting || window.innerWidth <= 768) return false;
+  try { if (localStorage.getItem("introSeen") === "1") return false; } catch (_) {}
   return !window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
 }
 
@@ -152,7 +153,17 @@ export default {
     BootScreen,
     AchievementToast,
     // Lazy: three.js only loads for visitors who actually see the intro.
-    Intro3D: defineAsyncComponent(() => import("./components/intro/Intro3D.vue")),
+    // The loading placeholder covers the desktop right away (same colour as
+    // the intro's background) so the OS never flashes before the intro.
+    Intro3D: defineAsyncComponent({
+      loader: () => import("./components/intro/Intro3D.vue"),
+      loadingComponent: {
+        render: () => h("div", {
+          style: { position: "fixed", inset: 0, zIndex: 100000, background: "#1a1a24" },
+        }),
+      },
+      delay: 0,
+    }),
   },
   data() {
     const booting = typeof sessionStorage !== "undefined" && sessionStorage.getItem("booted") !== "1";
