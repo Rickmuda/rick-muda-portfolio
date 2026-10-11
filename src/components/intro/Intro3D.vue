@@ -1,5 +1,5 @@
 <template>
-  <div class="intro3d" :class="{ leaving, shutdown: mode === 'shutdown', ready }">
+  <div class="intro3d" :class="{ leaving, sleep: mode === 'sleep', ready }">
     <canvas ref="canvas" class="intro3d-canvas" :class="{ ready }" aria-hidden="true"></canvas>
     <button v-if="mode === 'intro'" class="intro3d-skip" @click="skip">
       {{ skipLabel }} <kbd>Esc</kbd>
@@ -21,9 +21,11 @@
 //
 // Modes:
 //   intro    - fly from the room into the screen (first visit).
-//   shutdown - start on the screen showing a snapshot of the desktop, fly back
-//              out, switch the screen off and wait in the room until the
-//              visitor powers on again; then fly back in and reboot.
+//   sleep    - start on the screen showing a snapshot of the desktop, put the
+//              PC to sleep (screens fade out, "no signal" OSD, LEDs pulse
+//              amber), fly back out and wait in the room. Any input wakes it:
+//              the screens come back with the desktop and the camera flies
+//              back in - no reboot.
 //
 // Events:
 //   screen - the camera has filled the viewport with the monitor; mount the
@@ -35,15 +37,15 @@ import { loadRoom } from "./room";
 const IDLE_MS = 2200;   // look at the room before moving
 const ZOOM_MS = 5000;   // camera flight into the screen
 const FADE_MS = 350;    // crossfade onto the DOM BootScreen
-// Shutdown timeline (ms from the click), camera still in front of the screen:
-const SHUTDOWN_TEXT_AT = 120; // desktop -> "Shutting down..." screen
-const CRT_OFF_AT = 1500;      // picture collapses to a line, then a dot
-const CRT_LINE_MS = 170;      //   squeeze to a bright horizontal line
-const CRT_DOT_MS = 160;       //   line shrinks to a dot and fades
-const ZOOM_OUT_AT = 2050;     // then the camera flies back into the room
-const REVERSE_MS = 3600;      //   over this long
-const CRT_ON_MS = 260;        // power on: line expands back into a picture
-const POWER_ON_IDLE_MS = 450; // pause after "power on" before flying in
+// Sleep timeline (ms from the click), camera still in front of the screen:
+const SLEEP_FADE_AT = 150;   // desktop fades to black...
+const SLEEP_FADE_MS = 450;   //   ...over this long (side screens + glow too)
+const OSD_AT = 750;          // all monitors show the "no signal" box
+const OSD_MS = 1500;         //   for this long, then black + amber LEDs
+const ZOOM_OUT_AT = 2500;    // then the camera flies back into the room
+const REVERSE_MS = 3600;     //   over this long
+const WAKE_MS = 400;         // waking: screens fade back in
+const WAKE_IDLE_MS = 600;    //   and the camera waits this long before flying in
 const FOV = 45;          // landscape viewports
 const FOV_PORTRAIT = 62; // wider lens on phones so the room still fits
 
@@ -170,14 +172,40 @@ function drawSnapshot(canvas, snap) {
   ctx.drawImage(snap, 0, 0, vw, vh);
 }
 
+// The monitor's own "no signal" message, drawn centred on a black screen.
+// Uses the canvas' own aspect ratio, so it works for portrait screens too.
+function drawNoSignal(canvas, lines) {
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width, H = canvas.height;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.fillStyle = "#000";
+  ctx.fillRect(0, 0, W, H);
+  const u = Math.min(W, H) / 100; // 1% of the short side
+  const bw = Math.min(W * 0.8, u * 92), bh = u * 30;
+  const bx = (W - bw) / 2, by = (H - bh) / 2;
+  ctx.fillStyle = "#151520";
+  ctx.fillRect(bx, by, bw, bh);
+  ctx.strokeStyle = "#5a5a6a";
+  ctx.lineWidth = Math.max(1, u * 0.6);
+  ctx.strokeRect(bx, by, bw, bh);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.fillStyle = "#e8e8f0";
+  ctx.font = `bold ${Math.round(u * 8)}px "PortfolioFont", monospace`;
+  ctx.fillText(lines[0], W / 2, by + bh * 0.36);
+  ctx.fillStyle = "#a0a0b4";
+  ctx.font = `${Math.round(u * 5)}px "PortfolioFont", monospace`;
+  ctx.fillText(lines[1], W / 2, by + bh * 0.7);
+}
+
 export default {
   name: "Intro3D",
   props: {
     // "monitor" for the desktop intro, "phone" for the mobile one.
     target: { type: String, default: "monitor" },
-    // "intro" or "shutdown" (see top of file).
+    // "intro" or "sleep" (see top of file).
     mode: { type: String, default: "intro" },
-    // Shutdown: canvas with a snapshot of the desktop to show on the screen.
+    // Sleep: canvas with a snapshot of the desktop to show on the screen.
     snapshot: { type: Object, default: null },
   },
   emits: ["screen", "done"],
@@ -190,8 +218,8 @@ export default {
     },
     t() {
       return this.$i18n?.locale === "nl"
-        ? { back: "Druk op iets om terug te gaan", shuttingDown: "Afsluiten..." }
-        : { back: "Press anything to go back", shuttingDown: "Shutting down..." };
+        ? { back: "Druk op iets om terug te gaan", noSignal: ["GEEN SIGNAAL", "Energiebesparingsmodus"] }
+        : { back: "Press anything to go back", noSignal: ["NO SIGNAL", "Entering power saving mode"] };
     },
   },
   async mounted() {
@@ -259,16 +287,22 @@ export default {
         return tex;
       };
       this.bootTex = makeTex(this.bootCanvas);
-      // Shutdown: "Shutting down..." version of the boot frame.
-      if (this.mode === "shutdown") {
-        this.downCanvas = document.createElement("canvas");
-        this.downCanvas.width = this.bootCanvas.width;
-        this.downCanvas.height = this.bootCanvas.height;
-        await drawBootFrame(this.downCanvas, __COMMIT_SUMMARY__, this.t.shuttingDown);
-        this.downTex = makeTex(this.downCanvas);
+      // Sleep: every monitor's "no signal" message (in its own aspect ratio).
+      if (this.mode === "sleep") {
+        const osdTex = (w, h) => {
+          const c = document.createElement("canvas");
+          c.width = w; c.height = h;
+          drawNoSignal(c, this.t.noSignal);
+          return makeTex(c);
+        };
+        this.osdTex = osdTex(this.bootCanvas.width, this.bootCanvas.height);
+        this.sideOsd = this.room.sideScreens.map((m) => {
+          const { width: sw, height: sh } = m.geometry.parameters;
+          return sw >= sh ? osdTex(512, Math.round(512 * sh / sw)) : osdTex(Math.round(512 * sw / sh), 512);
+        });
       }
-      // Shutdown starts on a picture of the desktop as it was.
-      if (this.mode === "shutdown" && this.snapshot) {
+      // Sleep starts on a picture of the desktop as it was.
+      if (this.mode === "sleep" && this.snapshot) {
         this.snapCanvas = document.createElement("canvas");
         this.snapCanvas.width = this.bootCanvas.width;
         this.snapCanvas.height = this.bootCanvas.height;
@@ -312,7 +346,7 @@ export default {
       // tabs don't come back to a finished intro.
       this.elapsed = 0;
       this.last = performance.now();
-      if (this.mode === "shutdown") this.setPhase("reverse");
+      if (this.mode === "sleep") this.setPhase("reverse");
       else this.setPhase("forward", IDLE_MS);
       this.tick();
       this.ready = true; // fade the canvas in now that the first frame exists
@@ -353,11 +387,7 @@ export default {
         drawSnapshot(this.snapCanvas, this.snapshot);
         this.snapTex.needsUpdate = true;
       }
-      if (this.downTex) {
-        drawBootFrame(this.downCanvas, __COMMIT_SUMMARY__, this.t.shuttingDown).then(() => {
-          if (this.downTex) this.downTex.needsUpdate = true;
-        });
-      }
+
     },
     tick() {
       if (this.finished) return;
@@ -383,13 +413,10 @@ export default {
       if (this.phase === "forward") {
         raw = clamp01((e - this.idleMs) / ZOOM_MS);
         sway = this.idleMs ? Math.max(0, 1 - e / this.idleMs) : 0;
-        if (this.poweringOn) this.crtOn(e);
+        if (this.waking) this.wakeIn(e);
       } else if (this.phase === "reverse") {
-        // Hold on the screen: shutdown message, CRT power-off, then fly out.
-        if (e >= SHUTDOWN_TEXT_AT && this.downTex && this.screen.mesh.material.map !== this.downTex) {
-          this.screen.mesh.material.map = this.downTex;
-        }
-        this.crtOff(e - CRT_OFF_AT);
+        // Hold on the screen while the PC goes to sleep, then fly out.
+        this.sleepOut(e);
         raw = clamp01(1 - (e - ZOOM_OUT_AT) / REVERSE_MS);
         sway = 1 - raw;
       } else {
@@ -413,28 +440,45 @@ export default {
       if (this.phase === "forward" && raw >= 1) this.finish(false);
       if (this.phase === "reverse" && raw <= 0) this.setPhase("off");
     },
-    // Classic CRT switch-off: squeeze to a bright line, shrink to a dot, gone.
-    // Afterwards the black bezel behind the screen plane is all you see.
-    crtOff(t) {
-      const mesh = this.screen.mesh, mat = mesh.material;
-      if (t < 0) return;
-      const line = Math.min(1, t / CRT_LINE_MS);
-      const dot = Math.min(1, Math.max(0, (t - CRT_LINE_MS) / CRT_DOT_MS));
-      mesh.scale.set(1 - dot * 0.98, 1 - line * 0.985, 1);
-      mat.color.setScalar(1 + line * 2.5);      // brighter as it collapses
-      mesh.visible = dot < 1;
-      // Side screens and the room glow power down with it.
-      this.room.setPowered(1 - Math.min(1, t / (CRT_LINE_MS + CRT_DOT_MS)));
+    // Swap a material's texture (a map appearing/disappearing needs a
+    // shader update in three.js).
+    setMap(mat, map) {
+      if (mat.map === map) return;
+      if (!mat.map !== !map) mat.needsUpdate = true;
+      mat.map = map;
     },
-    // Power on: the reverse - a line that opens up into the boot screen.
-    crtOn(t) {
-      const mesh = this.screen.mesh, mat = mesh.material;
-      const k = Math.min(1, t / CRT_ON_MS);
-      mesh.visible = true;
-      mesh.scale.set(1, 0.015 + 0.985 * k * k, 1);
-      mat.color.setScalar(1 + (1 - k) * 2.5);
+    // Going to sleep, e = ms since the click. Desktop fades out, every monitor
+    // shows its "no signal" box, then all goes dark and the LEDs pulse amber.
+    sleepOut(e) {
+      const clamp01 = (v) => Math.min(1, Math.max(0, v));
+      const mat = this.screen.mesh.material;
+      const fade = clamp01((e - SLEEP_FADE_AT) / SLEEP_FADE_MS);
+      const osd = e >= OSD_AT && e < OSD_AT + OSD_MS;
+      this.room.setPowered(e < OSD_AT ? 1 - fade : 0);
+      if (e < OSD_AT) {
+        this.setMap(mat, this.snapTex || this.bootTex);
+        mat.color.setScalar(1 - fade);
+      } else {
+        this.setMap(mat, this.osdTex);
+        mat.color.setScalar(osd ? 1 : 0);
+      }
+      this.room.sideScreens.forEach((m, i) => {
+        this.setMap(m.material, osd ? this.sideOsd[i] : null);
+        if (osd) m.material.color.setScalar(1);
+      });
+      this.room.setSleeping(e >= OSD_AT + OSD_MS);
+    },
+    // Waking up, e = ms since the key press: LEDs back on, screens fade in
+    // with the desktop as it was.
+    wakeIn(e) {
+      const k = Math.min(1, e / WAKE_MS);
+      const mat = this.screen.mesh.material;
+      this.room.setSleeping(false);
+      this.room.sideScreens.forEach((m) => this.setMap(m.material, null));
       this.room.setPowered(k);
-      if (k >= 1) this.poweringOn = false;
+      this.setMap(mat, this.snapTex || this.bootTex);
+      mat.color.setScalar(k);
+      if (k >= 1) this.waking = false;
     },
     setPhase(phase, idleMs = 0) {
       this.phase = phase;
@@ -445,14 +489,13 @@ export default {
         this.$nextTick(() => this.$refs.powerBtn?.focus());
       }
     },
-    // Power on from the room: screen comes back with the boot frame and the
+    // Wake up from the room: screens come back with the desktop and the
     // camera flies in again.
     powerOn() {
       if (this.phase !== "off") return;
       this.offVisible = false;
-      this.screen.mesh.material.map = this.bootTex;
-      this.poweringOn = true;
-      this.setPhase("forward", POWER_ON_IDLE_MS);
+      this.waking = true;
+      this.setPhase("forward", WAKE_IDLE_MS);
     },
     // Renders the scene into the low-res target, then upscales it to the
     // canvas with hard pixels and dithering.
@@ -510,9 +553,9 @@ export default {
       }
       if (e.key === "Escape" || e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        // During shutdown, Esc jumps straight to the room.
+        // While going to sleep, Esc jumps straight to the (sleeping) room.
         if (this.phase === "reverse") {
-          this.crtOff(CRT_LINE_MS + CRT_DOT_MS); // screen fully off
+          this.sleepOut(OSD_AT + OSD_MS); // everything dark, LEDs amber
           this.setPhase("off");
         } else {
           this.skip();
@@ -531,13 +574,13 @@ export default {
   background: #1a1a24;
   transition: opacity 0.35s ease;
 }
-/* Shutdown: keep the desktop visible until the first 3D frame is drawn
+/* Sleep: keep the desktop visible until the first 3D frame is drawn
    (that frame looks exactly like the desktop), then switch instantly. */
-.intro3d.shutdown:not(.ready) {
+.intro3d.sleep:not(.ready) {
   background: transparent;
   cursor: progress;
 }
-.intro3d.shutdown .intro3d-canvas {
+.intro3d.sleep .intro3d-canvas {
   transition: none;
 }
 /* Full-screen "press anything" layer: any click or tap powers back on. */

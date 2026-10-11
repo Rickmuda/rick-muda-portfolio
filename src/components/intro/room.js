@@ -129,6 +129,10 @@ function shape(parent, look, color, geo, [x, y, z], rot = [0, 0, 0]) {
   return mesh;
 }
 
+// Monitor power LED colours: on, and the pulsing amber of standby.
+const LED_ON = 0xc637e6;
+const LED_SLEEP = 0xffa020;
+
 // A monitor hanging on the arm: bezel, back plate and a screen plane just in
 // front of the bezel. (x, y, z) is the center of the display.
 function monitor(parent, L, pal, { x, y, z, rotY, w, h, glow }) {
@@ -142,9 +146,17 @@ function monitor(parent, L, pal, { x, y, z, rotY, w, h, glow }) {
     new THREE.PlaneGeometry(w, h),
     new THREE.MeshBasicMaterial({ color: glow ?? 0x0c0c14, fog: false }),
   );
-  screen.position.set(0, 0, 0.0126);
+  // 1 mm in front of the bezel: closer than that z-fights on dark screens.
+  screen.position.set(0, 0, 0.0135);
   group.add(screen);
-  return { group, screen, top: h / 2 + 0.015 };
+  // Small power LED in the bottom-right corner of the bezel.
+  const led = new THREE.Mesh(
+    new THREE.BoxGeometry(0.012, 0.006, 0.002),
+    new THREE.MeshBasicMaterial({ color: LED_ON, fog: false }),
+  );
+  led.position.set(w / 2 - 0.012, -h / 2 - 0.008, 0.0145);
+  group.add(led);
+  return { group, screen, led, top: h / 2 + 0.015 };
 }
 
 // Generic blocky toy figure (~4.5 cm), standing on top of a monitor.
@@ -698,7 +710,11 @@ function buildGreybox(pal) {
   const chameleon = terrarium(scene, L, pal);
   const animate = (t) => { birds(t); chameleon(t); };
 
-  return { scene, screen, phoneScreen, animate, sideScreens: [m1.screen, m3.screen] };
+  return {
+    scene, screen, phoneScreen, animate,
+    sideScreens: [m1.screen, m3.screen],
+    leds: [m1.led, m2.led, m3.led],
+  };
 }
 
 async function buildFromModel(url) {
@@ -741,10 +757,28 @@ export async function loadRoom() {
   const sideColors = sideScreens.map((m) => m.material.color.clone());
   const glowOn = glow.intensity;
   const setPowered = (level) => {
-    // level: 1 = on, 0 = off (in between while switching)
+    // level: 1 = on, 0 = screens dark (in between while switching)
     glow.intensity = glowOn * (0.12 + 0.88 * level);
-    sideScreens.forEach((m, i) =>
-      m.material.color.copy(sideColors[i]).multiplyScalar(0.15 + 0.85 * level));
+    sideScreens.forEach((m, i) => m.material.color.copy(sideColors[i]).multiplyScalar(level));
+  };
+  // Standby: the monitor LEDs pulse amber instead of glowing purple.
+  const leds = room.leds || [];
+  let sleeping = false;
+  const setSleeping = (on) => { sleeping = on; };
+  const ledColor = new THREE.Color();
+  // The LEDs are only a few pixels at 240 lines, so standby also gets a soft
+  // amber glow over the desk that pulses with them.
+  const standbyGlow = new THREE.PointLight(LED_SLEEP, 0, 1.6, 2);
+  standbyGlow.position.set(0, 1.05, -1.35);
+  room.scene.add(standbyGlow);
+  const roomAnimate = room.animate || (() => {});
+  const animate = (t) => {
+    roomAnimate(t);
+    const pulse = 0.5 + 0.5 * Math.sin(t * 0.0028);
+    if (sleeping) ledColor.set(LED_SLEEP).multiplyScalar(0.2 + 0.8 * pulse);
+    else ledColor.set(LED_ON);
+    standbyGlow.intensity = sleeping ? 0.15 + 0.45 * pulse : 0;
+    leds.forEach((l) => l.material.color.copy(ledColor));
   };
   room.scene.updateMatrixWorld(true);
   // Give posters and game covers up to 1.5 s to arrive before we start.
@@ -756,8 +790,10 @@ export async function loadRoom() {
   const monitor = screenInfo(room.screen);
   return {
     scene: room.scene,
-    animate: room.animate || (() => {}),
+    animate,
     setPowered,
+    setSleeping,
+    sideScreens,
     // Camera targets: the middle monitor (desktop intro) and the phone
     // (mobile intro; falls back to the monitor if the model has no phone).
     screens: {

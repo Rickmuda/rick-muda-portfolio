@@ -51,7 +51,7 @@
         <span class="sm-user-name">Rick Muda</span>
       </div>
       <button class="sm-power" :title="$t('startPower')" :aria-label="$t('startPower')" @click="powerOff">
-        <font-awesome-icon icon="power-off" />
+        <font-awesome-icon icon="moon" />
       </button>
     </div>
   </div>
@@ -124,7 +124,7 @@ export default {
     },
   },
   methods: {
-    // Shut MudaOS down: App listens for this and zooms back out into the room.
+    // Put MudaOS to sleep: App listens for this and zooms back out into the room.
     powerOff() {
       this.$emit("close");
       window.dispatchEvent(new CustomEvent("power-off"));

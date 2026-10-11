@@ -107,6 +107,17 @@
         @done="onIntroDone"
       />
 
+      <!-- Sleep without animation (reduced motion): any input wakes up. -->
+      <button
+        v-if="simpleSleep"
+        ref="simpleSleep"
+        class="simple-sleep"
+        @click="simpleSleep = false"
+        @keydown.prevent="simpleSleep = false"
+      >
+        <span>{{ $i18n.locale === "nl" ? "Druk op iets om terug te gaan" : "Press anything to go back" }}</span>
+      </button>
+
       <!-- Boot screen (first visit per session) -->
       <BootScreen v-if="booting && !introCovering" @done="onBootDone" />
 
@@ -176,12 +187,14 @@ export default {
       // introPlaying: the 3D intro is mounted. introCovering: it still hides
       // the screen, so the BootScreen waits underneath until the hand-off.
       introPlaying: showIntro,
-      // "intro" on first visit, "shutdown" after the start menu's power button.
+      // "intro" on first visit, "sleep" after the start menu's sleep button.
       introMode: "intro",
       introSnapshot: null,
       // The intro component once its chunk is loaded; used directly for the
-      // shutdown so the async loader's cover never flashes over the desktop.
+      // sleep animation so the async loader's cover never flashes over the desktop.
       introLoaded: null,
+      // Sleep without the 3D room (prefers-reduced-motion).
+      simpleSleep: false,
       // Phones fly into the phone on the desk, everything else into the monitor.
       introTarget: typeof window !== "undefined" && window.innerWidth <= 768 ? "phone" : "monitor",
       introCovering: showIntro,
@@ -295,6 +308,9 @@ export default {
     },
   },
   watch: {
+    simpleSleep(on) {
+      if (on) this.$nextTick(() => this.$refs.simpleSleep?.focus());
+    },
     // Persist chrome (open/minimized) state on any change, rather than at each
     // of openApp/ensureOpen/closeApp/minimizeApp individually - this also means
     // any future mutator gets persistence for free with no extra plumbing.
@@ -506,21 +522,23 @@ export default {
     },
     onIntroScreen() {
       this.introCovering = false;
-      // Powering back on after a shutdown: run the boot sequence again.
-      if (this.introMode === "shutdown") this.booting = true;
+      // Waking from sleep shows the desktop as it was. Only without a snapshot
+      // (html2canvas failed) do we boot, so the hand-off still matches.
+      if (this.introMode === "sleep" && !this.introSnapshot) this.booting = true;
     },
     onIntroDone() {
       this.introPlaying = false;
       this.introMode = "intro";
       this.introSnapshot = null;
     },
-    // Start menu power button: photograph the desktop, then let the intro fly
-    // back out into the room with that picture on the monitor.
+    // Start menu sleep button: photograph the desktop, then let the intro put
+    // the PC to sleep and fly back out into the room.
     async powerOff() {
       if (this.introPlaying || this.booting) return;
       const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
       if (reduceMotion) {
-        this.booting = true; // simple reboot, no camera flight
+        // Reduced motion: no camera flight, just a black sleep screen.
+        this.simpleSleep = true;
         return;
       }
       document.body.style.cursor = "progress";
@@ -544,7 +562,7 @@ export default {
       document.body.style.cursor = "";
       this.introSnapshot = snapshot ? markRaw(snapshot) : null;
       this.introTarget = this.isMobile ? "phone" : "monitor";
-      this.introMode = "shutdown";
+      this.introMode = "sleep";
       this.introCovering = false;
       this.introPlaying = true;
     },
@@ -927,5 +945,26 @@ export default {
   to   { opacity: 1; }
 }
 
+
+.simple-sleep {
+  position: fixed;
+  inset: 0;
+  z-index: 100001;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding-bottom: 14vh;
+  border: 0;
+  background: #000;
+  color: #f0dcff;
+  font-family: 'PortfolioFont', monospace;
+  font-size: 16px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+.simple-sleep:focus-visible {
+  outline: none;
+}
 </style>
 
