@@ -154,6 +154,8 @@ export default {
     this.target = new THREE.WebGLRenderTarget(1, 1, {
       minFilter: THREE.NearestFilter,
       magFilter: THREE.NearestFilter,
+      // Half float: an 8-bit linear buffer bands badly in dark gradients.
+      type: THREE.HalfFloatType,
       depthBuffer: true,
     });
     this.post = new THREE.ShaderMaterial({
@@ -215,7 +217,7 @@ export default {
         c.clone().addScaledVector(n, 0.35),       // lining up with the screen
         end,
       ], false, "centripetal");
-      this.lookFrom = new THREE.Vector3(-0.15, 0.95, -1.3);
+      this.lookFrom = new THREE.Vector3(-0.1, 1.2, -1.4);
       this.lookTo = c.clone();
       // Re-crop the boot frame for the new viewport shape.
       if (this.bootCanvas && this.room.screen.material.map) {
@@ -260,7 +262,9 @@ export default {
         const lw = Math.round(lh * (size.x / size.y));
         this.target.setSize(lw, lh);
         this.post.uniforms.lowRes.value.set(lw, lh);
-        // Dithering fades out with the last step so the final frame is clean.
+        // Color depth climbs with each step too (31 -> 63 -> 127 levels) and
+        // dithering is off at native resolution, so the last frame is clean.
+        this.post.uniforms.levels.value = (COLOR_LEVELS + 1) * 2 ** step - 1;
         this.post.uniforms.dither.value = RES_STEPS[step] ? 1 : 0;
       }
       this.renderer.setRenderTarget(this.target);
