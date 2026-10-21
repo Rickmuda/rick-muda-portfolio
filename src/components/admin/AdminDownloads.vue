@@ -5,7 +5,7 @@
         <button class="cms-btn primary" @click="addDownload">
           <font-awesome-icon icon="plus" /> {{ $t('adminDlNew') }}
         </button>
-        <span class="cms-hint">{{ $t('adminDragHint') }}</span>
+        <span class="cms-hint cms-drag-hint">{{ $t('adminDragHint') }}</span>
       </div>
       <ul class="cms-list">
         <li

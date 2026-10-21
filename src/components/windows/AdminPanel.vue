@@ -85,7 +85,7 @@
               <button class="cms-btn primary" @click="addProject">
                 <font-awesome-icon icon="plus" /> {{ $t('adminNewProject') }}
               </button>
-              <span class="cms-hint">{{ $t('adminDragHint') }}</span>
+              <span class="cms-hint cms-drag-hint">{{ $t('adminDragHint') }}</span>
             </div>
             <ul class="cms-list">
               <li
@@ -102,7 +102,7 @@
                 <font-awesome-icon icon="grip-vertical" class="cms-grip" />
                 <img v-if="p.images.length" :src="resolveImage(p.images[0])" class="cms-row-thumb" alt="" />
                 <span v-else class="cms-row-thumb empty"></span>
-                <span class="cms-row-title">
+                <span class="cms-row-title clickable" @click="editingId = editingId === p.id ? null : p.id">
                   {{ titleOf(p) }}
                   <small>{{ p.type }}<template v-if="p.status"> - {{ p.status }}</template></small>
                 </span>
@@ -192,10 +192,16 @@
             <div class="cms-card">
               <div class="cms-card-head">
                 <h4 class="cms-card-title">{{ $t('adminPhotos') }}</h4>
-                <label class="cms-btn small upload" :class="{ disabled: uploading }">
-                  <font-awesome-icon icon="upload" /> {{ uploading ? $t('adminUploading') : $t('adminUpload') }}
-                  <input type="file" accept="image/webp,image/jpeg,image/png,image/gif" multiple hidden :disabled="uploading" @change="uploadProjectImages" />
-                </label>
+                <div class="cms-card-actions">
+                  <button class="cms-btn small" :class="{ active: hasWipImage }" @click="toggleWipImage">
+                    <font-awesome-icon :icon="hasWipImage ? 'xmark' : 'person-digging'" />
+                    {{ hasWipImage ? $t('adminWipImageRemove') : $t('adminWipImageUse') }}
+                  </button>
+                  <label class="cms-btn small upload" :class="{ disabled: uploading }">
+                    <font-awesome-icon icon="upload" /> {{ uploading ? $t('adminUploading') : $t('adminUpload') }}
+                    <input type="file" accept="image/webp,image/jpeg,image/png,image/gif" multiple hidden :disabled="uploading" @change="uploadProjectImages" />
+                  </label>
+                </div>
               </div>
               <div class="cms-photos">
                 <div
@@ -214,6 +220,10 @@
                   <button class="cms-photo-remove" :title="$t('adminDelete')" @click="editingProject.images.splice(i, 1)">
                     <font-awesome-icon icon="xmark" />
                   </button>
+                  <span class="cms-photo-move">
+                    <button class="cms-icon-btn" :disabled="i === 0" aria-label="Left" @click="move(editingProject.images, i, -1)">&#9664;</button>
+                    <button class="cms-icon-btn" :disabled="i === editingProject.images.length - 1" aria-label="Right" @click="move(editingProject.images, i, 1)">&#9654;</button>
+                  </span>
                 </div>
                 <span v-if="!editingProject.images.length" class="cms-hint">{{ $t('adminNoPhotos') }}</span>
               </div>
@@ -228,7 +238,7 @@
               <font-awesome-icon icon="upload" /> {{ uploading ? $t('adminUploading') : $t('adminUpload') }}
               <input type="file" accept="image/webp,image/jpeg,image/png,image/gif" multiple hidden :disabled="uploading" @change="uploadArt" />
             </label>
-            <span class="cms-hint">{{ $t('adminDragHint') }}</span>
+            <span class="cms-hint cms-drag-hint">{{ $t('adminDragHint') }}</span>
           </div>
           <div class="cms-art-grid">
             <div
@@ -481,6 +491,8 @@ const GAMES = [
 ];
 const DIFFICULTIES = ["easy", "medium", "hard"];
 const MAX_SHOWN_TEXTS = 80;
+// Bundled "under construction" image for work-in-progress projects.
+const WIP_IMAGE = "bundled:projects/under-construction.svg";
 
 const newId = (prefix) => prefix + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
 
@@ -563,6 +575,9 @@ export default {
     editingProject() {
       return this.draft?.projects.find((p) => p.id === this.editingId) || null;
     },
+    hasWipImage() {
+      return !!this.editingProject?.images.includes(WIP_IMAGE);
+    },
     knownTypes() {
       return [...new Set((this.draft?.projects || []).map((p) => p.type).filter(Boolean))];
     },
@@ -596,8 +611,14 @@ export default {
     },
   },
   watch: {
+    // On narrow screens the editor replaces the list, so start it at the top.
+    editingId() {
+      this.$nextTick(() => this.$el.querySelector?.(".cms-body")?.scrollTo({ top: 0 }));
+    },
     tab() {
       this.confirmDeleteId = null;
+      // Keep the active tab visible in the horizontally scrolling mobile nav.
+      this.$nextTick(() => this.$el.querySelector?.(".cms-nav-item.active")?.scrollIntoView({ block: "nearest", inline: "nearest" }));
       if (this.tab === "scores") this.loadScores();
     },
     scoreGame() {
@@ -789,6 +810,14 @@ export default {
       if (!project || !files.length) return;
       const uploaded = await this.uploadFiles(files, "projects");
       project.images.push(...uploaded.map((u) => u.url));
+    },
+    // Adds the W.I.P. image as the cover, or takes it out again.
+    toggleWipImage() {
+      const images = this.editingProject?.images;
+      if (!images) return;
+      const i = images.indexOf(WIP_IMAGE);
+      if (i === -1) images.unshift(WIP_IMAGE);
+      else images.splice(i, 1);
     },
     async uploadArt(e) {
       const files = [...e.target.files];
@@ -1455,6 +1484,18 @@ input[type="date"].cms-input {
 .cms-card-head .cms-card-title {
   margin: 0;
 }
+.cms-card-head {
+  flex-wrap: wrap;
+}
+.cms-card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.cms-btn.active {
+  border-color: var(--cms-accent);
+  background: var(--cms-accent-soft);
+}
 .cms-card-title {
   margin: 0 0 12px;
   font-size: 13px;
@@ -1540,6 +1581,9 @@ h4.cms-card-title {
   text-overflow: ellipsis;
   white-space: nowrap;
   font-weight: 550;
+}
+.cms-row-title.clickable {
+  cursor: pointer;
 }
 .cms-row-title small {
   display: block;
@@ -1632,6 +1676,22 @@ h4.cms-card-title {
   .cms-photo-remove {
     opacity: 1;
   }
+}
+/* Touch fallback for reordering photos (hidden with a mouse, see .cms-move). */
+.cms-photo-move {
+  position: absolute;
+  right: 6px;
+  bottom: 6px;
+  display: flex;
+  gap: 4px;
+}
+.cms-photo-move .cms-icon-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background: rgba(0, 0, 0, 0.7);
+  color: #fff;
+  font-size: 11px;
 }
 .cms-thumb-preview {
   width: 64px;
@@ -2111,6 +2171,74 @@ h4.cms-card-title {
   }
   .cms-top-apps li {
     grid-template-columns: 110px 1fr 40px;
+  }
+  .cms-topbar h2 {
+    font-size: 16px;
+  }
+  .cms-actions {
+    margin-left: auto;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .cms-message {
+    white-space: normal;
+  }
+  /* The project editor replaces the list instead of sitting below it, with
+     its title and "Done" button pinned to the top while scrolling. */
+  .cms-projects:has(.cms-edit-col) .cms-list-col {
+    display: none;
+  }
+  .cms-projects .cms-edit-head {
+    position: sticky;
+    top: -14px;
+    z-index: 2;
+    margin: -14px -14px 12px;
+    padding: 10px 14px;
+    background: var(--cms-bg);
+    border-bottom: 1px solid var(--cms-border);
+  }
+  .cms-card {
+    padding: 12px;
+  }
+  .cms-photos {
+    grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  }
+  .cms-table td {
+    padding: 6px 8px;
+  }
+}
+@container (max-width: 440px) {
+  .cms-row-thumb {
+    display: none;
+  }
+  .cms-row {
+    gap: 8px;
+    padding: 8px;
+  }
+}
+
+/* ---------------------------------------------------------------- Touch screens */
+@media (pointer: coarse) {
+  /* Drag & drop doesn't work on touch: the arrow buttons take over. */
+  .cms-grip,
+  .cms-drag-hint {
+    display: none;
+  }
+  .cms-icon-btn {
+    width: 36px;
+    height: 36px;
+  }
+  .cms-move .cms-icon-btn {
+    width: 32px;
+    height: 20px;
+    font-size: 10px;
+  }
+  .cms-nav-item {
+    padding: 10px 12px;
+  }
+  /* 16px keeps iOS from zooming in on every focused field. */
+  .cms-input {
+    font-size: 16px;
   }
 }
 </style>
