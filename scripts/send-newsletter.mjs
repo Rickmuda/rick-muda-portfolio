@@ -35,15 +35,23 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY || !GMAIL_USER || !GMAIL_APP_PAS
   process.exit(0);
 }
 
-const listRes = await fetch(
-  `${SUPABASE_URL}/rest/v1/subscribers?select=email,unsubscribe_token`,
-  {
-    headers: {
-      apikey: SUPABASE_SERVICE_ROLE_KEY,
-      Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+// fetch() throws (instead of returning a bad status) when Supabase can't be
+// reached at all, e.g. a paused free-tier project whose hostname no longer resolves.
+let listRes;
+try {
+  listRes = await fetch(
+    `${SUPABASE_URL}/rest/v1/subscribers?select=email,unsubscribe_token`,
+    {
+      headers: {
+        apikey: SUPABASE_SERVICE_ROLE_KEY,
+        Authorization: `Bearer ${SUPABASE_SERVICE_ROLE_KEY}`,
+      },
     },
-  },
-);
+  );
+} catch (err) {
+  console.error("Newsletter: could not reach Supabase", err.cause?.code || err.message);
+  process.exit(0);
+}
 
 if (!listRes.ok) {
   console.error("Newsletter: failed to fetch subscribers", listRes.status, await listRes.text());
