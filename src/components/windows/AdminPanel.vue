@@ -1080,6 +1080,9 @@ export default {
 .cms-main {
   flex: 1;
   min-width: 0;
+  /* Without this the column layout on narrow screens grows to fit its content,
+     so .cms-body never gets a bounded height and can't scroll. */
+  min-height: 0;
   display: flex;
   flex-direction: column;
 }
